@@ -361,7 +361,7 @@ export default function App() {
 
     setLoading(true);
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/explore`, {
+      const response = await fetch('https://concept-atlas-backend.onrender.com/api/explore', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
