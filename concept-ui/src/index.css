@@ -1,0 +1,93 @@
+@import url('https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Inter:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,600;1,400&display=swap');
+
+@import "tailwindcss";
+
+/* This forces Tailwind v4 to listen to our Sun/Moon button instead of your Mac! */
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+  --color-background-light: #f8fafc;
+  --color-background-dark: #020617;
+  --color-cluster-emerald: #10b981;
+  --color-cluster-amethyst: #8b5cf6;
+  --color-cluster-amber: #f59e0b;
+  --color-cluster-rose: #f43f5e;
+
+  --font-sans: 'Inter', sans-serif;
+  --font-serif: '"Playfair Display"', serif;
+  --font-arabic: 'Amiri', serif;
+
+  --animate-pulse-slow: pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  --animate-aurora: aurora 15s ease infinite;
+  --animate-float: float 6s ease-in-out infinite;
+
+  @keyframes aurora {
+    0%,
+    100% {
+      background-position: 0% 50%;
+    }
+
+    50% {
+      background-position: 100% 50%;
+    }
+  }
+
+  @keyframes float {
+    0%,
+    100% {
+      transform: translateY(0);
+    }
+
+    50% {
+      transform: translateY(-10px);
+    }
+  }
+}
+
+@layer base {
+  body {
+    @apply bg-background-light text-slate-800 transition-colors duration-700 antialiased font-sans m-0 p-0;
+  }
+
+  .dark body {
+    @apply bg-background-dark text-slate-200;
+  }
+}
+
+@layer utilities {
+  .glass-panel {
+    @apply bg-white/40 border border-white/20 backdrop-blur-md rounded-xl;
+    box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.07);
+  }
+
+  .dark .glass-panel {
+    @apply bg-slate-900/40 border border-slate-700/50;
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+  }
+
+  .aurora-bg {
+    background: linear-gradient(-45deg, #020617, #0f172a, #064e3b, #2e1065);
+    background-size: 400% 400%;
+    animation: var(--animate-aurora);
+  }
+
+ .light-aurora-bg {
+    /* Upgraded to true mother-of-pearl so the glass catches the light */
+    background: linear-gradient(-45deg, #ffffff, #f8fafc, #fef3c7, #e0e7ff, #fcfaf8);
+    background-size: 400% 400%;
+    animation: var(--animate-aurora);
+  }
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-slate-300 dark:bg-slate-700 rounded-full;
+}
