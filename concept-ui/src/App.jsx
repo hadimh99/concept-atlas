@@ -25,7 +25,7 @@ const HadithCard = ({ item, handleCopyHadith }) => {
 
     engText = engText.replace(/^[\s"'‘“\[\(]*(?:Unknown[\.\s]*)?(?:\d+[\.\-:]?\s*)?/i, "").trim();
     araText = araText.replace(/^[\s"'‘“\[\(]*(?:\d+[ـ\.\-\s]+)?/, "").trim();
-    
+
     engText = engText.replace(/(who has said the following|said the following|who said|the following is narrated|who has narrated the following|in a marfu['‘] manner the following|in a marfu['‘] manner who has narrated the following)(?!\s*:)/gi, "$1:");
 
     if (engText.length > 0) {
@@ -44,13 +44,13 @@ const HadithCard = ({ item, handleCopyHadith }) => {
       "in a marfu‘ manner the following:",
       "in a marfu' manner the following:",
       "who has narrated the following:",
-      "said the following:", 
-      "who said:", 
+      "said the following:",
+      "who said:",
       "who has said:",
-      "is narrated from", 
-      "narrated that:", 
+      "is narrated from",
+      "narrated that:",
       "following Hadith:",
-      "the following is narrated:", 
+      "the following is narrated:",
       "said:"
     ];
 
@@ -66,7 +66,7 @@ const HadithCard = ({ item, handleCopyHadith }) => {
         let chainSegments = [];
         let bodySegments = [];
         let foundNonImam = false;
-        
+
         const blessingRegex = /\(\s*(as|a\.s\.?|s\.a\.?|sawa|s\.a\.w\.w\.?|r\.a\.?)\s*\)/i;
 
         for (let i = segments.length - 1; i >= 0; i -= 2) {
@@ -116,7 +116,7 @@ const HadithCard = ({ item, handleCopyHadith }) => {
     if (text.length < 500) return [text];
 
     const rawSegments = text.split(/([.!?]["'”’]*\s*(?:\(\s*\d+\s*:\s*\d+\s*\))?\s+)/);
-    
+
     const sentences = [];
     for (let i = 0; i < rawSegments.length; i += 2) {
       let sentence = rawSegments[i];
@@ -129,13 +129,13 @@ const HadithCard = ({ item, handleCopyHadith }) => {
 
     sentences.forEach(sentence => {
       currentPara += sentence;
-      
+
       const endsWithAcronym = /(a\.s\.\s*|s\.a\.\s*|a\.j\.\s*|r\.a\.\s*|sawa\s*)$/i.test(sentence);
-      
+
       const openSmart = (currentPara.match(/[“‘]/g) || []).length;
       const closeSmart = (currentPara.match(/[”’]/g) || []).length;
       const straightDouble = (currentPara.match(/"/g) || []).length;
-      
+
       const insideQuote = (openSmart > closeSmart) || (straightDouble % 2 !== 0);
 
       const isSoftBreak = currentPara.length > 600 && !insideQuote;
@@ -155,14 +155,14 @@ const HadithCard = ({ item, handleCopyHadith }) => {
   };
 
   const paragraphs = formatParagraphs(body);
-  
-  const textToCopy = chain 
-    ? `${chain}\n\n${paragraphs.join('\n\n')}` 
+
+  const textToCopy = chain
+    ? `${chain}\n\n${paragraphs.join('\n\n')}`
     : paragraphs.join('\n\n');
 
   return (
     <div className="bg-white dark:bg-slate-800 rounded-xl p-6 relative shadow-sm border border-slate-100 dark:border-slate-700">
-      
+
       <div className="mb-5 border-b border-slate-100 dark:border-slate-700 pb-3">
         <span className="text-sm md:text-base font-medium text-slate-500 dark:text-slate-400 leading-relaxed block">
           Book: {item.book}, Vol: {item.volume}, {item.sub_book}, Chapter: {item.chapter}
@@ -171,7 +171,7 @@ const HadithCard = ({ item, handleCopyHadith }) => {
       </div>
 
       <div className="mb-3">
-        <button 
+        <button
           onClick={() => setShowArabic(!showArabic)}
           className="flex items-center gap-1 text-sm font-medium text-indigo-500 hover:text-indigo-600 dark:text-indigo-400 dark:hover:text-indigo-300 transition-colors cursor-pointer"
         >
@@ -198,14 +198,14 @@ const HadithCard = ({ item, handleCopyHadith }) => {
       </div>
 
       <div className="mb-4">
-        <button 
+        <button
           onClick={() => setShowChain(!showChain)}
           className="flex items-center gap-1 text-xs font-semibold uppercase tracking-wider text-slate-400 hover:text-indigo-500 dark:hover:text-indigo-400 transition-colors cursor-pointer"
         >
           {showChain ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
           {showChain ? "Hide Chain of Narrators" : "View Chain of Narrators"}
         </button>
-        
+
         <AnimatePresence>
           {showChain && (
             <motion.div
@@ -224,7 +224,7 @@ const HadithCard = ({ item, handleCopyHadith }) => {
 
       <div className="mb-6">
         {paragraphs.map((para, idx) => (
-          <p 
+          <p
             key={idx}
             className={`text-lg md:text-xl leading-[1.8] text-slate-900 dark:text-slate-50 ${idx !== paragraphs.length - 1 ? 'mb-5' : ''}`}
             style={{ fontFamily: "'Times New Roman', Times, serif" }}
@@ -238,8 +238,8 @@ const HadithCard = ({ item, handleCopyHadith }) => {
       </div>
 
       <div className="mt-2 flex justify-end pt-4 border-t border-slate-50 dark:border-slate-700/50">
-        <button 
-          onClick={() => handleCopyHadith({...item, hadith_number: displayNum, english_text: textToCopy})}
+        <button
+          onClick={() => handleCopyHadith({ ...item, hadith_number: displayNum, english_text: textToCopy })}
           className="flex items-center gap-2 text-xs font-mono text-slate-400 hover:text-indigo-500 dark:hover:text-indigo-400 transition-colors px-3 py-1.5 rounded-md hover:bg-slate-100 dark:hover:bg-slate-700/50 cursor-pointer"
         >
           <Copy className="w-4 h-4" />
@@ -253,14 +253,14 @@ const HadithCard = ({ item, handleCopyHadith }) => {
 const getTopKeywords = (items) => {
   if (!items || items.length === 0) return [];
   const stopWords = new Set([
-    "the", "and", "to", "of", "a", "in", "that", "is", "for", "it", "with", "as", 
-    "he", "was", "on", "from", "who", "has", "said", "this", "they", "but", "are", 
-    "not", "have", "be", "upon", "him", "peace", "narrated", "which", "what", "their", 
-    "all", "your", "them", "those", "these", "would", "were", "had", "been", "also", 
-    "allah", "messenger", "imam", "ibn", "abu", "ali", "muhammad", "abdillah", "abdullah", 
-    "ja'far", "hasan", "husayn", "baqir", "sadiq", "prophet", "lord", "holy", "people", 
+    "the", "and", "to", "of", "a", "in", "that", "is", "for", "it", "with", "as",
+    "he", "was", "on", "from", "who", "has", "said", "this", "they", "but", "are",
+    "not", "have", "be", "upon", "him", "peace", "narrated", "which", "what", "their",
+    "all", "your", "them", "those", "these", "would", "were", "had", "been", "also",
+    "allah", "messenger", "imam", "ibn", "abu", "ali", "muhammad", "abdillah", "abdullah",
+    "ja'far", "hasan", "husayn", "baqir", "sadiq", "prophet", "lord", "holy", "people",
     "man", "men", "woman", "women", "asked", "told", "heard", "came", "went", "saying",
-    "some", "we", "you", "by", "or", "if", "when", "an", "at", "about", "then", "there", 
+    "some", "we", "you", "by", "or", "if", "when", "an", "at", "about", "then", "there",
     "his", "do", "did", "does", "can", "could", "should", "shall", "will"
   ]);
 
@@ -288,7 +288,7 @@ export default function App() {
   const [viewMode, setViewMode] = useState(window.innerWidth < 768 ? 'list' : 'map');
   const [activeCluster, setActiveCluster] = useState(null);
   const [hoveredCluster, setHoveredCluster] = useState(null);
-  
+
   const [sourceFilter, setSourceFilter] = useState(SOURCES[0]);
   const [showDropdown, setShowDropdown] = useState(false);
   const [searchMode, setSearchMode] = useState('concept');
@@ -307,7 +307,7 @@ export default function App() {
   const handleModalScroll = (e) => {
     const el = e.currentTarget;
     const isDark = document.documentElement.classList.contains('dark');
-    
+
     // Instantly inject the color based on light/dark mode without triggering a React render
     el.style.setProperty('--thumb-bg', isDark ? 'rgba(255, 255, 255, 0.4)' : 'rgba(15, 23, 42, 0.4)');
 
@@ -333,7 +333,7 @@ export default function App() {
   useEffect(() => {
     setCurrentPage(1);
     if (modalScrollRef.current) {
-        modalScrollRef.current.scrollTop = 0;
+      modalScrollRef.current.scrollTop = 0;
     }
   }, [activeCluster]);
 
@@ -361,16 +361,16 @@ export default function App() {
 
     setLoading(true);
     try {
-      const response = await fetch('http://127.0.0.1:8000/api/explore', { 
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/explore`, {
         method: 'POST',
-        headers: { 
+        headers: {
           'Content-Type': 'application/json',
-          'Accept': 'application/json' 
+          'Accept': 'application/json'
         },
-        body: JSON.stringify({ 
-          query: query, 
+        body: JSON.stringify({
+          query: query,
           source: sourceFilter,
-          searchMode: searchMode 
+          searchMode: searchMode
         })
       });
 
@@ -378,7 +378,7 @@ export default function App() {
       if (result.clusters && result.clusters.length > 0) {
         setData(result);
         if (searchMode === 'keyword') {
-            setViewMode('list');
+          setViewMode('list');
         }
       } else {
         setData(null);
@@ -392,7 +392,7 @@ export default function App() {
 
   const handleCopyHadith = (item) => {
     const formattedText = `Book ${item.book}, Volume ${item.volume}, ${item.sub_book}, Chapter: ${item.chapter}, Hadith ${item.hadith_number}\n\n${item.arabic_text}\n\n${item.english_text}\n\n— Via Concept Atlas`;
-    
+
     navigator.clipboard.writeText(formattedText).then(() => {
       console.log("Hadith copied to clipboard!");
     }).catch(err => {
@@ -414,7 +414,7 @@ export default function App() {
 
   return (
     <div className={`min-h-screen w-full overflow-hidden transition-colors duration-700 flex flex-col ${theme === 'dark' ? 'aurora-bg text-slate-100' : 'light-aurora-bg text-slate-900'}`}>
-      
+
       {/* --- BULLETPROOF SCROLLBAR CSS --- */}
       <style>{`
         /* Keep the outer list completely hidden */
@@ -532,13 +532,13 @@ export default function App() {
                 Explore the Depths of <br />
                 <span className="italic">Twelver Literature</span>
               </h2>
-              
+
               <div className="w-full relative group pointer-events-auto">
-                <div 
-                  className="absolute inset-0 w-full h-full rounded-2xl border border-white/60 dark:border-white/10 shadow-[0_8px_32px_rgba(0,0,0,0.08)] dark:shadow-xl pointer-events-none z-0 transition-colors duration-700" 
-                  style={{ 
-                    backgroundColor: theme === 'dark' ? 'rgba(0, 0, 0, 0.4)' : 'rgba(255, 255, 255, 0.3)', 
-                    backdropFilter: 'blur(24px)' 
+                <div
+                  className="absolute inset-0 w-full h-full rounded-2xl border border-white/60 dark:border-white/10 shadow-[0_8px_32px_rgba(0,0,0,0.08)] dark:shadow-xl pointer-events-none z-0 transition-colors duration-700"
+                  style={{
+                    backgroundColor: theme === 'dark' ? 'rgba(0, 0, 0, 0.4)' : 'rgba(255, 255, 255, 0.3)',
+                    backdropFilter: 'blur(24px)'
                   }}
                 ></div>
 
@@ -583,8 +583,8 @@ export default function App() {
                         <BookOpen className="w-4 h-4" />
                         <span className="text-xs uppercase tracking-wider font-semibold">Source:</span>
                       </div>
-                      
-                      <button 
+
+                      <button
                         type="button"
                         onClick={() => setShowDropdown(!showDropdown)}
                         className="flex items-center justify-between w-full sm:w-[220px] px-3 py-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors text-sm font-medium text-slate-700 dark:text-slate-300 border border-transparent hover:border-slate-200 dark:hover:border-slate-700"
@@ -602,7 +602,7 @@ export default function App() {
                             className="absolute top-14 right-0 w-full sm:w-[220px] glass-panel rounded-xl border border-slate-200 dark:border-slate-700 shadow-xl overflow-hidden z-50 bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl"
                           >
                             {SOURCES.map((source) => (
-                              <div 
+                              <div
                                 key={source}
                                 onClick={() => {
                                   setSourceFilter(source);
@@ -653,7 +653,7 @@ export default function App() {
               animate={{ opacity: 1 }}
               className="absolute inset-0 w-full h-full flex flex-col items-center justify-center"
             >
-              
+
               {/* --- MAP VIEW RENDER --- */}
               {viewMode === 'map' && searchMode === 'concept' && (
                 <>
@@ -675,7 +675,7 @@ export default function App() {
                       const rx = Math.min(Math.max(120, centerPos.x - 200), 450);
                       const ry = Math.min(Math.max(120, centerPos.y - 180), 300);
                       const pos = getRadialPosition(i, data.clusters.length, rx, ry);
-                      
+
                       const color = CLUSTER_COLORS[i % CLUSTER_COLORS.length];
                       const isHovered = hoveredCluster === i;
                       const isActive = activeCluster === i;
@@ -705,15 +705,15 @@ export default function App() {
                     const rx = Math.min(Math.max(120, centerPos.x - 200), 450);
                     const ry = Math.min(Math.max(120, centerPos.y - 180), 300);
                     const pos = getRadialPosition(i, data.clusters.length, rx, ry);
-                    
+
                     const color = CLUSTER_COLORS[i % CLUSTER_COLORS.length];
                     const isActive = activeCluster === i;
                     const isHovered = hoveredCluster === i;
                     const isFaded = activeCluster !== null && !isActive;
 
                     const maxClusterSize = Math.max(...data.clusters.map(c => c.items.length));
-                    const relativeWeight = cluster.items.length / maxClusterSize; 
-                    const screenScaleFactor = Math.min(1, windowWidth / 1200); 
+                    const relativeWeight = cluster.items.length / maxClusterSize;
+                    const screenScaleFactor = Math.min(1, windowWidth / 1200);
                     const baseScale = (0.85 + (relativeWeight * 0.45)) * screenScaleFactor;
                     const finalBaseScale = Math.max(0.65, baseScale);
                     const targetScale = isActive ? finalBaseScale * 1.05 : finalBaseScale;
@@ -728,7 +728,7 @@ export default function App() {
                           opacity: isFaded ? 0.2 : 1,
                           x: pos.x,
                           y: pos.y,
-                          scale: targetScale 
+                          scale: targetScale
                         }}
                         transition={{ type: "spring", stiffness: 60, delay: i * 0.1 }}
                         className={`absolute pointer-events-auto transition-all duration-300 z-20 ${isFaded ? 'pointer-events-none grayscale' : ''}`}
@@ -755,7 +755,7 @@ export default function App() {
                               {isActive ? <X className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
                             </div>
                           </div>
-                          
+
                           <div className="h-0 overflow-hidden group-hover:h-auto transition-all duration-300 bg-black/5 dark:bg-white/5 border-t border-white/10">
                             <div className="px-5 py-2 flex items-center gap-2 text-xs font-mono text-slate-500 dark:text-slate-400">
                               <Info className="w-3.5 h-3.5 shrink-0" />
@@ -772,7 +772,7 @@ export default function App() {
               {/* --- LIST VIEW RENDER (Outer Scrollbar Hidden via class) --- */}
               {viewMode === 'list' && (
                 <div className="z-30 w-full max-w-4xl px-4 pt-28 pb-12 h-full overflow-y-auto pointer-events-auto hide-scroll">
-                  
+
                   {/* Compact Header Card */}
                   <div className="glass-panel p-5 sm:p-6 rounded-xl mb-8 border border-white/20 dark:border-slate-700/50 shadow-sm bg-white/40 dark:bg-slate-900/40">
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -789,7 +789,7 @@ export default function App() {
                           ))}
                         </div>
                       </div>
-                      
+
                       <div className="flex gap-6 sm:border-l border-slate-200 dark:border-slate-700/60 sm:pl-6">
                         {searchMode === 'concept' && (
                           <div>
@@ -823,7 +823,7 @@ export default function App() {
                             <span className="font-mono text-sm sm:text-base font-medium text-slate-400 group-hover:text-indigo-500 dark:group-hover:text-indigo-400 transition-colors pt-1 sm:pt-0">
                               0{i + 1}
                             </span>
-                            
+
                             <div>
                               <h3 className="font-mono text-lg sm:text-xl font-medium tracking-tight text-slate-800 dark:text-slate-100 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
                                 {cluster.theme_label}
@@ -832,7 +832,7 @@ export default function App() {
                                 <span className="font-mono text-xs sm:text-sm text-slate-500 dark:text-slate-400">
                                   [{cluster.items.length} narrations]
                                 </span>
-                                
+
                                 {searchMode === 'concept' && (
                                   <div className="hidden sm:flex items-center gap-1.5 text-xs font-mono text-slate-400 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
                                     <Info className="w-3.5 h-3.5" />
@@ -842,7 +842,7 @@ export default function App() {
                               </div>
                             </div>
                           </div>
-                          
+
                           <div className="opacity-0 group-hover:opacity-100 transform translate-x-[-10px] group-hover:translate-x-0 transition-all duration-300 pl-4">
                             <ChevronRight className="w-5 h-5 text-indigo-500 dark:text-indigo-400" />
                           </div>
@@ -853,10 +853,10 @@ export default function App() {
                 </div>
               )}
 
-             {/* --- THE PAGINATED MODAL --- */}
-             <AnimatePresence>
+              {/* --- THE PAGINATED MODAL --- */}
+              <AnimatePresence>
                 {activeCluster !== null && data.clusters[activeCluster] && (() => {
-                  
+
                   const clusterItems = data.clusters[activeCluster].items;
                   const totalPages = Math.ceil(clusterItems.length / ITEMS_PER_PAGE);
                   const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
@@ -864,14 +864,14 @@ export default function App() {
 
                   return (
                     <div className="fixed inset-0 z-[1000] flex items-center justify-center pointer-events-auto">
-                      <motion.div 
-                        initial={{ opacity: 0 }} 
-                        animate={{ opacity: 1 }} 
+                      <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
                         onClick={() => setActiveCluster(null)}
                         className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm cursor-pointer"
                       />
-                      
+
                       <motion.div
                         initial={{ opacity: 0, scale: 0.9, y: 20 }}
                         animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -888,42 +888,42 @@ export default function App() {
                         </div>
 
                         {/* --- BULLETPROOF SCROLL INJECTION --- */}
-                        <div 
-                          ref={modalScrollRef} 
+                        <div
+                          ref={modalScrollRef}
                           onScroll={handleModalScroll}
                           className="p-6 flex flex-col gap-6 overflow-y-auto flex-grow smart-scrollbar"
                         >
                           {paginatedItems.map((item, idx) => (
                             <HadithCard key={idx} item={item} handleCopyHadith={handleCopyHadith} />
                           ))}
-                          
+
                           {totalPages > 1 && (
                             <div className="flex items-center justify-between pt-6 border-t border-slate-200 dark:border-slate-700/50 mt-4">
-                                <button 
-                                  onClick={() => {
-                                    setCurrentPage(prev => Math.max(prev - 1, 1));
-                                    modalScrollRef.current.scrollTop = 0;
-                                  }}
-                                  disabled={currentPage === 1}
-                                  className={`flex items-center gap-1 px-4 py-2 rounded-lg font-medium transition-colors ${currentPage === 1 ? 'opacity-30 cursor-not-allowed text-slate-500' : 'text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-500/10 cursor-pointer'}`}
-                                >
-                                  <ChevronLeft className="w-5 h-5" /> Previous
-                                </button>
-                                
-                                <span className="font-mono text-sm text-slate-500 dark:text-slate-400">
-                                  Page {currentPage} of {totalPages}
-                                </span>
-                                
-                                <button 
-                                  onClick={() => {
-                                    setCurrentPage(prev => Math.min(prev + 1, totalPages));
-                                    modalScrollRef.current.scrollTop = 0;
-                                  }}
-                                  disabled={currentPage === totalPages}
-                                  className={`flex items-center gap-1 px-4 py-2 rounded-lg font-medium transition-colors ${currentPage === totalPages ? 'opacity-30 cursor-not-allowed text-slate-500' : 'text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-500/10 cursor-pointer'}`}
-                                >
-                                  Next <ChevronRight className="w-5 h-5" />
-                                </button>
+                              <button
+                                onClick={() => {
+                                  setCurrentPage(prev => Math.max(prev - 1, 1));
+                                  modalScrollRef.current.scrollTop = 0;
+                                }}
+                                disabled={currentPage === 1}
+                                className={`flex items-center gap-1 px-4 py-2 rounded-lg font-medium transition-colors ${currentPage === 1 ? 'opacity-30 cursor-not-allowed text-slate-500' : 'text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-500/10 cursor-pointer'}`}
+                              >
+                                <ChevronLeft className="w-5 h-5" /> Previous
+                              </button>
+
+                              <span className="font-mono text-sm text-slate-500 dark:text-slate-400">
+                                Page {currentPage} of {totalPages}
+                              </span>
+
+                              <button
+                                onClick={() => {
+                                  setCurrentPage(prev => Math.min(prev + 1, totalPages));
+                                  modalScrollRef.current.scrollTop = 0;
+                                }}
+                                disabled={currentPage === totalPages}
+                                className={`flex items-center gap-1 px-4 py-2 rounded-lg font-medium transition-colors ${currentPage === totalPages ? 'opacity-30 cursor-not-allowed text-slate-500' : 'text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-500/10 cursor-pointer'}`}
+                              >
+                                Next <ChevronRight className="w-5 h-5" />
+                              </button>
                             </div>
                           )}
                         </div>
