@@ -6,6 +6,7 @@ const fs = require('fs');
 const path = require('path');
 const { kmeans } = require('ml-kmeans');
 const { GoogleGenerativeAI } = require('@google/generative-ai');
+const sqlite3 = require('sqlite3').verbose(); // <-- The new database bridge!
 
 dotenv.config();
 
@@ -13,9 +14,9 @@ const app = express();
 const PORT = process.env.PORT || 8000;
 
 app.use(cors({
-  origin: '*', 
-  methods: ['GET', 'POST'],
-  allowedHeaders: ['Content-Type']
+    origin: '*',
+    methods: ['GET', 'POST'],
+    allowedHeaders: ['Content-Type']
 }));
 app.use(express.json());
 
@@ -30,22 +31,11 @@ let pipeline;
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
-const dataPath = path.join(__dirname, 'data', 'concept_atlas_export.json');
-let hadithMap = null;
-
-function loadMapIfMem() {
-    if (!hadithMap) {
-        console.log("Loading thaqalayn_complete.json into memory...");
-        try {
-            const rawData = fs.readFileSync('../thaqalayn_complete.json', 'utf8');
-            hadithMap = JSON.parse(rawData);
-            console.log("JSON map loaded successfully.");
-        } catch (error) {
-            console.error("Error loading JSON file:", error);
-            hadithMap = [];
-        }
-    }
-}
+// --- CONNECT TO THE MEMORY-LIGHT DATABASE ---
+const db = new sqlite3.Database('thaqalayn.db', sqlite3.OPEN_READONLY, (err) => {
+    if (err) console.error("Database connection error:", err.message);
+    else console.log("Connected securely to the Twelver SQLite database.");
+});
 
 // --- ONTOLOGY ENGINE HELPERS ---
 function cosineSimilarity(vecA, vecB) {
@@ -94,13 +84,13 @@ const fallbackLabeler = (items, query, usedLabels) => {
     }
 
     const stopWords = new Set([
-        "the", "and", "to", "of", "a", "in", "that", "is", "for", "it", "with", "as", 
-        "he", "was", "on", "from", "who", "has", "said", "this", "they", "but", "are", 
-        "not", "have", "be", "upon", "him", "peace", "narrated", "which", "what", "their", 
-        "all", "your", "them", "those", "these", "would", "were", "had", "been", "also", 
-        "some", "we", "you", "by", "or", "if", "when", "an", "at", "about", "then", "there", 
+        "the", "and", "to", "of", "a", "in", "that", "is", "for", "it", "with", "as",
+        "he", "was", "on", "from", "who", "has", "said", "this", "they", "but", "are",
+        "not", "have", "be", "upon", "him", "peace", "narrated", "which", "what", "their",
+        "all", "your", "them", "those", "these", "would", "were", "had", "been", "also",
+        "some", "we", "you", "by", "or", "if", "when", "an", "at", "about", "then", "there",
         "his", "do", "did", "does", "can", "could", "should", "shall", "will",
-        "allah", "messenger", "imam", "imams", "ibn", "abu", "ali", "muhammad", "abdillah", "abdullah", 
+        "allah", "messenger", "imam", "imams", "ibn", "abu", "ali", "muhammad", "abdillah", "abdullah",
         "ja'far", "jafar", "hasan", "husayn", "baqir", "sadiq", "rida", "reza", "prophet", "lord", "holy",
         "people", "man", "men", "woman", "women", "asked", "told", "heard", "came", "went",
         "following", "hadith", "chain", "narrators", "narrator", "book", "chapter", "volume", "sub_book",
@@ -146,9 +136,9 @@ const fallbackLabeler = (items, query, usedLabels) => {
 
 const generateAllClusterLabelsAI = async (clusters, query) => {
     try {
-        const model = genAI.getGenerativeModel({ 
+        const model = genAI.getGenerativeModel({
             model: "gemini-2.5-flash",
-            generationConfig: { responseMimeType: "application/json" } 
+            generationConfig: { responseMimeType: "application/json" }
         });
 
         let prompt = `You are an expert analyzing Twelver Shia narrations. 
@@ -209,18 +199,25 @@ app.post('/api/explore', async (req, res) => {
         console.log(`[🔍 CACHE MISS] Processing new ${activeSearchMode} query: "${query}" (Source: ${activeSource})`);
 
         if (activeSearchMode === 'keyword') {
-            loadMapIfMem();
-            console.log("Running lightning-fast exact keyword & alias match in RAM...");
-            
+            console.log("Fetching data from SQLite for keyword search...");
+
+            // Clean RAM management for Keyword Mode
+            const allRows = await new Promise((resolve, reject) => {
+                db.all("SELECT raw_data FROM hadiths", (err, rows) => {
+                    if (err) reject(err); else resolve(rows);
+                });
+            });
+            const hadithMap = allRows.map(r => JSON.parse(r.raw_data));
+
             const lowerQuery = query.toLowerCase().trim();
             let exactMatches = [];
             let fuzzyMatches = [];
 
             let altQuery = lowerQuery;
             const aliasMap = {
-                "hussain": "husayn", "husain": "husayn", 
+                "hussain": "husayn", "husain": "husayn",
                 "hassan": "hasan",
-                "mohammad": "muhammad", "mohammed": "muhammad", 
+                "mohammad": "muhammad", "mohammed": "muhammad",
                 "reza": "rida", "ridha": "rida",
                 "sadeq": "sadiq", "sadegh": "sadiq",
                 "baqer": "baqir",
@@ -228,7 +225,7 @@ app.post('/api/explore', async (req, res) => {
                 "quran": "qur'an", "koran": "qur'an",
                 "shia": "shi'a", "shiite": "shi'a"
             };
-            
+
             Object.keys(aliasMap).forEach(key => {
                 const regex = new RegExp(`\\b${key}\\b`, 'gi');
                 altQuery = altQuery.replace(regex, aliasMap[key]);
@@ -240,7 +237,7 @@ app.post('/api/explore', async (req, res) => {
 
                 const eng = (hData.en || "").toLowerCase();
                 const ar = hData.ar || "";
-                
+
                 let hNum = hData.hadith_number || hData.hadith;
                 if (!hNum || hNum === "unknown" || hNum === "Unknown") {
                     const textMatch = (hData.en || "").match(/^(\d+)\s*\./);
@@ -256,13 +253,13 @@ app.post('/api/explore', async (req, res) => {
                     sub_book: hData.category || hData.sub_book || "Unknown",
                     chapter: hData.chapter_number || hData.chapter || "Unknown",
                     hadith_number: hNum,
-                    similarity_score: 1.0, 
-                    vector: [] 
+                    similarity_score: 1.0,
+                    vector: []
                 };
 
                 if (eng.includes(lowerQuery) || ar.includes(query)) {
                     exactMatches.push(hadithObj);
-                } 
+                }
                 else if (altQuery !== lowerQuery && (eng.includes(altQuery) || ar.includes(altQuery))) {
                     fuzzyMatches.push(hadithObj);
                 }
@@ -274,7 +271,7 @@ app.post('/api/explore', async (req, res) => {
             if (exactMatches.length > 0) {
                 clusters.push({
                     theme_label: `Exact Matches: "${query}"`,
-                    items: exactMatches 
+                    items: exactMatches
                 });
                 totalFound += exactMatches.length;
             }
@@ -306,14 +303,14 @@ app.post('/api/explore', async (req, res) => {
 
         console.log("Embedding query...");
         const extractor = await pipeline('feature-extraction', 'Xenova/all-MiniLM-L6-v2', {
-            quantized: false 
+            quantized: false
         });
 
         const output = await extractor(query, { pooling: 'mean', normalize: true });
         const vector = Array.from(output.data);
 
         let finalQueryVector = vector;
-        
+
         if (Object.keys(ontology).length > 0 && activeSearchMode === 'concept') {
             let bestConcept = null;
             let highestSim = -1;
@@ -328,7 +325,7 @@ app.post('/api/explore', async (req, res) => {
 
             if (bestConcept && highestSim > 0.45) {
                 console.log(`[ONTOLOGY ENGINE] Query aligned with ${bestConcept.name} (Match: ${highestSim.toFixed(2)}). Blending vectors...`);
-                const blendWeight = 0.25; 
+                const blendWeight = 0.25;
                 const queryWeight = 0.75;
                 let blended = finalQueryVector.map((val, i) => (val * queryWeight) + (bestConcept.vector[i] * blendWeight));
                 let mag = Math.sqrt(blended.reduce((sum, val) => sum + val * val, 0));
@@ -338,33 +335,40 @@ app.post('/api/explore', async (req, res) => {
 
         console.log("Querying Pinecone index...");
         const index = pc.index(process.env.PINECONE_INDEX_NAME).namespace('Twelver_Ahadith');
-        
+
         let pineconeFilter = undefined;
         if (activeSource !== "All Twelver Sources") {
             pineconeFilter = { book: { $eq: activeSource } };
         }
 
-        // --- THE MASSIVE NET: EXPANDED FROM 100 TO 500 ---
         const queryResponse = await index.query({
-            vector: finalQueryVector, 
-            topK: 500, // <---- This completely changes the depth of the search
+            vector: finalQueryVector,
+            topK: 500,
             includeMetadata: true,
             includeValues: true,
             filter: pineconeFilter
         });
 
-        loadMapIfMem();
-        console.log("Looking up top IDs in local json map...");
+        console.log("Looking up top IDs directly in SQLite database...");
 
         const fetchedHadiths = [];
         for (const match of queryResponse.matches) {
             const id = match.id;
             const parts = id.split("_idx");
-            
+
             if (parts.length > 1) {
                 const mapIdx = parseInt(parts[1], 10);
-                if (mapIdx >= 0 && mapIdx < hadithMap.length) {
-                    const hData = hadithMap[mapIdx];
+
+                // --- SURGICAL FIX: Fetch ONLY what we need from SQLite ---
+                const dbRow = await new Promise((resolve, reject) => {
+                    db.get("SELECT raw_data FROM hadiths WHERE id = ?", [mapIdx], (err, row) => {
+                        if (err) reject(err);
+                        else resolve(row);
+                    });
+                });
+
+                if (dbRow) {
+                    const hData = JSON.parse(dbRow.raw_data);
                     const foundEnglish = hData.en || "English translation not available";
                     const foundArabic = hData.ar || "Arabic text not available";
 
@@ -398,7 +402,7 @@ app.post('/api/explore', async (req, res) => {
         }
 
         console.log("Running K-Means Semantic Clustering...");
-        
+
         const vectors = fetchedHadiths.map(h => h.vector);
         const numberOfClusters = Math.min(5, fetchedHadiths.length);
         const kmeansResult = kmeans(vectors, numberOfClusters, { initialization: 'kmeans++' });
@@ -433,7 +437,7 @@ app.post('/api/explore', async (req, res) => {
             searchCache.delete(firstKey);
         }
         searchCache.set(cacheKey, resultPayload);
-        
+
         console.log(`Successfully clustered and labeled ${fetchedHadiths.length} Hadiths.`);
         res.json(resultPayload);
 
