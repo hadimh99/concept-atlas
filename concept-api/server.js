@@ -32,9 +32,10 @@ let pipeline;
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
 // --- CONNECT TO THE MEMORY-LIGHT DATABASE ---
-const db = new sqlite3.Database('thaqalayn.db', sqlite3.OPEN_READONLY, (err) => {
-    if (err) console.error("Database connection error:", err.message);
-    else console.log("Connected securely to the Twelver SQLite database.");
+const dbPath = path.join(__dirname, 'thaqalayn.db');
+const db = new sqlite3.Database(dbPath, sqlite3.OPEN_READONLY, (err) => {
+    if (err) console.error("Database connection error:", err.message, "at path:", dbPath);
+    else console.log("Connected securely to the Twelver SQLite database at:", dbPath);
 });
 
 // --- ONTOLOGY ENGINE HELPERS ---
