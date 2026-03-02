@@ -530,9 +530,9 @@ export default function App() {
           </div>
           <div>
             <h1 className="font-sans font-bold text-xl tracking-tight hidden sm:block">Concept Atlas</h1>
-            <div className="hidden sm:flex items-center gap-2 mt-0.5">
-              <p className="font-sans text-xs opacity-60">Semantic Explorer</p>
-              <span className="w-1 h-1 rounded-full bg-slate-300 dark:bg-slate-600"></span>
+            <div className="flex items-center gap-2 mt-0.5">
+              <p className="font-sans text-xs opacity-60 hidden sm:block">Semantic Explorer</p>
+              <span className="hidden sm:block w-1 h-1 rounded-full bg-slate-300 dark:bg-slate-600"></span>
               {/* --- UPDATES LOG BUTTON --- */}
               <button
                 onClick={() => setShowUpdates(true)}
