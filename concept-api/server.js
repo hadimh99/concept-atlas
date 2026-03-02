@@ -302,7 +302,7 @@ app.post('/api/explore', async (req, res) => {
         let retries = 3;
 
         while (retries > 0) {
-            const hfResponse = await fetch("https://api-inference.huggingface.co/pipeline/feature-extraction/sentence-transformers/all-MiniLM-L6-v2", {
+            const hfResponse = await fetch("https://router.huggingface.co/hf-inference/models/sentence-transformers/all-MiniLM-L6-v2", {
                 headers: {
                     "Authorization": `Bearer ${hfToken}`,
                     "Content-Type": "application/json"
