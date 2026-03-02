@@ -368,52 +368,56 @@ app.post('/api/explore', async (req, res) => {
         }
 
         const fetchedHadiths = [];
+        console.log(`Successfully mapped ${mapIndices.length} IDs. Beginning safe sequential fetch...`);
 
-        // 2. Fetch them ALL at once without breaking the C++ bridge
-        if (mapIndices.length > 0) {
-            // We bypass the ? placeholders entirely to prevent the Status 139 Segfault
-            const idList = mapIndices.join(',');
-            const querySql = `SELECT id, raw_data FROM hadiths WHERE id IN (${idList})`;
-
-            const dbRows = await new Promise((resolve, reject) => {
-                // Notice we pass an empty array [] because the IDs are baked into the string now
-                db.all(querySql, [], (err, rows) => {
-                    if (err) reject(err);
-                    else resolve(rows);
-                });
-            });
-
-            // 3. Assemble the final data
-            for (const row of dbRows) {
-                const hData = JSON.parse(row.raw_data);
-                const match = matchMap.get(row.id);
-
-                if (match && match.values && match.values.length > 0) {
-                    const foundEnglish = hData.en || "English translation not available";
-                    const foundArabic = hData.ar || "Arabic text not available";
-
-                    let hNum = hData.hadith_number || hData.hadith;
-                    if (!hNum || hNum === "unknown" || hNum === "Unknown") {
-                        const textMatch = foundEnglish.match(/^(\d+)\s*\./);
-                        hNum = textMatch ? textMatch[1] : "Unknown";
-                    }
-
-                    fetchedHadiths.push({
-                        id: match.id,
-                        arabic_text: foundArabic,
-                        english_text: foundEnglish,
-                        book: hData.book || hData.book_number || "al-Kafi", // Prioritizing Twelver texts
-                        volume: hData.volume_number || hData.volume || "Unknown",
-                        sub_book: hData.category || hData.sub_book || "Unknown",
-                        chapter: hData.chapter_number || hData.chapter || "Unknown",
-                        hadith_number: hNum,
-                        similarity_score: match.score,
-                        metadata: match.metadata || {},
-                        vector: match.values
+        // 2. Strict Sequential Fetch to prevent Status 139 C++ Segfaults
+        for (let i = 0; i < mapIndices.length; i++) {
+            const mapIdx = mapIndices[i];
+            try {
+                // Fetch exactly one row at a time, wait for it to cross the bridge safely, then fetch the next
+                const dbRow = await new Promise((resolve, reject) => {
+                    db.get(`SELECT raw_data FROM hadiths WHERE id = ${mapIdx}`, [], (err, row) => {
+                        if (err) reject(err);
+                        else resolve(row);
                     });
+                });
+
+                if (dbRow && dbRow.raw_data) {
+                    const hData = JSON.parse(dbRow.raw_data);
+                    const match = matchMap.get(mapIdx);
+
+                    if (match && match.values && match.values.length > 0) {
+                        const foundEnglish = hData.en || "English translation not available";
+                        const foundArabic = hData.ar || "Arabic text not available";
+
+                        let hNum = hData.hadith_number || hData.hadith;
+                        if (!hNum || hNum === "unknown" || hNum === "Unknown") {
+                            const textMatch = foundEnglish.match(/^(\d+)\s*\./);
+                            hNum = textMatch ? textMatch[1] : "Unknown";
+                        }
+
+                        // We prioritize your Twelver Hadith collections here
+                        fetchedHadiths.push({
+                            id: match.id,
+                            arabic_text: foundArabic,
+                            english_text: foundEnglish,
+                            book: hData.book || hData.book_number || "al-Kafi",
+                            volume: hData.volume_number || hData.volume || "Unknown",
+                            sub_book: hData.category || hData.sub_book || "Unknown",
+                            chapter: hData.chapter_number || hData.chapter || "Unknown",
+                            hadith_number: hNum,
+                            similarity_score: match.score,
+                            metadata: match.metadata || {},
+                            vector: match.values
+                        });
+                    }
                 }
+            } catch (err) {
+                console.error(`Error fetching ID ${mapIdx}:`, err);
             }
         }
+
+        console.log(`Database fetch complete. Successfully safely processed ${fetchedHadiths.length} narrations.`);
 
         if (fetchedHadiths.length === 0) {
             return res.json({ total_results: 0, clusters: [] });
