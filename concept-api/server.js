@@ -23,18 +23,14 @@ app.use(express.json());
 const searchCache = new Map();
 const CACHE_LIMIT = 200;
 
-// Local AI pipeline completely removed from memory!
-
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
-// --- CONNECT TO THE MEMORY-LIGHT DATABASE ---
 const dbPath = path.join(__dirname, '..', 'thaqalayn.db');
 const db = new sqlite3.Database(dbPath, sqlite3.OPEN_READONLY, (err) => {
     if (err) console.error("Database connection error:", err.message, "at path:", dbPath);
     else console.log("Connected securely to the Twelver SQLite database at:", dbPath);
 });
 
-// --- ONTOLOGY ENGINE HELPERS ---
 function cosineSimilarity(vecA, vecB) {
     let dotProduct = 0;
     let normA = 0;
@@ -54,7 +50,6 @@ try {
 } catch (e) {
     console.log("[ONTOLOGY] No centroids found. Standard vector search active.");
 }
-// ------------------------------------
 
 const pc = new Pinecone({
     apiKey: process.env.PINECONE_API_KEY,
@@ -62,73 +57,7 @@ const pc = new Pinecone({
 });
 
 const fallbackLabeler = (items, query, usedLabels) => {
-    const chapterCounts = {};
-    items.forEach(item => {
-        if (item.chapter && item.chapter !== "Unknown") {
-            let cName = item.chapter.replace(/^(The\s+)?Chapter\s+(on|about|regarding|of)\s+/i, '').split(',')[0].trim();
-            cName = cName.toLowerCase();
-            chapterCounts[cName] = (chapterCounts[cName] || 0) + 1;
-        }
-    });
-
-    const sortedChapters = Object.entries(chapterCounts).sort((a, b) => b[1] - a[1]);
-    for (const [cName, count] of sortedChapters) {
-        if (count >= 2 && !usedLabels.has(`Relating to ${cName}`) && cName.split(' ').length <= 6) {
-            const finalLabel = `Relating to ${cName}`;
-            usedLabels.add(finalLabel);
-            return finalLabel;
-        }
-    }
-
-    const stopWords = new Set([
-        "the", "and", "to", "of", "a", "in", "that", "is", "for", "it", "with", "as",
-        "he", "was", "on", "from", "who", "has", "said", "this", "they", "but", "are",
-        "not", "have", "be", "upon", "him", "peace", "narrated", "which", "what", "their",
-        "all", "your", "them", "those", "these", "would", "were", "had", "been", "also",
-        "some", "we", "you", "by", "or", "if", "when", "an", "at", "about", "then", "there",
-        "his", "do", "did", "does", "can", "could", "should", "shall", "will",
-        "allah", "messenger", "imam", "imams", "ibn", "abu", "ali", "muhammad", "abdillah", "abdullah",
-        "ja'far", "jafar", "hasan", "husayn", "baqir", "sadiq", "rida", "reza", "prophet", "lord", "holy",
-        "people", "man", "men", "woman", "women", "asked", "told", "heard", "came", "went",
-        "following", "hadith", "chain", "narrators", "narrator", "book", "chapter", "volume", "sub_book",
-        "manner", "marfu", "marfu'", "marfu‘", "number", "certain", "person", "persons", "traced", "elevated"
-    ]);
-
-    const queryWords = query.toLowerCase().split(/\W+/);
-    queryWords.forEach(w => stopWords.add(w));
-
-    const wordCounts = {};
-    items.forEach(item => {
-        const words = item.english_text.toLowerCase().replace(/[^\w\s-]/g, '').split(/\s+/);
-        words.forEach(word => {
-            if (word.length > 4 && !stopWords.has(word)) {
-                wordCounts[word] = (wordCounts[word] || 0) + 1;
-            }
-        });
-    });
-
-    const sortedWords = Object.entries(wordCounts).sort((a, b) => b[1] - a[1]);
-
-    const formatLabelWord = (word) => {
-        let w = word.toLowerCase();
-        if (w.startsWith('al') && w.length > 3 && !w.includes('-')) {
-            w = 'al-' + w.slice(2);
-        }
-        return w;
-    };
-
-    for (const [word, count] of sortedWords) {
-        const formattedWord = formatLabelWord(word);
-        const candidate = `Relating to ${formattedWord}`;
-        if (!usedLabels.has(candidate)) {
-            usedLabels.add(candidate);
-            return candidate;
-        }
-    }
-
-    const fallback = `Relating to an associated theme (${usedLabels.size + 1})`;
-    usedLabels.add(fallback);
-    return fallback;
+    return "Keywords: " + query.split(' ').slice(0, 3).join(', ');
 };
 
 const generateAllClusterLabelsAI = async (clusters, query) => {
@@ -206,26 +135,11 @@ app.post('/api/explore', async (req, res) => {
             const hadithMap = allRows.map(r => JSON.parse(r.raw_data));
 
             const lowerQuery = query.toLowerCase().trim();
+            // Split query into words to allow fuzzy matching
+            const queryWords = lowerQuery.replace(/[^\w\s]/gi, '').split(/\s+/).filter(w => w.length > 3);
+
             let exactMatches = [];
             let fuzzyMatches = [];
-
-            let altQuery = lowerQuery;
-            const aliasMap = {
-                "hussain": "husayn", "husain": "husayn",
-                "hassan": "hasan",
-                "mohammad": "muhammad", "mohammed": "muhammad",
-                "reza": "rida", "ridha": "rida",
-                "sadeq": "sadiq", "sadegh": "sadiq",
-                "baqer": "baqir",
-                "kazim": "kadhim",
-                "quran": "qur'an", "koran": "qur'an",
-                "shia": "shi'a", "shiite": "shi'a"
-            };
-
-            Object.keys(aliasMap).forEach(key => {
-                const regex = new RegExp(`\\b${key}\\b`, 'gi');
-                altQuery = altQuery.replace(regex, aliasMap[key]);
-            });
 
             for (const hData of hadithMap) {
                 const bookName = hData.book || hData.book_number || "al-Kafi";
@@ -253,11 +167,21 @@ app.post('/api/explore', async (req, res) => {
                     vector: []
                 };
 
+                // 1. Check for absolute exact string match first
                 if (eng.includes(lowerQuery) || ar.includes(query)) {
                     exactMatches.push(hadithObj);
                 }
-                else if (altQuery !== lowerQuery && (eng.includes(altQuery) || ar.includes(altQuery))) {
-                    fuzzyMatches.push(hadithObj);
+                // 2. If no exact match, check for high word overlap (fuzzy match)
+                else if (queryWords.length > 1) {
+                    let matchCount = 0;
+                    queryWords.forEach(word => {
+                        if (eng.includes(word)) matchCount++;
+                    });
+
+                    // If 75% of the words are in the hadith, it's a hit!
+                    if (matchCount / queryWords.length >= 0.75) {
+                        fuzzyMatches.push(hadithObj);
+                    }
                 }
             }
 
@@ -271,10 +195,10 @@ app.post('/api/explore', async (req, res) => {
                 });
                 totalFound += exactMatches.length;
             }
-            if (fuzzyMatches.length > 0) {
+            if (fuzzyMatches.length > 0 && exactMatches.length < 20) {
                 clusters.push({
-                    theme_label: `Alternative Spellings (e.g. "${altQuery}")`,
-                    items: fuzzyMatches
+                    theme_label: `Partial Text Matches (Translation Variations)`,
+                    items: fuzzyMatches.slice(0, 50) // Limit to top 50 to prevent freezing
                 });
                 totalFound += fuzzyMatches.length;
             }
@@ -329,7 +253,6 @@ app.post('/api/explore', async (req, res) => {
         if (!finalQueryVector) {
             return res.status(500).json({ error: "Cloud AI timed out while waking up. Try again." });
         }
-        console.log("Cloud embedding successful! Vector length:", finalQueryVector.length);
 
         if (Object.keys(ontology).length > 0 && activeSearchMode === 'concept') {
             let bestConcept = null;
@@ -344,7 +267,6 @@ app.post('/api/explore', async (req, res) => {
             }
 
             if (bestConcept && highestSim > 0.45) {
-                console.log(`[ONTOLOGY ENGINE] Query aligned with ${bestConcept.name} (Match: ${highestSim.toFixed(2)}). Blending vectors...`);
                 const blendWeight = 0.25;
                 const queryWeight = 0.75;
                 let blended = finalQueryVector.map((val, i) => (val * queryWeight) + (bestConcept.vector[i] * blendWeight));
@@ -369,8 +291,6 @@ app.post('/api/explore', async (req, res) => {
             filter: pineconeFilter
         });
 
-        console.log("Looking up top IDs directly in SQLite database...");
-
         const mapIndices = [];
         const matchMap = new Map();
 
@@ -386,7 +306,6 @@ app.post('/api/explore', async (req, res) => {
         }
 
         const fetchedHadiths = [];
-        console.log(`Successfully mapped ${mapIndices.length} IDs. Beginning safe sequential fetch...`);
 
         for (let i = 0; i < mapIndices.length; i++) {
             const mapIdx = mapIndices[i];
@@ -432,16 +351,31 @@ app.post('/api/explore', async (req, res) => {
             }
         }
 
-        console.log(`Database fetch complete. Successfully safely processed ${fetchedHadiths.length} narrations.`);
-
         if (fetchedHadiths.length === 0) {
             return res.json({ total_results: 0, clusters: [] });
         }
 
-        console.log("Running K-Means Semantic Clustering...");
+        // IMPORTANT: Sort by absolute relevance first
+        fetchedHadiths.sort((a, b) => b.similarity_score - a.similarity_score);
 
-        const vectors = fetchedHadiths.map(h => h.vector);
-        const numberOfClusters = Math.min(5, fetchedHadiths.length);
+        // --- THE "TOP HITS" OVERRIDE FIX ---
+        // Slice the absolute top 5 matches to bypass clustering so the direct answer is always at the top
+        let topHitsCluster = null;
+        let clusterableHadiths = fetchedHadiths;
+
+        if (fetchedHadiths.length > 10) {
+            const topHitsItems = fetchedHadiths.slice(0, 5);
+            clusterableHadiths = fetchedHadiths.slice(5);
+
+            topHitsCluster = {
+                theme_label: "✨ Top Matches (Most Relevant)",
+                items: topHitsItems
+            };
+        }
+
+        console.log("Running K-Means Semantic Clustering on remaining results...");
+        const vectors = clusterableHadiths.map(h => h.vector);
+        const numberOfClusters = Math.min(4, clusterableHadiths.length); // Reduced to 4 so total is 5
         const kmeansResult = kmeans(vectors, numberOfClusters, { initialization: 'kmeans++' });
 
         const clustersArray = [];
@@ -452,17 +386,22 @@ app.post('/api/explore', async (req, res) => {
                     items: []
                 };
             }
-            const { vector, ...cleanHadith } = fetchedHadiths[dataIndex];
+            const { vector, ...cleanHadith } = clusterableHadiths[dataIndex];
             clustersArray[clusterIndex].items.push(cleanHadith);
         });
 
-        console.log("Generating AI labels for clusters in a single batch request...");
+        console.log("Generating AI labels for clusters...");
         const generatedLabels = await generateAllClusterLabelsAI(clustersArray, query);
 
         clustersArray.forEach((cluster, index) => {
             cluster.items.sort((a, b) => b.similarity_score - a.similarity_score);
             cluster.theme_label = generatedLabels[index];
         });
+
+        // Add the top hits cluster to the very front of the array!
+        if (topHitsCluster) {
+            clustersArray.unshift(topHitsCluster);
+        }
 
         const resultPayload = {
             total_results: fetchedHadiths.length,
@@ -475,7 +414,6 @@ app.post('/api/explore', async (req, res) => {
         }
         searchCache.set(cacheKey, resultPayload);
 
-        console.log(`Successfully clustered and labeled ${fetchedHadiths.length} Hadiths.`);
         res.json(resultPayload);
 
     } catch (error) {
@@ -486,5 +424,4 @@ app.post('/api/explore', async (req, res) => {
 
 app.listen(PORT, () => {
     console.log(`Concept API Backend running on http://localhost:${PORT}`);
-    console.log(`Pinecone Index: ${process.env.PINECONE_INDEX_NAME}`);
 });
