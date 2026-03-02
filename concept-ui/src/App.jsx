@@ -1,9 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Search, Moon, Sun, Sparkles, X, ChevronRight, ChevronLeft, Home, Copy, ChevronDown, ChevronUp, List, Layout, Info, BookOpen, Fingerprint, History } from 'lucide-react';
+import { Search, Moon, Sun, Sparkles, X, ChevronRight, ChevronLeft, Home, Copy, ChevronDown, ChevronUp, List, Layout, Info, BookOpen, Fingerprint, History, HelpCircle } from 'lucide-react';
 
-// --- ADD YOUR NEW UPDATES HERE! ---
-// Just copy the format below to add new releases to the timeline.
 const APP_UPDATES = [
   {
     version: "v1.2.0",
@@ -339,11 +337,11 @@ export default function App() {
   const [centerPos, setCenterPos] = useState({ x: 0, y: 0 });
   const [windowWidth, setWindowWidth] = useState(window.innerWidth);
 
-  // --- SMART PIPELINE UI STATE ---
   const [loadingMessage, setLoadingMessage] = useState('Deep Search');
 
-  // --- UPDATES LOG STATE ---
   const [showUpdates, setShowUpdates] = useState(false);
+  // --- ADDED INFO MODAL STATE ---
+  const [showInfo, setShowInfo] = useState(false);
 
   const modalScrollTimeoutRef = useRef(null);
 
@@ -370,7 +368,6 @@ export default function App() {
     }
   }, [theme]);
 
-  // --- CHATGPT PIPELINE TIMER LOGIC ---
   useEffect(() => {
     if (!loading) return;
 
@@ -533,7 +530,6 @@ export default function App() {
             <div className="flex items-center gap-2 mt-0.5">
               <p className="font-sans text-xs opacity-60 hidden sm:block">Semantic Explorer</p>
               <span className="hidden sm:block w-1 h-1 rounded-full bg-slate-300 dark:bg-slate-600"></span>
-              {/* --- UPDATES LOG BUTTON --- */}
               <button
                 onClick={() => setShowUpdates(true)}
                 className="pointer-events-auto text-[10px] font-bold uppercase tracking-wider text-indigo-500 dark:text-indigo-400 hover:text-indigo-600 dark:hover:text-indigo-300 transition-colors cursor-pointer flex items-center gap-1 bg-indigo-500/10 px-1.5 py-0.5 rounded-md"
@@ -584,6 +580,15 @@ export default function App() {
               </motion.button>
             )}
           </AnimatePresence>
+
+          {/* --- ADDED INFO BUTTON HERE --- */}
+          <button
+            onClick={() => setShowInfo(true)}
+            className="w-11 h-11 rounded-full appearance-none outline-none bg-white/0 flex items-center justify-center group transition-all duration-300 hover:scale-110 cursor-pointer"
+            title="How to use this tool"
+          >
+            <HelpCircle className="w-5 h-5 text-slate-400 transition-all duration-300 group-hover:text-indigo-500 dark:group-hover:text-indigo-400" />
+          </button>
 
           <button
             onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
@@ -853,14 +858,12 @@ export default function App() {
               {viewMode === 'list' && (
                 <div className="z-30 w-full max-w-4xl px-4 pt-28 pb-12 h-full overflow-y-auto pointer-events-auto hide-scroll">
 
-                  {/* Compact Header Card */}
                   <div className="glass-panel p-5 sm:p-6 rounded-xl mb-8 border border-white/20 dark:border-slate-700/50 shadow-sm bg-white/40 dark:bg-slate-900/40">
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                       <div>
                         <h2 className="font-serif text-2xl sm:text-3xl font-medium text-slate-900 dark:text-white tracking-tight">
                           {searchMode === 'keyword' ? 'Exact Matches:' : 'Search:'} <span className="italic">"{query}"</span>
                         </h2>
-                        {/* Dynamic Book Tags */}
                         <div className="flex flex-wrap gap-2 mt-3">
                           {uniqueBooks.map((bookName, idx) => (
                             <span key={idx} className="text-xs uppercase tracking-wider font-bold text-slate-500 dark:text-slate-400 bg-slate-500/10 px-2.5 py-1 rounded-md border border-slate-500/20">
@@ -885,7 +888,6 @@ export default function App() {
                     </div>
                   </div>
 
-                  {/* Clean Monospaced Index Rows */}
                   <div className="flex flex-col border-t border-slate-200 dark:border-slate-800">
                     {data.clusters.map((cluster, i) => {
                       const topKeywords = getTopKeywords(cluster.items);
@@ -1062,6 +1064,85 @@ export default function App() {
                       </ul>
                     </div>
                   ))}
+                </div>
+              </motion.div>
+            </div>
+          )}
+        </AnimatePresence>
+
+        {/* --- ADDED INFO/GUIDE MODAL --- */}
+        <AnimatePresence>
+          {showInfo && (
+            <div className="fixed inset-0 z-[2000] flex items-center justify-center pointer-events-auto">
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                onClick={() => setShowInfo(false)}
+                className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm cursor-pointer"
+              />
+
+              <motion.div
+                initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.9, y: 20 }}
+                className="relative bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 w-[90vw] max-w-[600px] max-h-[85vh] flex flex-col shadow-2xl rounded-2xl z-[2001]"
+              >
+                <div className="flex justify-between items-center bg-slate-50/90 dark:bg-slate-900/90 backdrop-blur-md pt-6 pb-4 px-6 z-10 border-b border-slate-200 dark:border-slate-800 rounded-t-2xl shrink-0">
+                  <h2 className="text-xl font-mono font-bold tracking-tight text-slate-800 dark:text-slate-100 flex items-center gap-2">
+                    <HelpCircle className="w-5 h-5 text-emerald-500" />
+                    How to Use Concept Atlas
+                  </h2>
+                  <button onClick={() => setShowInfo(false)} className="p-2 hover:bg-slate-200 dark:hover:bg-slate-800 rounded-full transition-colors cursor-pointer shrink-0">
+                    <X className="w-5 h-5" />
+                  </button>
+                </div>
+
+                <div className="p-6 overflow-y-auto flex-grow smart-scrollbar flex flex-col gap-6 text-slate-700 dark:text-slate-300">
+
+                  <div>
+                    <h3 className="font-bold text-lg mb-2 text-slate-900 dark:text-white">Welcome to the Explorer</h3>
+                    <p className="leading-relaxed text-sm">
+                      Concept Atlas is a semantic search engine designed specifically to explore authentic Twelver Shia literature, prioritizing core texts like <i>al-Kafi</i>, <i>Bihar al-Anwar</i>, and <i>Basa'ir al-Darajat</i>. It mathematically groups verified texts so you can explore concepts without AI hallucinations.
+                    </p>
+                  </div>
+
+                  <hr className="border-slate-200 dark:border-slate-700" />
+
+                  <div>
+                    <h3 className="font-bold text-lg flex items-center gap-2 mb-3 text-slate-900 dark:text-white">
+                      <Sparkles className="w-4 h-4 text-indigo-500" />
+                      Concept Mode (Thematic Search)
+                    </h3>
+                    <p className="leading-relaxed text-sm mb-3">
+                      This mode uses AI vector math to find underlying themes, even if the exact words aren't used. It is perfect for exploring abstract theology like <i>"divine justice"</i> or <i>"the nature of the intellect."</i>
+                    </p>
+                    <div className="bg-orange-50 dark:bg-orange-500/10 border-l-4 border-orange-500 p-4 rounded-r-lg">
+                      <p className="text-sm font-semibold text-orange-800 dark:text-orange-300 mb-1">⚠️ The Historical Fact Trap</p>
+                      <p className="text-sm text-orange-700 dark:text-orange-200/80">
+                        Concept Mode finds themes, not historical facts. If you search <i>"How was Imam Jafar Sadiq martyred?"</i>, it won't give you a Wikipedia summary. Instead, it will pull dozens of thematic narrations about grief, martyrdom, and the Imam.
+                      </p>
+                    </div>
+                  </div>
+
+                  <hr className="border-slate-200 dark:border-slate-700" />
+
+                  <div>
+                    <h3 className="font-bold text-lg flex items-center gap-2 mb-3 text-slate-900 dark:text-white">
+                      <Fingerprint className="w-4 h-4 text-emerald-500" />
+                      Keyword Mode (Exact Match)
+                    </h3>
+                    <p className="leading-relaxed text-sm mb-3">
+                      This mode strictly searches the exact English or Arabic text you type, functioning like a traditional database index.
+                    </p>
+                    <div className="bg-blue-50 dark:bg-blue-500/10 border-l-4 border-blue-500 p-4 rounded-r-lg">
+                      <p className="text-sm font-semibold text-blue-800 dark:text-blue-300 mb-1">⚠️ The Translator's Trap</p>
+                      <p className="text-sm text-blue-700 dark:text-blue-200/80">
+                        If you search an English idiom like <i>"peak of affairs"</i>, you might miss a Hadith because the translator wrote <i>"summit of the matter"</i> instead. To bypass this, search using core "Anchor Words" like <i>"obeying the Imam"</i> to catch exactly what you are looking for.
+                      </p>
+                    </div>
+                  </div>
+
                 </div>
               </motion.div>
             </div>
