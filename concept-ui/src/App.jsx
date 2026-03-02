@@ -1,6 +1,29 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Search, Moon, Sun, Sparkles, X, ChevronRight, ChevronLeft, Home, Copy, ChevronDown, ChevronUp, List, Layout, Info, BookOpen, Fingerprint } from 'lucide-react';
+import { Search, Moon, Sun, Sparkles, X, ChevronRight, ChevronLeft, Home, Copy, ChevronDown, ChevronUp, List, Layout, Info, BookOpen, Fingerprint, History } from 'lucide-react';
+
+// --- ADD YOUR NEW UPDATES HERE! ---
+// Just copy the format below to add new releases to the timeline.
+const APP_UPDATES = [
+  {
+    version: "v1.1.0",
+    date: "March 2, 2026",
+    changes: [
+      "Migrated AI semantic engine to the cloud for zero-latency lookups.",
+      "Added dynamic loading sequences to track deep-search progress.",
+      "Optimized database architecture to prevent memory crashes."
+    ]
+  },
+  {
+    version: "v1.0.0",
+    date: "March 1, 2026",
+    changes: [
+      "Launched Beta with semantic and keyword search modes.",
+      "Integrated K-Means clustering and Gemini AI theme generation.",
+      "Added interactive visual map and list views."
+    ]
+  }
+];
 
 const CLUSTER_COLORS = ['#10b981', '#8b5cf6', '#f59e0b', '#f43f5e', '#3b82f6'];
 const SOURCES = ["All Twelver Sources", "al-Kafi", "Bihar al-Anwar", "Basa'ir al-Darajat"];
@@ -304,6 +327,9 @@ export default function App() {
   // --- SMART PIPELINE UI STATE ---
   const [loadingMessage, setLoadingMessage] = useState('Deep Search');
 
+  // --- UPDATES LOG STATE ---
+  const [showUpdates, setShowUpdates] = useState(false);
+
   const modalScrollTimeoutRef = useRef(null);
 
   const handleModalScroll = (e) => {
@@ -336,25 +362,20 @@ export default function App() {
     let timeouts = [];
 
     if (searchMode === 'concept') {
-      // Step 1: Default fast start
       setLoadingMessage('Embedding query...');
 
-      // Step 2: If it takes longer than 3s, the cloud AI is cold-starting
       timeouts.push(setTimeout(() => {
         setLoadingMessage('Waking up Cloud AI & Embedding query... ⏳');
       }, 3000));
 
-      // Step 3: Moving to the database
       timeouts.push(setTimeout(() => {
         setLoadingMessage('Retrieving narrations...');
       }, 16000));
 
-      // Step 4: The Gemini labeling phase
       timeouts.push(setTimeout(() => {
         setLoadingMessage('Generating conceptual themes...');
       }, 23000));
 
-      // Step 5: Finalizing
       timeouts.push(setTimeout(() => {
         setLoadingMessage('Finalizing UI...');
       }, 29000));
@@ -365,7 +386,6 @@ export default function App() {
       timeouts.push(setTimeout(() => setLoadingMessage('Formatting results...'), 5000));
     }
 
-    // Cleanup timers if the search finishes early
     return () => timeouts.forEach(clearTimeout);
   }, [loading, searchMode]);
 
@@ -495,7 +515,18 @@ export default function App() {
           </div>
           <div>
             <h1 className="font-sans font-bold text-xl tracking-tight hidden sm:block">Concept Atlas</h1>
-            <p className="font-sans text-xs opacity-60 hidden sm:block">Semantic Explorer</p>
+            <div className="hidden sm:flex items-center gap-2 mt-0.5">
+              <p className="font-sans text-xs opacity-60">Semantic Explorer</p>
+              <span className="w-1 h-1 rounded-full bg-slate-300 dark:bg-slate-600"></span>
+              {/* --- UPDATES LOG BUTTON --- */}
+              <button
+                onClick={() => setShowUpdates(true)}
+                className="pointer-events-auto text-[10px] font-bold uppercase tracking-wider text-indigo-500 dark:text-indigo-400 hover:text-indigo-600 dark:hover:text-indigo-300 transition-colors cursor-pointer flex items-center gap-1 bg-indigo-500/10 px-1.5 py-0.5 rounded-md"
+              >
+                <Sparkles className="w-3 h-3" />
+                What's New
+              </button>
+            </div>
           </div>
         </div>
 
@@ -967,6 +998,58 @@ export default function App() {
               </AnimatePresence>
 
             </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* --- THE UPDATES LOG MODAL --- */}
+        <AnimatePresence>
+          {showUpdates && (
+            <div className="fixed inset-0 z-[2000] flex items-center justify-center pointer-events-auto">
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                onClick={() => setShowUpdates(false)}
+                className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm cursor-pointer"
+              />
+
+              <motion.div
+                initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.9, y: 20 }}
+                className="relative bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 w-[90vw] max-w-[500px] max-h-[80vh] flex flex-col shadow-2xl rounded-2xl z-[2001]"
+              >
+                <div className="flex justify-between items-center bg-slate-50/90 dark:bg-slate-900/90 backdrop-blur-md pt-6 pb-4 px-6 z-10 border-b border-slate-200 dark:border-slate-800 rounded-t-2xl shrink-0">
+                  <h2 className="text-xl font-mono font-bold tracking-tight text-slate-800 dark:text-slate-100 flex items-center gap-2">
+                    <History className="w-5 h-5 text-indigo-500" />
+                    Updates Log
+                  </h2>
+                  <button onClick={() => setShowUpdates(false)} className="p-2 hover:bg-slate-200 dark:hover:bg-slate-800 rounded-full transition-colors cursor-pointer shrink-0">
+                    <X className="w-5 h-5" />
+                  </button>
+                </div>
+
+                <div className="p-6 overflow-y-auto flex-grow smart-scrollbar flex flex-col gap-6">
+                  {APP_UPDATES.map((update, idx) => (
+                    <div key={idx} className="relative pl-4 border-l-2 border-slate-200 dark:border-slate-700">
+                      <div className="absolute -left-[5px] top-1.5 w-2 h-2 rounded-full bg-indigo-500" />
+                      <div className="flex items-baseline justify-between mb-2">
+                        <h3 className="font-mono font-bold text-lg text-slate-800 dark:text-slate-200">{update.version}</h3>
+                        <span className="text-xs font-mono text-slate-400">{update.date}</span>
+                      </div>
+                      <ul className="flex flex-col gap-2">
+                        {update.changes.map((change, cIdx) => (
+                          <li key={cIdx} className="text-sm text-slate-600 dark:text-slate-400 flex items-start gap-2 leading-relaxed">
+                            <span className="text-indigo-400 mt-0.5 font-bold">•</span>
+                            <span>{change}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  ))}
+                </div>
+              </motion.div>
+            </div>
           )}
         </AnimatePresence>
       </main>
