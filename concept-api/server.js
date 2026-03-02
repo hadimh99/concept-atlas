@@ -369,13 +369,15 @@ app.post('/api/explore', async (req, res) => {
 
         const fetchedHadiths = [];
 
-        // 2. Fetch them ALL at once in a single, blazing-fast query
+        // 2. Fetch them ALL at once without breaking the C++ bridge
         if (mapIndices.length > 0) {
-            const placeholders = mapIndices.map(() => '?').join(',');
-            const querySql = `SELECT id, raw_data FROM hadiths WHERE id IN (${placeholders})`;
+            // We bypass the ? placeholders entirely to prevent the Status 139 Segfault
+            const idList = mapIndices.join(',');
+            const querySql = `SELECT id, raw_data FROM hadiths WHERE id IN (${idList})`;
 
             const dbRows = await new Promise((resolve, reject) => {
-                db.all(querySql, mapIndices, (err, rows) => {
+                // Notice we pass an empty array [] because the IDs are baked into the string now
+                db.all(querySql, [], (err, rows) => {
                     if (err) reject(err);
                     else resolve(rows);
                 });
@@ -400,7 +402,7 @@ app.post('/api/explore', async (req, res) => {
                         id: match.id,
                         arabic_text: foundArabic,
                         english_text: foundEnglish,
-                        book: hData.book || hData.book_number || "al-Kafi",
+                        book: hData.book || hData.book_number || "al-Kafi", // Prioritizing Twelver texts
                         volume: hData.volume_number || hData.volume || "Unknown",
                         sub_book: hData.category || hData.sub_book || "Unknown",
                         chapter: hData.chapter_number || hData.chapter || "Unknown",
