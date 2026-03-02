@@ -352,24 +352,41 @@ app.post('/api/explore', async (req, res) => {
 
         console.log("Looking up top IDs directly in SQLite database...");
 
-        const fetchedHadiths = [];
-        for (const match of queryResponse.matches) {
-            const id = match.id;
-            const parts = id.split("_idx");
+        // 1. Gather all the IDs we need
+        const mapIndices = [];
+        const matchMap = new Map();
 
+        for (const match of queryResponse.matches) {
+            const parts = match.id.split("_idx");
             if (parts.length > 1) {
                 const mapIdx = parseInt(parts[1], 10);
+                if (!isNaN(mapIdx)) {
+                    mapIndices.push(mapIdx);
+                    matchMap.set(mapIdx, match);
+                }
+            }
+        }
 
-                // --- SURGICAL FIX: Fetch ONLY what we need from SQLite ---
-                const dbRow = await new Promise((resolve, reject) => {
-                    db.get("SELECT raw_data FROM hadiths WHERE id = ?", [mapIdx], (err, row) => {
-                        if (err) reject(err);
-                        else resolve(row);
-                    });
+        const fetchedHadiths = [];
+
+        // 2. Fetch them ALL at once in a single, blazing-fast query
+        if (mapIndices.length > 0) {
+            const placeholders = mapIndices.map(() => '?').join(',');
+            const querySql = `SELECT id, raw_data FROM hadiths WHERE id IN (${placeholders})`;
+
+            const dbRows = await new Promise((resolve, reject) => {
+                db.all(querySql, mapIndices, (err, rows) => {
+                    if (err) reject(err);
+                    else resolve(rows);
                 });
+            });
 
-                if (dbRow) {
-                    const hData = JSON.parse(dbRow.raw_data);
+            // 3. Assemble the final data
+            for (const row of dbRows) {
+                const hData = JSON.parse(row.raw_data);
+                const match = matchMap.get(row.id);
+
+                if (match && match.values && match.values.length > 0) {
                     const foundEnglish = hData.en || "English translation not available";
                     const foundArabic = hData.ar || "Arabic text not available";
 
@@ -379,21 +396,19 @@ app.post('/api/explore', async (req, res) => {
                         hNum = textMatch ? textMatch[1] : "Unknown";
                     }
 
-                    if (match.values && match.values.length > 0) {
-                        fetchedHadiths.push({
-                            id: id,
-                            arabic_text: foundArabic,
-                            english_text: foundEnglish,
-                            book: hData.book || hData.book_number || "al-Kafi",
-                            volume: hData.volume_number || hData.volume || "Unknown",
-                            sub_book: hData.category || hData.sub_book || "Unknown",
-                            chapter: hData.chapter_number || hData.chapter || "Unknown",
-                            hadith_number: hNum,
-                            similarity_score: match.score,
-                            metadata: match.metadata || {},
-                            vector: match.values
-                        });
-                    }
+                    fetchedHadiths.push({
+                        id: match.id,
+                        arabic_text: foundArabic,
+                        english_text: foundEnglish,
+                        book: hData.book || hData.book_number || "al-Kafi",
+                        volume: hData.volume_number || hData.volume || "Unknown",
+                        sub_book: hData.category || hData.sub_book || "Unknown",
+                        chapter: hData.chapter_number || hData.chapter || "Unknown",
+                        hadith_number: hNum,
+                        similarity_score: match.score,
+                        metadata: match.metadata || {},
+                        vector: match.values
+                    });
                 }
             }
         }
