@@ -301,22 +301,22 @@ export default function App() {
   const [centerPos, setCenterPos] = useState({ x: 0, y: 0 });
   const [windowWidth, setWindowWidth] = useState(window.innerWidth);
 
-  // --- NEW: Bulletproof Direct DOM Scroll Listener ---
+  // --- NEW: Smart Loading Message State ---
+  const [loadingMessage, setLoadingMessage] = useState('Deep Search');
+  const loadingTimerRef = useRef(null);
+
   const modalScrollTimeoutRef = useRef(null);
 
   const handleModalScroll = (e) => {
     const el = e.currentTarget;
     const isDark = document.documentElement.classList.contains('dark');
 
-    // Instantly inject the color based on light/dark mode without triggering a React render
     el.style.setProperty('--thumb-bg', isDark ? 'rgba(255, 255, 255, 0.4)' : 'rgba(15, 23, 42, 0.4)');
 
-    // Reset the fade-out timer
     if (modalScrollTimeoutRef.current) {
       clearTimeout(modalScrollTimeoutRef.current);
     }
 
-    // Fade it back out 800ms after you stop scrolling
     modalScrollTimeoutRef.current = setTimeout(() => {
       el.style.setProperty('--thumb-bg', 'transparent');
     }, 800);
@@ -359,7 +359,15 @@ export default function App() {
     e.preventDefault();
     if (!query.trim()) return;
 
+    // Reset the message to default when a new search starts
+    setLoadingMessage(searchMode === 'concept' ? 'Deep Search' : 'Scanning Records');
     setLoading(true);
+
+    // If 4 seconds pass, the server is waking up. Change the text!
+    loadingTimerRef.current = setTimeout(() => {
+      setLoadingMessage('Waking up the AI server... this might take 30-50 seconds ⏳');
+    }, 4000);
+
     try {
       const response = await fetch('https://concept-atlas-backend.onrender.com/api/explore', {
         method: 'POST',
@@ -386,6 +394,8 @@ export default function App() {
     } catch (err) {
       console.error("Search error:", err);
     } finally {
+      // Clear the timer and turn off the loading screen
+      clearTimeout(loadingTimerRef.current);
       setLoading(false);
     }
   };
@@ -415,9 +425,7 @@ export default function App() {
   return (
     <div className={`min-h-screen w-full overflow-hidden transition-colors duration-700 flex flex-col ${theme === 'dark' ? 'aurora-bg text-slate-100' : 'light-aurora-bg text-slate-900'}`}>
 
-      {/* --- BULLETPROOF SCROLLBAR CSS --- */}
       <style>{`
-        /* Keep the outer list completely hidden */
         .hide-scroll::-webkit-scrollbar {
           display: none;
         }
@@ -426,9 +434,7 @@ export default function App() {
           scrollbar-width: none;
         }
 
-        /* The inner modal scrollbar logic */
         .smart-scrollbar {
-          /* Starts invisible */
           --thumb-bg: transparent;
           scrollbar-width: thin;
           scrollbar-color: var(--thumb-bg) transparent;
@@ -440,12 +446,10 @@ export default function App() {
           background: transparent;
         }
         .smart-scrollbar::-webkit-scrollbar-thumb {
-          /* Color is injected by the onScroll function */
           background-color: var(--thumb-bg);
           border-radius: 10px;
         }
         
-        /* If you hover directly on the thumb, it darkens so you can drag it */
         .smart-scrollbar::-webkit-scrollbar-thumb:hover {
           background-color: rgba(100, 116, 139, 0.8) !important;
         }
@@ -640,7 +644,7 @@ export default function App() {
                 </div>
               </div>
               <motion.p className="mt-8 font-sans tracking-widest uppercase text-sm font-semibold opacity-70">
-                {searchMode === 'concept' ? 'Deep Search' : 'Scanning Records'}
+                {loadingMessage}
               </motion.p>
             </motion.div>
           )}
@@ -769,7 +773,7 @@ export default function App() {
                 </>
               )}
 
-              {/* --- LIST VIEW RENDER (Outer Scrollbar Hidden via class) --- */}
+              {/* --- LIST VIEW RENDER --- */}
               {viewMode === 'list' && (
                 <div className="z-30 w-full max-w-4xl px-4 pt-28 pb-12 h-full overflow-y-auto pointer-events-auto hide-scroll">
 
@@ -887,7 +891,6 @@ export default function App() {
                           </button>
                         </div>
 
-                        {/* --- BULLETPROOF SCROLL INJECTION --- */}
                         <div
                           ref={modalScrollRef}
                           onScroll={handleModalScroll}
