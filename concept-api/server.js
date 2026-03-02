@@ -6,7 +6,7 @@ const fs = require('fs');
 const path = require('path');
 const { kmeans } = require('ml-kmeans');
 const { GoogleGenerativeAI } = require('@google/generative-ai');
-const sqlite3 = require('sqlite3').verbose(); // <-- The new database bridge!
+const sqlite3 = require('sqlite3').verbose();
 
 dotenv.config();
 
@@ -23,11 +23,7 @@ app.use(express.json());
 const searchCache = new Map();
 const CACHE_LIMIT = 200;
 
-let pipeline;
-(async () => {
-    const { pipeline: transformersPipeline } = await import('@xenova/transformers');
-    pipeline = transformersPipeline;
-})();
+// Local AI pipeline completely removed from memory!
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
@@ -202,7 +198,6 @@ app.post('/api/explore', async (req, res) => {
         if (activeSearchMode === 'keyword') {
             console.log("Fetching data from SQLite for keyword search...");
 
-            // Clean RAM management for Keyword Mode
             const allRows = await new Promise((resolve, reject) => {
                 db.all("SELECT raw_data FROM hadiths", (err, rows) => {
                     if (err) reject(err); else resolve(rows);
@@ -297,20 +292,44 @@ app.post('/api/explore', async (req, res) => {
             return res.json(resultPayload);
         }
 
-        if (!pipeline) {
-            const { pipeline: transformersPipeline } = await import('@xenova/transformers');
-            pipeline = transformersPipeline;
+        console.log("Embedding query via Hugging Face Cloud API...");
+        const hfToken = process.env.HF_TOKEN;
+        if (!hfToken) {
+            return res.status(500).json({ error: "Server missing HF_TOKEN environment variable." });
         }
 
-        console.log("Embedding query...");
-        const extractor = await pipeline('feature-extraction', 'Xenova/all-MiniLM-L6-v2', {
-            quantized: true
-        });
+        let finalQueryVector = null;
+        let retries = 3;
 
-        const output = await extractor(query, { pooling: 'mean', normalize: true });
-        const vector = Array.from(output.data);
+        while (retries > 0) {
+            const hfResponse = await fetch("https://api-inference.huggingface.co/pipeline/feature-extraction/sentence-transformers/all-MiniLM-L6-v2", {
+                headers: {
+                    "Authorization": `Bearer ${hfToken}`,
+                    "Content-Type": "application/json"
+                },
+                method: "POST",
+                body: JSON.stringify({ inputs: [query] })
+            });
 
-        let finalQueryVector = vector;
+            const result = await hfResponse.json();
+
+            if (hfResponse.ok) {
+                finalQueryVector = Array.isArray(result[0]) ? result[0] : result;
+                break;
+            } else if (result.error && result.error.includes("loading")) {
+                console.log(`Cloud AI is waking up. Waiting ${result.estimated_time || 10} seconds...`);
+                await new Promise(resolve => setTimeout(resolve, (result.estimated_time || 10) * 1000));
+                retries--;
+            } else {
+                console.error("Hugging Face API Error:", result);
+                return res.status(500).json({ error: "Failed to communicate with Cloud AI." });
+            }
+        }
+
+        if (!finalQueryVector) {
+            return res.status(500).json({ error: "Cloud AI timed out while waking up. Try again." });
+        }
+        console.log("Cloud embedding successful! Vector length:", finalQueryVector.length);
 
         if (Object.keys(ontology).length > 0 && activeSearchMode === 'concept') {
             let bestConcept = null;
@@ -352,7 +371,6 @@ app.post('/api/explore', async (req, res) => {
 
         console.log("Looking up top IDs directly in SQLite database...");
 
-        // 1. Gather all the IDs we need
         const mapIndices = [];
         const matchMap = new Map();
 
@@ -370,11 +388,9 @@ app.post('/api/explore', async (req, res) => {
         const fetchedHadiths = [];
         console.log(`Successfully mapped ${mapIndices.length} IDs. Beginning safe sequential fetch...`);
 
-        // 2. Strict Sequential Fetch to prevent Status 139 C++ Segfaults
         for (let i = 0; i < mapIndices.length; i++) {
             const mapIdx = mapIndices[i];
             try {
-                // Fetch exactly one row at a time, wait for it to cross the bridge safely, then fetch the next
                 const dbRow = await new Promise((resolve, reject) => {
                     db.get(`SELECT raw_data FROM hadiths WHERE id = ${mapIdx}`, [], (err, row) => {
                         if (err) reject(err);
@@ -396,7 +412,6 @@ app.post('/api/explore', async (req, res) => {
                             hNum = textMatch ? textMatch[1] : "Unknown";
                         }
 
-                        // We prioritize your Twelver Hadith collections here
                         fetchedHadiths.push({
                             id: match.id,
                             arabic_text: foundArabic,
