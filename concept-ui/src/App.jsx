@@ -6,21 +6,36 @@ import { Search, Moon, Sun, Sparkles, X, ChevronRight, ChevronLeft, Home, Copy, 
 // Just copy the format below to add new releases to the timeline.
 const APP_UPDATES = [
   {
-    version: "v1.1.0",
+    version: "v1.2.0",
     date: "March 2, 2026",
     changes: [
-      "Migrated AI semantic engine to the cloud for zero-latency lookups.",
-      "Added dynamic loading sequences to track deep-search progress.",
-      "Optimized database architecture to prevent memory crashes."
+      "Added a live 'Updates Log' timeline (you're looking at it!) to track new features.",
+      "Introduced a dynamic loading sequence that shows the exact steps the AI is taking during a deep search.",
+      "Upgraded the semantic search engine to cloud infrastructure for faster, highly reliable results.",
+      "Optimized database architecture to guarantee stability and prevent memory crashes during complex queries.",
+      "UI Tweak: Implemented 'smart' scrollbars that fade away when not in use for a cleaner, distraction-free reading interface."
+    ]
+  },
+  {
+    version: "v1.1.0",
+    date: "March 1, 2026",
+    changes: [
+      "Added a dual-search toggle: effortlessly switch between AI 'Concept' exploration and exact 'Keyword' matching.",
+      "Introduced source filtering to search across all Twelver collections or narrow down to specific books.",
+      "Added interactive visual map and list views to give you complete control over how you explore search results.",
+      "UI Tweak: Completely redesigned Hadith Cards! Original Arabic, English translations, and Chains of Narrators are now separated into clean, collapsible sections.",
+      "UI Tweak: Added pagination inside the cluster modals so you can easily flip through large groups of narrations.",
+      "UI Tweak: Added a one-click 'Copy Text' button that instantly formats the narration and its citation for easy sharing."
     ]
   },
   {
     version: "v1.0.0",
-    date: "March 1, 2026",
+    date: "February 2026",
     changes: [
-      "Launched Beta with semantic and keyword search modes.",
-      "Integrated K-Means clustering and Gemini AI theme generation.",
-      "Added interactive visual map and list views."
+      "Launched the Concept Atlas Beta: A first-of-its-kind semantic explorer for Twelver Shia literature.",
+      "Integrated K-Means clustering and Gemini AI theme generation to automatically discover and label conceptual relationships between narrations.",
+      "UI Tweak: Added a beautiful Dark/Light mode toggle to suit your reading environment.",
+      "UI Tweak: Fully responsive design that automatically adapts the layout for mobile and desktop screens."
     ]
   }
 ];
