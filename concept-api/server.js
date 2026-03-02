@@ -304,7 +304,7 @@ app.post('/api/explore', async (req, res) => {
 
         console.log("Embedding query...");
         const extractor = await pipeline('feature-extraction', 'Xenova/all-MiniLM-L6-v2', {
-            quantized: false
+            quantized: true
         });
 
         const output = await extractor(query, { pooling: 'mean', normalize: true });
@@ -344,8 +344,8 @@ app.post('/api/explore', async (req, res) => {
 
         const queryResponse = await index.query({
             vector: finalQueryVector,
-            topK: 500,
-            includeMetadata: true,
+            topK: 150,
+            includeMetadata: false,
             includeValues: true,
             filter: pineconeFilter
         });
