@@ -301,9 +301,8 @@ export default function App() {
   const [centerPos, setCenterPos] = useState({ x: 0, y: 0 });
   const [windowWidth, setWindowWidth] = useState(window.innerWidth);
 
-  // --- NEW: Smart Loading Message State ---
+  // --- SMART PIPELINE UI STATE ---
   const [loadingMessage, setLoadingMessage] = useState('Deep Search');
-  const loadingTimerRef = useRef(null);
 
   const modalScrollTimeoutRef = useRef(null);
 
@@ -329,6 +328,46 @@ export default function App() {
       document.documentElement.classList.remove('dark');
     }
   }, [theme]);
+
+  // --- CHATGPT PIPELINE TIMER LOGIC ---
+  useEffect(() => {
+    if (!loading) return;
+
+    let timeouts = [];
+
+    if (searchMode === 'concept') {
+      // Step 1: Default fast start
+      setLoadingMessage('Embedding query...');
+
+      // Step 2: If it takes longer than 3s, the cloud AI is cold-starting
+      timeouts.push(setTimeout(() => {
+        setLoadingMessage('Waking up Cloud AI & Embedding query... ⏳');
+      }, 3000));
+
+      // Step 3: Moving to the database
+      timeouts.push(setTimeout(() => {
+        setLoadingMessage('Retrieving narrations...');
+      }, 16000));
+
+      // Step 4: The Gemini labeling phase
+      timeouts.push(setTimeout(() => {
+        setLoadingMessage('Generating conceptual themes...');
+      }, 23000));
+
+      // Step 5: Finalizing
+      timeouts.push(setTimeout(() => {
+        setLoadingMessage('Finalizing UI...');
+      }, 29000));
+
+    } else {
+      setLoadingMessage('Scanning Records...');
+      timeouts.push(setTimeout(() => setLoadingMessage('Retrieving matches...'), 2000));
+      timeouts.push(setTimeout(() => setLoadingMessage('Formatting results...'), 5000));
+    }
+
+    // Cleanup timers if the search finishes early
+    return () => timeouts.forEach(clearTimeout);
+  }, [loading, searchMode]);
 
   useEffect(() => {
     setCurrentPage(1);
@@ -359,14 +398,7 @@ export default function App() {
     e.preventDefault();
     if (!query.trim()) return;
 
-    // Reset the message to default when a new search starts
-    setLoadingMessage(searchMode === 'concept' ? 'Deep Search' : 'Scanning Records');
     setLoading(true);
-
-    // If 4 seconds pass, the server is waking up. Change the text!
-    loadingTimerRef.current = setTimeout(() => {
-      setLoadingMessage('Waking up the AI server... this might take 30-50 seconds ⏳');
-    }, 4000);
 
     try {
       const response = await fetch('https://concept-atlas-backend.onrender.com/api/explore', {
@@ -394,8 +426,6 @@ export default function App() {
     } catch (err) {
       console.error("Search error:", err);
     } finally {
-      // Clear the timer and turn off the loading screen
-      clearTimeout(loadingTimerRef.current);
       setLoading(false);
     }
   };
@@ -643,7 +673,7 @@ export default function App() {
                   <Sparkles className="w-6 h-6 animate-pulse text-white" />
                 </div>
               </div>
-              <motion.p className="mt-8 font-sans tracking-widest uppercase text-sm font-semibold opacity-70">
+              <motion.p className="mt-8 font-sans tracking-widest uppercase text-sm font-semibold opacity-70 transition-opacity duration-300">
                 {loadingMessage}
               </motion.p>
             </motion.div>
