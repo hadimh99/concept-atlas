@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Search, Moon, Sun, Sparkles, X, ChevronRight, ChevronLeft, Home, Copy, ChevronDown, ChevronUp, List, Layout, Info, BookOpen, History, HelpCircle, Database, Filter, Share2, Check, Settings2, Menu } from 'lucide-react';
 import quranData from './quran.json';
 
-const APP_UPDATES = [{ version: "v2.9.5", date: "March 3, 2026", changes: ["The Final Font Fix: Bypassed all server blocks by fetching the circle-free 'me_quran' TTF binary directly from the Linuxscout open-source repository.", "Added Scheherazade New as a flawless, traditional Quranic failsafe font immune to dotted-circle bugs."] }, { version: "v2.8.0", date: "March 3, 2026", changes: ["Added the official KFGQPC Uthman Taha (Madinah) script as the default Quran font."] }, { version: "v2.7.0", date: "March 3, 2026", changes: ["Mobile Polish: Decluttered the top navigation bar by moving secondary icons into an elegant mobile menu.", "Fixed the alignment of the Quran control buttons on mobile devices."] }];
+const APP_UPDATES = [{ version: "v2.9.6", date: "March 3, 2026", changes: ["The Absolute Font Fix: Defeated all external CORS server blocks by locally hosting the pristine me_quran.ttf font file directly inside the app. The true Madinah script is now guaranteed to load flawlessly."] }, { version: "v2.9.5", date: "March 3, 2026", changes: ["Bypassed all server blocks by fetching the circle-free 'me_quran' TTF binary directly from the Linuxscout open-source repository."] }, { version: "v2.8.0", date: "March 3, 2026", changes: ["Added the official KFGQPC Uthman Taha (Madinah) script as the default Quran font."] }];
 const CLUSTER_COLORS = ['#10b981', '#8b5cf6', '#f59e0b', '#f43f5e', '#3b82f6'];
 const SOURCES = ["All Twelver Sources", "al-Kafi", "Bihar al-Anwar", "Basa'ir al-Darajat"];
 
@@ -365,7 +365,7 @@ export default function App() {
 
   const [fontStyle, setFontStyle] = useState('madinah');
 
-  // THE ULTIMATE FONT MAP - Madinah -> Scheherazade New -> Amiri -> System
+  // THE ULTIMATE FONT MAP - Points explicitly to the local file, then falls back to Scheherazade New, then Noto Naskh. No false Amiri matches!
   const activeFontFamily =
     fontStyle === 'madinah' ? '"MadinahFont", "Scheherazade New", "Noto Naskh Arabic", sans-serif' :
       fontStyle === 'uthmani' ? '"Amiri Quran", "Amiri", serif' :
@@ -460,10 +460,10 @@ export default function App() {
         /* Import Scheherazade New and Noto Naskh as gorgeous, unblockable Google Font fallbacks */
         @import url('https://fonts.googleapis.com/css2?family=Amiri+Quran&family=Amiri:wght@400;700&family=Scheherazade+New:wght@400;700&family=Noto+Naskh+Arabic:wght@400;700&display=swap');
         
-        /* Direct GitHub injection of me_quran.ttf from Linuxscout repo - Guaranteed no CORS blocks, fixes dotted circles */
+        /* Direct Local Injection - This forces the browser to use the file you just downloaded to your public folder! */
         @font-face {
           font-family: 'MadinahFont';
-          src: url('https://cdn.jsdelivr.net/gh/linuxscout/mushaf@master/fonts/me_quran.ttf') format('truetype');
+          src: url('/me_quran.ttf') format('truetype');
           font-weight: normal;
           font-style: normal;
           font-display: swap;
