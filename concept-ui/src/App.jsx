@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Search, Moon, Sun, Sparkles, X, ChevronRight, ChevronLeft, Home, Copy, ChevronDown, ChevronUp, List, Layout, Info, BookOpen, History, HelpCircle, Database, Filter, Share2, Check, Settings2, Menu } from 'lucide-react';
 import quranData from './quran.json';
 
-const APP_UPDATES = [{ version: "v2.9.8", date: "March 3, 2026", changes: ["Added a Smart Quran Search bar above the reader. You can now instantly search for specific verses (e.g. '3:22') or fuzzy-search Surah names (e.g. 'surah fatiha', 'bani israeel').", "Added automatic smooth-scrolling and highlighting when jumping to a specific verse."] }, { version: "v2.9.7", date: "March 3, 2026", changes: ["Pivoted to Scheherazade New as the default Quranic font. This provides a flawless, traditional Naskh calligraphy experience that is 100% immune to browser security blocks and dotted-circle rendering bugs."] }, { version: "v2.8.0", date: "March 3, 2026", changes: ["Maintained Amiri and XB Zar as robust alternative font options."] }];
+const APP_UPDATES = [{ version: "v2.9.9", date: "March 3, 2026", changes: ["Mobile Polish: Fixed the iOS auto-zoom bug by enforcing 16px minimum text size on search inputs.", "Enabled 'Enter' key submission on all search bars and automatic keyboard dismissal.", "Rebuilt the scrolling architecture so tapping the top of an iPhone screen instantly scrolls to the top of the page."] }, { version: "v2.9.8", date: "March 3, 2026", changes: ["Added a Smart Quran Search bar above the reader. You can now instantly search for specific verses (e.g. '3:22') or fuzzy-search Surah names.", "Added automatic smooth-scrolling and highlighting when jumping to a specific verse."] }, { version: "v2.9.6", date: "March 3, 2026", changes: ["Defeated all external CORS server blocks by locally hosting the pristine me_quran.ttf font file directly inside the app."] }];
 const CLUSTER_COLORS = ['#10b981', '#8b5cf6', '#f59e0b', '#f43f5e', '#3b82f6'];
 const SOURCES = ["All Twelver Sources", "al-Kafi", "Bihar al-Anwar", "Basa'ir al-Darajat"];
 
@@ -177,12 +177,12 @@ const QuranReader = ({ activeFontFamily, fontStyle, setFontStyle }) => {
   const [showSurahMenu, setShowSurahMenu] = useState(false);
   const [showSettingsMenu, setShowSettingsMenu] = useState(false);
 
-  // Search State
   const [quranSearchQuery, setQuranSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState([]);
   const [targetVerse, setTargetVerse] = useState(null);
 
-  // Initialize Surah List
+  const quranSearchInputRef = useRef(null);
+
   const surahs = useMemo(() => {
     const list = [];
     for (let i = 1; i <= 114; i++) {
@@ -193,7 +193,6 @@ const QuranReader = ({ activeFontFamily, fontStyle, setFontStyle }) => {
     return list;
   }, []);
 
-  // Historic Surah Aliases Mapping
   const surahAliases = {
     1: ["fatiha", "fatihah", "hamd"],
     9: ["tawbah", "baraah", "bara'ah", "tawba"],
@@ -206,7 +205,6 @@ const QuranReader = ({ activeFontFamily, fontStyle, setFontStyle }) => {
     111: ["masad", "lahab"]
   };
 
-  // Normalization logic for fuzzy search
   const normalize = (str) => {
     if (!str) return '';
     return str.toLowerCase()
@@ -246,7 +244,6 @@ const QuranReader = ({ activeFontFamily, fontStyle, setFontStyle }) => {
     const numMatch = query.match(/^(\d+)\s*:\s*(\d+)$/);
     let results = [];
 
-    // User is searching for a specific verse (e.g., 3:22)
     if (numMatch) {
       const sId = parseInt(numMatch[1]);
       const vId = parseInt(numMatch[2]);
@@ -257,7 +254,6 @@ const QuranReader = ({ activeFontFamily, fontStyle, setFontStyle }) => {
         }
       }
     } else {
-      // User is searching by name
       const normQuery = normalize(query);
       searchableSurahs.forEach(s => {
         if (s.terms.some(t => t.includes(normQuery))) {
@@ -265,7 +261,7 @@ const QuranReader = ({ activeFontFamily, fontStyle, setFontStyle }) => {
         }
       });
     }
-    setSearchResults(results.slice(0, 5)); // Return top 5
+    setSearchResults(results.slice(0, 5));
   };
 
   const handleSelectResult = (res) => {
@@ -274,14 +270,25 @@ const QuranReader = ({ activeFontFamily, fontStyle, setFontStyle }) => {
     setSelectedSurah(res.surahId);
 
     if (res.type === 'verse') {
-      setReadingMode('verse'); // Force verse mode to ensure clean scrolling
+      setReadingMode('verse');
       setTargetVerse(res.verseId);
     } else {
-      setTargetVerse(1); // Scroll to top
+      setTargetVerse(1);
     }
   };
 
-  // Fetch Ayahs for current Surah
+  // Enforce 'Enter' key submission logic for Quran Search
+  const handleQuranSearchSubmit = (e) => {
+    e.preventDefault();
+    if (searchResults.length > 0) {
+      handleSelectResult(searchResults[0]);
+    }
+    // Dismiss mobile keyboard natively
+    if (quranSearchInputRef.current) {
+      quranSearchInputRef.current.blur();
+    }
+  };
+
   const ayahsRaw = []; let aIdx = 1;
   while (quranData[`${selectedSurah}:${aIdx}`]) { ayahsRaw.push(quranData[`${selectedSurah}:${aIdx}`]); aIdx++; }
 
@@ -301,12 +308,12 @@ const QuranReader = ({ activeFontFamily, fontStyle, setFontStyle }) => {
     return { ...ayah, ar: arText };
   });
 
-  // Smooth Scroll Effect for Jump-to-Verse
   useEffect(() => {
     if (targetVerse && ayahs.length > 0) {
       setTimeout(() => {
         const el = document.getElementById(`verse-${selectedSurah}-${targetVerse}`);
         if (el) {
+          // Smooth scrolls the window itself natively, won't conflict with iOS status bar tap
           el.scrollIntoView({ behavior: 'smooth', block: 'center' });
           el.classList.add('bg-amber-500/20', 'dark:bg-amber-500/30');
           setTimeout(() => {
@@ -314,33 +321,32 @@ const QuranReader = ({ activeFontFamily, fontStyle, setFontStyle }) => {
           }, 2000);
         }
         setTargetVerse(null);
-      }, 100); // 100ms delay ensures DOM paints before scrolling
+      }, 100);
     }
   }, [selectedSurah, targetVerse, readingMode, ayahs]);
 
   return (
-    <div className="w-full max-w-4xl px-4 sm:px-6 pt-24 sm:pt-28 pb-12 h-full overflow-y-auto pointer-events-auto hide-scroll flex flex-col items-center">
+    <div className="w-full max-w-4xl px-4 sm:px-6 pt-24 sm:pt-28 pb-12 mx-auto min-h-screen flex flex-col items-center pointer-events-auto">
 
-      {/* Invisible overlay to close dropdowns */}
       {(showSurahMenu || showSettingsMenu || searchResults.length > 0) && (
         <div className="fixed inset-0 z-[60] pointer-events-auto" onClick={() => { setShowSurahMenu(false); setShowSettingsMenu(false); setSearchResults([]); }} />
       )}
 
-      {/* SEARCH BAR UI */}
+      {/* SMART QURAN SEARCH BAR - Wrapped in form to enable 'Enter' key submission */}
       <div className="w-full relative mb-4 sm:mb-6 z-[70]">
-        <div className="flex items-center bg-white/40 dark:bg-black/30 backdrop-blur-sm border border-slate-300/50 dark:border-slate-800 rounded-2xl px-4 py-3 sm:py-3.5 shadow-sm transition-all focus-within:border-amber-500/50 dark:focus-within:border-amber-500/50 focus-within:bg-white/60 dark:focus-within:bg-black/50">
+        <form onSubmit={handleQuranSearchSubmit} className="flex items-center bg-white/40 dark:bg-black/30 backdrop-blur-sm border border-slate-300/50 dark:border-slate-800 rounded-2xl px-4 py-3 sm:py-3.5 shadow-sm transition-all focus-within:border-amber-500/50 dark:focus-within:border-amber-500/50 focus-within:bg-white/60 dark:focus-within:bg-black/50">
           <Search className="w-4 h-4 sm:w-5 sm:h-5 text-slate-400 mr-3 shrink-0" />
           <input
+            ref={quranSearchInputRef}
             type="text"
             value={quranSearchQuery}
             onChange={(e) => handleSearchChange(e.target.value)}
             placeholder="Search Surah (e.g. Baqarah) or Verse (e.g. 2:255)..."
-            className="w-full bg-transparent border-none outline-none text-slate-800 dark:text-slate-200 placeholder:text-slate-500 text-sm sm:text-base font-medium"
+            className="w-full bg-transparent border-none outline-none text-slate-800 dark:text-slate-200 placeholder:text-slate-500 text-base font-medium"
           />
-          {quranSearchQuery && <button onClick={() => { setQuranSearchQuery(''); setSearchResults([]); }} className="p-1 hover:bg-slate-200 dark:hover:bg-slate-800 rounded-full transition-colors"><X className="w-4 h-4 text-slate-400" /></button>}
-        </div>
+          {quranSearchQuery && <button type="button" onClick={() => { setQuranSearchQuery(''); setSearchResults([]); quranSearchInputRef.current?.focus(); }} className="p-1 hover:bg-slate-200 dark:hover:bg-slate-800 rounded-full transition-colors cursor-pointer"><X className="w-4 h-4 text-slate-400" /></button>}
+        </form>
 
-        {/* SEARCH AUTOCOMPLETE DROPDOWN */}
         <AnimatePresence>
           {searchResults.length > 0 && (
             <motion.div initial={{ opacity: 0, y: -5 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -5 }} className="absolute left-0 top-full mt-2 w-full bg-[#f4ecd8] dark:bg-[#1a1a1a] border border-slate-300 dark:border-slate-700 rounded-xl shadow-xl z-[75] overflow-hidden smart-scrollbar">
@@ -406,7 +412,7 @@ const QuranReader = ({ activeFontFamily, fontStyle, setFontStyle }) => {
                   <div>
                     <p className="text-[10px] uppercase tracking-widest font-bold text-slate-500 dark:text-slate-400 mb-2">Quranic Font</p>
                     <div className="flex flex-col gap-1">
-                      <button onClick={() => { setFontStyle('scheherazade'); setShowSettingsMenu(false); }} className={`w-full text-left px-3 py-2 rounded-md text-sm transition-colors cursor-pointer ${fontStyle === 'scheherazade' ? 'bg-amber-200/60 dark:bg-amber-900/40 text-amber-900 dark:text-amber-500 font-bold' : 'text-slate-700 dark:text-slate-300 hover:bg-black/5 dark:hover:bg-white/5'}`}>Scheherazade</button>
+                      <button onClick={() => { setFontStyle('madinah'); setShowSettingsMenu(false); }} className={`w-full text-left px-3 py-2 rounded-md text-sm transition-colors cursor-pointer ${fontStyle === 'madinah' ? 'bg-amber-200/60 dark:bg-amber-900/40 text-amber-900 dark:text-amber-500 font-bold' : 'text-slate-700 dark:text-slate-300 hover:bg-black/5 dark:hover:bg-white/5'}`}>Madinah</button>
                       <button onClick={() => { setFontStyle('uthmani'); setShowSettingsMenu(false); }} className={`w-full text-left px-3 py-2 rounded-md text-sm transition-colors cursor-pointer ${fontStyle === 'uthmani' ? 'bg-amber-200/60 dark:bg-amber-900/40 text-amber-900 dark:text-amber-500 font-bold' : 'text-slate-700 dark:text-slate-300 hover:bg-black/5 dark:hover:bg-white/5'}`}>Amiri</button>
                       <button onClick={() => { setFontStyle('xbzar'); setShowSettingsMenu(false); }} className={`w-full text-left px-3 py-2 rounded-md text-sm transition-colors cursor-pointer ${fontStyle === 'xbzar' ? 'bg-amber-200/60 dark:bg-amber-900/40 text-amber-900 dark:text-amber-500 font-bold' : 'text-slate-700 dark:text-slate-300 hover:bg-black/5 dark:hover:bg-white/5'}`}>XB Zar</button>
                     </div>
@@ -510,13 +516,13 @@ export default function App() {
 
   const [showMobileMenu, setShowMobileMenu] = useState(false);
 
-  const [fontStyle, setFontStyle] = useState('scheherazade');
+  const [fontStyle, setFontStyle] = useState('madinah');
 
-  // THE ROCK SOLID FONT MAP - Guaranteed not to fail.
+  // The ultimate unblockable font engine map pointing to your local server
   const activeFontFamily =
-    fontStyle === 'scheherazade' ? '"Scheherazade New", "Noto Naskh Arabic", sans-serif' :
+    fontStyle === 'madinah' ? '"MadinahFont", Arial, sans-serif' :
       fontStyle === 'uthmani' ? '"Amiri Quran", "Amiri", serif' :
-        '"XBZarFont", "Noto Naskh Arabic", sans-serif';
+        '"XBZarFont", Arial, sans-serif';
 
   const containerRef = useRef(null);
   const modalScrollRef = useRef(null);
@@ -574,7 +580,14 @@ export default function App() {
     } catch (err) { console.error(err); } finally { setLoading(false); }
   };
 
-  const handleSearchSubmit = (e) => { e.preventDefault(); executeSearch(query, searchMode, sourceFilter); };
+  // Improved Submit Handler: Auto-Dismiss Mobile Keyboard
+  const handleSearchSubmit = (e) => {
+    e.preventDefault();
+    if (document.activeElement instanceof HTMLElement) {
+      document.activeElement.blur();
+    }
+    executeSearch(query, searchMode, sourceFilter);
+  };
 
   const handleCopyHadith = (item) => {
     let formattedText = `Book ${item.book}, Volume ${item.volume}, ${item.sub_book}, Chapter: ${item.chapter}, Hadith ${item.hadith_number}\n\n${item.arabic_text}\n\n${item.english_text}`;
@@ -601,12 +614,23 @@ export default function App() {
 
   const appBgClass = activeTab === 'quran' ? (theme === 'dark' ? 'bg-[#121212] text-slate-100' : 'bg-[#f4ecd8] text-slate-900') : (theme === 'dark' ? (isKeyword && activeTab === 'search' ? 'bg-slate-900 text-slate-100' : 'aurora-bg text-slate-100') : (isKeyword && activeTab === 'search' ? 'bg-slate-50 text-slate-900' : 'light-aurora-bg text-slate-900'));
 
+  // Logic to determine if we lock body scroll for the map view
+  const isMapView = activeTab === 'search' && data && viewMode === 'map' && !loading;
+  const isInitialSearch = activeTab === 'search' && !data && !loading;
+
   return (
-    <div className={`min-h-screen w-full overflow-hidden transition-colors duration-700 flex flex-col ${appBgClass}`}>
+    <div className={`min-h-screen w-full transition-colors duration-700 flex flex-col ${isMapView ? 'overflow-hidden h-screen' : 'overflow-x-hidden'} ${appBgClass}`}>
       <style>{`
-        /* Official Google Fonts - Guaranteed to load, no CORS blocks */
-        @import url('https://fonts.googleapis.com/css2?family=Amiri+Quran&family=Amiri:wght@400;700&family=Scheherazade+New:wght@400;700&family=Noto+Naskh+Arabic:wght@400;700&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Amiri+Quran&family=Amiri:wght@400;700&display=swap');
         
+        @font-face {
+          font-family: 'MadinahFont';
+          src: url('/me_quran.ttf') format('truetype');
+          font-weight: normal;
+          font-style: normal;
+          font-display: swap;
+        }
+
         @font-face {
           font-family: 'XBZarFont';
           src: url('https://cdn.jsdelivr.net/gh/rastikerdar/xb-zar@v1.1.1/fonts/woff2/XBZar.woff2') format('woff2');
@@ -674,17 +698,17 @@ export default function App() {
         </div>
       </header>
 
-      <main ref={containerRef} className="relative w-full flex-grow flex items-center justify-center h-screen">
+      <main ref={containerRef} className={`relative w-full flex-grow flex flex-col ${isMapView || isInitialSearch ? 'items-center justify-center h-screen overflow-hidden' : 'min-h-screen'}`}>
         {activeTab === 'quran' && <QuranReader activeFontFamily={activeFontFamily} fontStyle={fontStyle} setFontStyle={setFontStyle} />}
         <AnimatePresence>
           {activeTab === 'search' && !data && !loading && (
-            <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.9, filter: "blur(10px)" }} className="z-10 flex flex-col items-center w-full max-w-2xl px-4 sm:px-6">
+            <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.9, filter: "blur(10px)" }} className="z-10 flex flex-col items-center w-full max-w-2xl px-4 sm:px-6 mx-auto">
               <h2 className={`font-serif text-3xl sm:text-4xl md:text-5xl font-medium mb-6 sm:mb-8 text-center leading-tight ${isKeyword ? 'text-slate-800 dark:text-slate-100' : ''}`}>Explore the Depths of <br /><span className="italic">Twelver Literature</span></h2>
               <div className="w-full relative group pointer-events-auto">
                 <div className={`absolute inset-0 w-full h-full rounded-2xl border shadow-xl pointer-events-none z-0 transition-colors duration-700 ${isKeyword ? 'border-slate-300 dark:border-slate-700' : 'border-white/60 dark:border-white/10'}`} style={{ backgroundColor: isKeyword ? (theme === 'dark' ? 'rgba(30, 41, 59, 0.7)' : 'rgba(255, 255, 255, 0.9)') : (theme === 'dark' ? 'rgba(0, 0, 0, 0.4)' : 'rgba(255, 255, 255, 0.3)'), backdropFilter: 'blur(24px)' }}></div>
                 <form onSubmit={handleSearchSubmit} className="relative z-10 flex flex-col p-2">
                   <div className={`flex items-center border-b relative ${isKeyword ? 'border-slate-300 dark:border-slate-700' : 'border-slate-200/50 dark:border-slate-700/50'}`}>
-                    <input type="text" value={query} onChange={(e) => setQuery(e.target.value)} placeholder={isKeyword ? "Enter an exact word or phrase..." : "Enter a phrase or concept (e.g. intellect)..."} className="w-full bg-transparent appearance-none outline-none py-3 sm:py-4 pl-3 sm:pl-4 pr-14 sm:pr-16 text-base sm:text-lg font-sans placeholder:text-slate-500 cursor-text" style={{ color: theme === 'dark' ? '#ffffff' : '#000000' }} />
+                    <input type="text" value={query} onChange={(e) => setQuery(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') handleSearchSubmit(e); }} placeholder={isKeyword ? "Enter an exact word or phrase..." : "Enter a phrase or concept (e.g. intellect)..."} className="w-full bg-transparent appearance-none outline-none py-3 sm:py-4 pl-3 sm:pl-4 pr-14 sm:pr-16 text-base font-sans placeholder:text-slate-500 cursor-text" style={{ color: theme === 'dark' ? '#ffffff' : '#000000' }} />
                     <button type="submit" className={`absolute right-2 p-2 sm:p-2.5 rounded-xl transition-colors shadow-sm cursor-pointer ${isKeyword ? 'bg-blue-500/10 hover:bg-blue-500 text-blue-500 hover:text-white' : 'bg-indigo-500/10 hover:bg-indigo-500 text-indigo-500 hover:text-white'}`}><Search className="w-4 h-4 sm:w-5 sm:h-5" /></button>
                   </div>
                   <div className="relative py-3 px-2 flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
@@ -727,7 +751,7 @@ export default function App() {
 
         <AnimatePresence>
           {activeTab === 'search' && data && !loading && (
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="absolute inset-0 w-full h-full flex flex-col items-center justify-center">
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="absolute inset-0 w-full h-full flex flex-col items-center justify-center pointer-events-none">
               {viewMode === 'map' && !isKeyword && (
                 <>
                   <motion.div layoutId="search-node" className="absolute z-30 flex flex-col items-center justify-center pointer-events-auto cursor-pointer" onClick={() => setActiveCluster(null)}>
@@ -759,7 +783,7 @@ export default function App() {
               )}
 
               {viewMode === 'list' && (
-                <div className="z-30 w-full max-w-4xl px-4 sm:px-6 pt-24 sm:pt-28 pb-12 h-full overflow-y-auto pointer-events-auto hide-scroll">
+                <div className="z-30 w-full max-w-4xl mx-auto px-4 sm:px-6 pt-24 sm:pt-28 pb-12 pointer-events-auto">
                   <div className={`p-5 sm:p-6 rounded-xl mb-6 sm:mb-8 border shadow-sm ${isKeyword ? 'bg-white dark:bg-slate-800 border-slate-200' : 'glass-panel bg-white/40 dark:bg-slate-900/40 border-white/20'}`}>
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                       <div className="flex-1 min-w-0"><h2 className={`font-serif text-2xl sm:text-3xl font-medium tracking-tight truncate ${isKeyword ? 'text-slate-800 dark:text-slate-100' : 'text-slate-900 dark:text-white'}`}>{isKeyword ? 'Index Results:' : 'Search:'} <span className="italic break-words whitespace-normal">"{query}"</span></h2><div className="flex flex-wrap gap-2 mt-3">{uniqueBooks.map((bookName, idx) => (<span key={idx} className={`text-[10px] sm:text-xs uppercase tracking-wider font-bold px-2.5 py-1 rounded-md border ${isKeyword ? 'bg-blue-50 dark:bg-slate-700 text-blue-600 border-blue-200' : 'text-slate-500 bg-slate-500/10 border-slate-500/20'}`}>{bookName}</span>))}</div></div>
