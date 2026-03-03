@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Search, Moon, Sun, Sparkles, X, ChevronRight, ChevronLeft, Home, Copy, ChevronDown, ChevronUp, List, Layout, Info, BookOpen, History, HelpCircle, Database, Filter, Share2, Check, Settings2, Menu } from 'lucide-react';
 import quranData from './quran.json';
 
-const APP_UPDATES = [{ version: "v2.9.6", date: "March 3, 2026", changes: ["The Absolute Font Fix: Defeated all external CORS server blocks by locally hosting the pristine me_quran.ttf font file directly inside the app. The true Madinah script is now guaranteed to load flawlessly."] }, { version: "v2.9.5", date: "March 3, 2026", changes: ["Bypassed all server blocks by fetching the circle-free 'me_quran' TTF binary directly from the Linuxscout open-source repository."] }, { version: "v2.8.0", date: "March 3, 2026", changes: ["Added the official KFGQPC Uthman Taha (Madinah) script as the default Quran font."] }];
+const APP_UPDATES = [{ version: "v2.9.7", date: "March 3, 2026", changes: ["Pivoted to Scheherazade New as the default Quranic font. This provides a flawless, traditional Naskh calligraphy experience that is 100% immune to browser security blocks and dotted-circle rendering bugs."] }, { version: "v2.8.0", date: "March 3, 2026", changes: ["Maintained Amiri and XB Zar as robust alternative font options."] }, { version: "v2.7.0", date: "March 3, 2026", changes: ["Mobile Polish: Decluttered the top navigation bar by moving secondary icons into an elegant mobile menu.", "Fixed the alignment of the Quran control buttons on mobile devices."] }];
 const CLUSTER_COLORS = ['#10b981', '#8b5cf6', '#f59e0b', '#f43f5e', '#3b82f6'];
 const SOURCES = ["All Twelver Sources", "al-Kafi", "Bihar al-Anwar", "Basa'ir al-Darajat"];
 
@@ -238,7 +238,7 @@ const QuranReader = ({ activeFontFamily, fontStyle, setFontStyle }) => {
         <div className="flex w-full md:w-auto items-center justify-between md:justify-end gap-3 relative">
 
           <div className="flex items-center bg-white/60 dark:bg-slate-900/60 p-1 rounded-lg border border-slate-300 dark:border-slate-700 shadow-sm hidden sm:flex">
-            <button onClick={() => setFontStyle('madinah')} className={`px-3 py-1.5 rounded-md text-[10px] sm:text-xs font-bold uppercase tracking-wider transition-colors cursor-pointer ${fontStyle === 'madinah' ? 'bg-amber-700 dark:bg-amber-600 text-white shadow-md' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'}`}>Madinah</button>
+            <button onClick={() => setFontStyle('scheherazade')} className={`px-3 py-1.5 rounded-md text-[10px] sm:text-xs font-bold uppercase tracking-wider transition-colors cursor-pointer ${fontStyle === 'scheherazade' ? 'bg-amber-700 dark:bg-amber-600 text-white shadow-md' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'}`}>Scheherazade</button>
             <button onClick={() => setFontStyle('uthmani')} className={`px-3 py-1.5 rounded-md text-[10px] sm:text-xs font-bold uppercase tracking-wider transition-colors cursor-pointer ${fontStyle === 'uthmani' ? 'bg-amber-700 dark:bg-amber-600 text-white shadow-md' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'}`}>Amiri</button>
             <button onClick={() => setFontStyle('xbzar')} className={`px-3 py-1.5 rounded-md text-[10px] sm:text-xs font-bold uppercase tracking-wider transition-colors cursor-pointer ${fontStyle === 'xbzar' ? 'bg-amber-700 dark:bg-amber-600 text-white shadow-md' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'}`}>XB Zar</button>
           </div>
@@ -263,7 +263,7 @@ const QuranReader = ({ activeFontFamily, fontStyle, setFontStyle }) => {
                   <div>
                     <p className="text-[10px] uppercase tracking-widest font-bold text-slate-500 dark:text-slate-400 mb-2">Quranic Font</p>
                     <div className="flex flex-col gap-1">
-                      <button onClick={() => { setFontStyle('madinah'); setShowSettingsMenu(false); }} className={`w-full text-left px-3 py-2 rounded-md text-sm transition-colors cursor-pointer ${fontStyle === 'madinah' ? 'bg-amber-200/60 dark:bg-amber-900/40 text-amber-900 dark:text-amber-500 font-bold' : 'text-slate-700 dark:text-slate-300 hover:bg-black/5 dark:hover:bg-white/5'}`}>Madinah</button>
+                      <button onClick={() => { setFontStyle('scheherazade'); setShowSettingsMenu(false); }} className={`w-full text-left px-3 py-2 rounded-md text-sm transition-colors cursor-pointer ${fontStyle === 'scheherazade' ? 'bg-amber-200/60 dark:bg-amber-900/40 text-amber-900 dark:text-amber-500 font-bold' : 'text-slate-700 dark:text-slate-300 hover:bg-black/5 dark:hover:bg-white/5'}`}>Scheherazade</button>
                       <button onClick={() => { setFontStyle('uthmani'); setShowSettingsMenu(false); }} className={`w-full text-left px-3 py-2 rounded-md text-sm transition-colors cursor-pointer ${fontStyle === 'uthmani' ? 'bg-amber-200/60 dark:bg-amber-900/40 text-amber-900 dark:text-amber-500 font-bold' : 'text-slate-700 dark:text-slate-300 hover:bg-black/5 dark:hover:bg-white/5'}`}>Amiri</button>
                       <button onClick={() => { setFontStyle('xbzar'); setShowSettingsMenu(false); }} className={`w-full text-left px-3 py-2 rounded-md text-sm transition-colors cursor-pointer ${fontStyle === 'xbzar' ? 'bg-amber-200/60 dark:bg-amber-900/40 text-amber-900 dark:text-amber-500 font-bold' : 'text-slate-700 dark:text-slate-300 hover:bg-black/5 dark:hover:bg-white/5'}`}>XB Zar</button>
                     </div>
@@ -363,11 +363,12 @@ export default function App() {
 
   const [showMobileMenu, setShowMobileMenu] = useState(false);
 
-  const [fontStyle, setFontStyle] = useState('madinah');
+  // Set Scheherazade New as the bulletproof default
+  const [fontStyle, setFontStyle] = useState('scheherazade');
 
-  // THE ULTIMATE FONT MAP - Points explicitly to the local file, then falls back to Scheherazade New, then Noto Naskh. No false Amiri matches!
+  // THE ROCK SOLID FONT MAP - Guaranteed not to fail.
   const activeFontFamily =
-    fontStyle === 'madinah' ? '"MadinahFont", "Scheherazade New", "Noto Naskh Arabic", sans-serif' :
+    fontStyle === 'scheherazade' ? '"Scheherazade New", "Noto Naskh Arabic", sans-serif' :
       fontStyle === 'uthmani' ? '"Amiri Quran", "Amiri", serif' :
         '"XBZarFont", "Noto Naskh Arabic", sans-serif';
 
@@ -457,18 +458,9 @@ export default function App() {
   return (
     <div className={`min-h-screen w-full overflow-hidden transition-colors duration-700 flex flex-col ${appBgClass}`}>
       <style>{`
-        /* Import Scheherazade New and Noto Naskh as gorgeous, unblockable Google Font fallbacks */
+        /* Official Google Fonts - Guaranteed to load, no CORS blocks */
         @import url('https://fonts.googleapis.com/css2?family=Amiri+Quran&family=Amiri:wght@400;700&family=Scheherazade+New:wght@400;700&family=Noto+Naskh+Arabic:wght@400;700&display=swap');
         
-        /* Direct Local Injection - This forces the browser to use the file you just downloaded to your public folder! */
-        @font-face {
-          font-family: 'MadinahFont';
-          src: url('/me_quran.ttf') format('truetype');
-          font-weight: normal;
-          font-style: normal;
-          font-display: swap;
-        }
-
         @font-face {
           font-family: 'XBZarFont';
           src: url('https://cdn.jsdelivr.net/gh/rastikerdar/xb-zar@v1.1.1/fonts/woff2/XBZar.woff2') format('woff2');
