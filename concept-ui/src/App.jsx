@@ -1,8 +1,16 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Search, Moon, Sun, Sparkles, X, ChevronRight, ChevronLeft, Home, Copy, ChevronDown, ChevronUp, List, Layout, Info, BookOpen, Fingerprint, History, HelpCircle, Database } from 'lucide-react';
+import { Search, Moon, Sun, Sparkles, X, ChevronRight, ChevronLeft, Home, Copy, ChevronDown, ChevronUp, List, Layout, Info, BookOpen, Fingerprint, History, HelpCircle, Database, Filter } from 'lucide-react';
 
 const APP_UPDATES = [
+  {
+    version: "v1.4.0",
+    date: "March 2, 2026",
+    changes: [
+      "Added a new 'Length Filter' inside results: easily sort narrations by Short, Medium, or Long to find exactly what you want to read.",
+      "Reduced the number of hadiths per page from 20 to 10 for a much cleaner, less overwhelming reading experience on mobile."
+    ]
+  },
   {
     version: "v1.3.0",
     date: "March 2, 2026",
@@ -30,7 +38,6 @@ const APP_UPDATES = [
       "Added a dual-search toggle: effortlessly switch between AI 'Concept' exploration and exact 'Keyword' matching.",
       "Introduced source filtering to search across all Twelver collections or narrow down to specific books.",
       "UI Tweak: Completely redesigned Hadith Cards! Original Arabic, English translations, and Chains of Narrators are now separated into clean, collapsible sections.",
-      "UI Tweak: Added pagination inside the cluster modals so you can easily flip through large groups of narrations.",
       "UI Tweak: Added a one-click 'Copy Text' button that instantly formats the narration and its citation for easy sharing."
     ]
   },
@@ -40,8 +47,7 @@ const APP_UPDATES = [
     changes: [
       "Launched the Concept Atlas Beta: A first-of-its-kind semantic explorer for Twelver Shia literature.",
       "Integrated K-Means clustering and Gemini AI theme generation to automatically discover and label conceptual relationships between narrations.",
-      "UI Tweak: Added a beautiful Dark/Light mode toggle to suit your reading environment.",
-      "UI Tweak: Fully responsive design that automatically adapts the layout for mobile and desktop screens."
+      "UI Tweak: Added a beautiful Dark/Light mode toggle to suit your reading environment."
     ]
   }
 ];
@@ -338,8 +344,12 @@ export default function App() {
   const [showDropdown, setShowDropdown] = useState(false);
   const [searchMode, setSearchMode] = useState('concept');
 
+  // --- REDUCED TO 10 FOR EASIER READING ---
   const [currentPage, setCurrentPage] = useState(1);
-  const ITEMS_PER_PAGE = 20;
+  const ITEMS_PER_PAGE = 10;
+
+  // --- ADDED NEW LENGTH FILTER STATE ---
+  const [lengthFilter, setLengthFilter] = useState('All');
 
   const containerRef = useRef(null);
   const modalScrollRef = useRef(null);
@@ -393,6 +403,7 @@ export default function App() {
 
   useEffect(() => {
     setCurrentPage(1);
+    setLengthFilter('All'); // Reset filter when opening a new cluster
     if (modalScrollRef.current) {
       modalScrollRef.current.scrollTop = 0;
     }
@@ -842,7 +853,6 @@ export default function App() {
               {viewMode === 'list' && (
                 <div className="z-30 w-full max-w-4xl px-4 sm:px-6 pt-24 sm:pt-28 pb-12 h-full overflow-y-auto pointer-events-auto hide-scroll">
 
-                  {/* Header Card */}
                   <div className={`p-5 sm:p-6 rounded-xl mb-6 sm:mb-8 border shadow-sm ${isKeyword ? 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700' : 'glass-panel bg-white/40 dark:bg-slate-900/40 border-white/20 dark:border-slate-700/50'}`}>
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                       <div className="flex-1 min-w-0">
@@ -873,7 +883,6 @@ export default function App() {
                     </div>
                   </div>
 
-                  {/* Rows */}
                   <div className={`flex flex-col border-t ${isKeyword ? 'border-slate-200 dark:border-slate-700' : 'border-slate-200 dark:border-slate-800'}`}>
                     {data.clusters.map((cluster, i) => {
                       const topKeywords = getTopKeywords(cluster.items);
@@ -921,14 +930,26 @@ export default function App() {
                 </div>
               )}
 
-              {/* --- THE PAGINATED MODAL --- */}
+              {/* --- THE MODAL WITH ADDED FILTER LOGIC --- */}
               <AnimatePresence>
                 {activeCluster !== null && data.clusters[activeCluster] && (() => {
 
                   const clusterItems = data.clusters[activeCluster].items;
-                  const totalPages = Math.ceil(clusterItems.length / ITEMS_PER_PAGE);
-                  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
-                  const paginatedItems = clusterItems.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+
+                  // --- APPLY THE LENGTH FILTER ---
+                  const filteredItems = clusterItems.filter(item => {
+                    if (lengthFilter === 'All') return true;
+                    const len = (item.english_text || '').length;
+                    if (lengthFilter === 'Short') return len < 300;
+                    if (lengthFilter === 'Medium') return len >= 300 && len <= 1000;
+                    if (lengthFilter === 'Long') return len > 1000;
+                    return true;
+                  });
+
+                  const totalPages = Math.ceil(filteredItems.length / ITEMS_PER_PAGE) || 1;
+                  const safeCurrentPage = Math.min(currentPage, totalPages);
+                  const startIndex = (safeCurrentPage - 1) * ITEMS_PER_PAGE;
+                  const paginatedItems = filteredItems.slice(startIndex, startIndex + ITEMS_PER_PAGE);
 
                   return (
                     <div className="fixed inset-0 z-[1000] flex items-center justify-center pointer-events-auto p-4 sm:p-0">
@@ -955,30 +976,60 @@ export default function App() {
                           </button>
                         </div>
 
+                        {/* --- THE LENGTH FILTER UI BAR --- */}
+                        <div className={`px-4 sm:px-6 py-3 border-b shrink-0 flex flex-wrap gap-2 items-center ${isKeyword ? 'bg-slate-100/50 dark:bg-slate-800/30 border-slate-200 dark:border-slate-700' : 'bg-slate-200/30 dark:bg-slate-800/30 border-slate-200 dark:border-slate-800'}`}>
+                          <div className="flex items-center gap-1.5 text-slate-500 dark:text-slate-400 mr-1">
+                            <Filter className="w-3.5 h-3.5" />
+                            <span className="text-[10px] sm:text-xs font-semibold uppercase tracking-wider">Length:</span>
+                          </div>
+                          {['All', 'Short', 'Medium', 'Long'].map(f => (
+                            <button
+                              key={f}
+                              onClick={() => {
+                                setLengthFilter(f);
+                                setCurrentPage(1);
+                                if (modalScrollRef.current) modalScrollRef.current.scrollTop = 0;
+                              }}
+                              className={`px-3 py-1 sm:py-1.5 rounded-md text-[10px] sm:text-xs font-medium transition-colors cursor-pointer ${lengthFilter === f ? (isKeyword ? 'bg-blue-500 text-white shadow-sm' : 'bg-indigo-500 text-white shadow-sm') : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700'}`}
+                            >
+                              {f}
+                            </button>
+                          ))}
+                          <span className="ml-auto text-[10px] sm:text-xs font-mono text-slate-400">
+                            {filteredItems.length} matches
+                          </span>
+                        </div>
+
                         <div
                           ref={modalScrollRef}
                           onScroll={handleModalScroll}
                           className="p-4 sm:p-6 flex flex-col gap-4 sm:gap-6 overflow-y-auto flex-grow smart-scrollbar"
                         >
-                          {paginatedItems.map((item, idx) => (
-                            <HadithCard key={idx} item={item} handleCopyHadith={handleCopyHadith} searchMode={searchMode} />
-                          ))}
+                          {filteredItems.length === 0 ? (
+                            <div className="flex flex-col items-center justify-center h-full text-slate-400 dark:text-slate-500 italic mt-10">
+                              <p>No {lengthFilter.toLowerCase()} hadiths found in this cluster.</p>
+                            </div>
+                          ) : (
+                            paginatedItems.map((item, idx) => (
+                              <HadithCard key={idx} item={item} handleCopyHadith={handleCopyHadith} searchMode={searchMode} />
+                            ))
+                          )}
 
-                          {totalPages > 1 && (
+                          {totalPages > 1 && filteredItems.length > 0 && (
                             <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-4 sm:pt-6 border-t border-slate-200 dark:border-slate-700/50 mt-2 sm:mt-4">
                               <button
                                 onClick={() => {
                                   setCurrentPage(prev => Math.max(prev - 1, 1));
                                   modalScrollRef.current.scrollTop = 0;
                                 }}
-                                disabled={currentPage === 1}
-                                className={`flex items-center justify-center gap-1 w-full sm:w-auto px-4 py-2 rounded-lg font-medium transition-colors ${currentPage === 1 ? 'opacity-30 cursor-not-allowed text-slate-500' : (isKeyword ? 'text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-500/10 cursor-pointer' : 'text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-500/10 cursor-pointer')}`}
+                                disabled={safeCurrentPage === 1}
+                                className={`flex items-center justify-center gap-1 w-full sm:w-auto px-4 py-2 rounded-lg font-medium transition-colors ${safeCurrentPage === 1 ? 'opacity-30 cursor-not-allowed text-slate-500' : (isKeyword ? 'text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-500/10 cursor-pointer' : 'text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-500/10 cursor-pointer')}`}
                               >
                                 <ChevronLeft className="w-5 h-5" /> Previous
                               </button>
 
                               <span className="font-mono text-xs sm:text-sm text-slate-500 dark:text-slate-400 order-first sm:order-none">
-                                Page {currentPage} of {totalPages}
+                                Page {safeCurrentPage} of {totalPages}
                               </span>
 
                               <button
@@ -986,8 +1037,8 @@ export default function App() {
                                   setCurrentPage(prev => Math.min(prev + 1, totalPages));
                                   modalScrollRef.current.scrollTop = 0;
                                 }}
-                                disabled={currentPage === totalPages}
-                                className={`flex items-center justify-center gap-1 w-full sm:w-auto px-4 py-2 rounded-lg font-medium transition-colors ${currentPage === totalPages ? 'opacity-30 cursor-not-allowed text-slate-500' : (isKeyword ? 'text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-500/10 cursor-pointer' : 'text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-500/10 cursor-pointer')}`}
+                                disabled={safeCurrentPage === totalPages}
+                                className={`flex items-center justify-center gap-1 w-full sm:w-auto px-4 py-2 rounded-lg font-medium transition-colors ${safeCurrentPage === totalPages ? 'opacity-30 cursor-not-allowed text-slate-500' : (isKeyword ? 'text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-500/10 cursor-pointer' : 'text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-500/10 cursor-pointer')}`}
                               >
                                 Next <ChevronRight className="w-5 h-5" />
                               </button>
