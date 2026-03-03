@@ -11,7 +11,9 @@ const APP_UPDATES = [
       "Introduced a dynamic loading sequence that shows the exact steps the AI is taking during a deep search.",
       "Upgraded the semantic search engine to cloud infrastructure for faster, highly reliable results.",
       "Optimized database architecture to guarantee stability and prevent memory crashes during complex queries.",
-      "UI Tweak: Implemented 'smart' scrollbars that fade away when not in use for a cleaner, distraction-free reading interface."
+      "UI Tweak: Implemented 'smart' scrollbars that fade away when not in use for a cleaner, distraction-free reading interface.",
+      "Added an interactive 'How to Use' guide (click the question mark icon) to help you master the search engine.",
+      "Included expert search tips to help you avoid common translation mismatches and get the most accurate results from both Concept and Keyword modes."
     ]
   },
   {
