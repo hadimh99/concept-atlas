@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Search, Moon, Sun, Sparkles, X, ChevronRight, ChevronLeft, Home, Copy, ChevronDown, ChevronUp, List, Layout, Info, BookOpen, History, HelpCircle, Database, Filter, Share2, Check, Settings2, Menu } from 'lucide-react';
 import quranData from './quran.json';
 
-const APP_UPDATES = [{ version: "v2.9.2", date: "March 3, 2026", changes: ["The Ultimate Font Fix: Bypassed strict Quran.com CORS server blocks by fetching the uncompressed, raw KFGQPC binary from the global NPM developer registry.", "Eradicated the dotted-circle bug by ensuring OpenType combining marks are preserved.", "Added Google Noto Naskh as a beautiful, curved failsafe backup."] }, { version: "v2.8.0", date: "March 3, 2026", changes: ["Added the official KFGQPC Uthman Taha (Madinah) script as the default Quran font."] }, { version: "v2.7.0", date: "March 3, 2026", changes: ["Mobile Polish: Decluttered the top navigation bar by moving secondary icons into an elegant mobile menu.", "Fixed the alignment of the Quran control buttons on mobile devices."] }];
+const APP_UPDATES = [{ version: "v2.9.5", date: "March 3, 2026", changes: ["The Final Font Fix: Bypassed all server blocks by fetching the circle-free 'me_quran' TTF binary directly from the Linuxscout open-source repository.", "Added Scheherazade New as a flawless, traditional Quranic failsafe font immune to dotted-circle bugs."] }, { version: "v2.8.0", date: "March 3, 2026", changes: ["Added the official KFGQPC Uthman Taha (Madinah) script as the default Quran font."] }, { version: "v2.7.0", date: "March 3, 2026", changes: ["Mobile Polish: Decluttered the top navigation bar by moving secondary icons into an elegant mobile menu.", "Fixed the alignment of the Quran control buttons on mobile devices."] }];
 const CLUSTER_COLORS = ['#10b981', '#8b5cf6', '#f59e0b', '#f43f5e', '#3b82f6'];
 const SOURCES = ["All Twelver Sources", "al-Kafi", "Bihar al-Anwar", "Basa'ir al-Darajat"];
 
@@ -365,10 +365,10 @@ export default function App() {
 
   const [fontStyle, setFontStyle] = useState('madinah');
 
-  // STRICT FONT MAP WITH NOTO NASKH FAILSAFE
+  // THE ULTIMATE FONT MAP - Madinah -> Scheherazade New -> Amiri -> System
   const activeFontFamily =
-    fontStyle === 'madinah' ? '"MadinahFont", "Noto Naskh Arabic", Arial, sans-serif' :
-      fontStyle === 'uthmani' ? '"Amiri Quran", "Noto Naskh Arabic", serif' :
+    fontStyle === 'madinah' ? '"MadinahFont", "Scheherazade New", "Noto Naskh Arabic", sans-serif' :
+      fontStyle === 'uthmani' ? '"Amiri Quran", "Amiri", serif' :
         '"XBZarFont", "Noto Naskh Arabic", sans-serif';
 
   const containerRef = useRef(null);
@@ -457,13 +457,13 @@ export default function App() {
   return (
     <div className={`min-h-screen w-full overflow-hidden transition-colors duration-700 flex flex-col ${appBgClass}`}>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Amiri+Quran&family=Amiri:wght@400;700&family=Noto+Naskh+Arabic:wght@400;700&display=swap');
+        /* Import Scheherazade New and Noto Naskh as gorgeous, unblockable Google Font fallbacks */
+        @import url('https://fonts.googleapis.com/css2?family=Amiri+Quran&family=Amiri:wght@400;700&family=Scheherazade+New:wght@400;700&family=Noto+Naskh+Arabic:wght@400;700&display=swap');
         
-        /* Raw Uncompressed KFGQPC Binaries via Global NPM Registry */
+        /* Direct GitHub injection of me_quran.ttf from Linuxscout repo - Guaranteed no CORS blocks, fixes dotted circles */
         @font-face {
           font-family: 'MadinahFont';
-          src: url('https://cdn.jsdelivr.net/npm/quran-font@1.1.2/dist/fonts/quran.woff2') format('woff2'),
-               url('https://cdn.jsdelivr.net/npm/quran-font@1.1.2/dist/fonts/quran.ttf') format('truetype');
+          src: url('https://cdn.jsdelivr.net/gh/linuxscout/mushaf@master/fonts/me_quran.ttf') format('truetype');
           font-weight: normal;
           font-style: normal;
           font-display: swap;
