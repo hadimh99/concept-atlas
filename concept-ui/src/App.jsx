@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Search, Moon, Sun, Sparkles, X, ChevronRight, ChevronLeft, Home, Copy, ChevronDown, ChevronUp, List, Layout, Info, BookOpen, History, HelpCircle, Database, Filter, Share2, Check, Settings2, Menu } from 'lucide-react';
 import quranData from './quran.json';
 
-const APP_UPDATES = [{ version: "v2.7.1", date: "March 3, 2026", changes: ["Bug Fix: Fixed an overlapping z-index issue that made mobile menu buttons unclickable.", "Increased the tap target size for mobile menu items."] }, { version: "v2.7.0", date: "March 3, 2026", changes: ["Mobile Polish: Decluttered the top navigation bar by moving secondary icons into an elegant mobile menu.", "Fixed the alignment of the Quran control buttons on mobile devices so they no longer wrap awkwardly."] }, { version: "v2.6.0", date: "March 3, 2026", changes: ["Decluttered the Quran reader UI by moving Font and Translation settings into a minimalist 'Customise' menu.", "Replaced the native OS Surah dropdown with a custom, theme-aware menu."] }];
+const APP_UPDATES = [{ version: "v2.8.0", date: "March 3, 2026", changes: ["Added the official KFGQPC Uthman Taha (Madinah) script as the default Quran font.", "Maintained Amiri and XB Zar as alternative font options.", "Added the third font toggle into the Customise menu for mobile users."] }, { version: "v2.7.0", date: "March 3, 2026", changes: ["Mobile Polish: Decluttered the top navigation bar by moving secondary icons into an elegant mobile menu.", "Fixed the alignment of the Quran control buttons on mobile devices."] }, { version: "v2.6.0", date: "March 3, 2026", changes: ["Decluttered the Quran reader UI by moving Font and Translation settings into a minimalist 'Customise' menu.", "Replaced the native OS Surah dropdown with a custom, theme-aware menu."] }];
 const CLUSTER_COLORS = ['#10b981', '#8b5cf6', '#f59e0b', '#f43f5e', '#3b82f6'];
 const SOURCES = ["All Twelver Sources", "al-Kafi", "Bihar al-Anwar", "Basa'ir al-Darajat"];
 
@@ -233,6 +233,12 @@ const QuranReader = ({ activeFontFamily, fontStyle, setFontStyle }) => {
 
         <div className="flex w-full md:w-auto items-center justify-between md:justify-end gap-3 relative">
 
+          <div className="flex items-center bg-white/60 dark:bg-slate-900/60 p-1 rounded-lg border border-slate-300 dark:border-slate-700 shadow-sm hidden sm:flex">
+            <button onClick={() => setFontStyle('madinah')} className={`px-3 py-1.5 rounded-md text-[10px] sm:text-xs font-bold uppercase tracking-wider transition-colors cursor-pointer ${fontStyle === 'madinah' ? 'bg-amber-700 dark:bg-amber-600 text-white shadow-md' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'}`}>Madinah</button>
+            <button onClick={() => setFontStyle('uthmani')} className={`px-3 py-1.5 rounded-md text-[10px] sm:text-xs font-bold uppercase tracking-wider transition-colors cursor-pointer ${fontStyle === 'uthmani' ? 'bg-amber-700 dark:bg-amber-600 text-white shadow-md' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'}`}>Amiri</button>
+            <button onClick={() => setFontStyle('xbzar')} className={`px-3 py-1.5 rounded-md text-[10px] sm:text-xs font-bold uppercase tracking-wider transition-colors cursor-pointer ${fontStyle === 'xbzar' ? 'bg-amber-700 dark:bg-amber-600 text-white shadow-md' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'}`}>XB Zar</button>
+          </div>
+
           <div className="flex items-center bg-white/60 dark:bg-slate-900/60 p-1 rounded-lg border border-slate-300 dark:border-slate-700 shadow-sm">
             <button onClick={() => setReadingMode('verse')} className={`px-3 py-1.5 rounded-md text-[10px] sm:text-xs font-bold uppercase tracking-wider transition-colors cursor-pointer ${readingMode === 'verse' ? 'bg-amber-700 dark:bg-amber-600 text-white shadow-md' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'}`}>Verse</button>
             <button onClick={() => setReadingMode('flow')} className={`px-3 py-1.5 rounded-md text-[10px] sm:text-xs font-bold uppercase tracking-wider transition-colors cursor-pointer ${readingMode === 'flow' ? 'bg-amber-700 dark:bg-amber-600 text-white shadow-md' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'}`}>Flow</button>
@@ -253,7 +259,8 @@ const QuranReader = ({ activeFontFamily, fontStyle, setFontStyle }) => {
                   <div>
                     <p className="text-[10px] uppercase tracking-widest font-bold text-slate-500 dark:text-slate-400 mb-2">Quranic Font</p>
                     <div className="flex flex-col gap-1">
-                      <button onClick={() => { setFontStyle('uthmani'); setShowSettingsMenu(false); }} className={`w-full text-left px-3 py-2 rounded-md text-sm transition-colors cursor-pointer ${fontStyle === 'uthmani' ? 'bg-amber-200/60 dark:bg-amber-900/40 text-amber-900 dark:text-amber-500 font-bold' : 'text-slate-700 dark:text-slate-300 hover:bg-black/5 dark:hover:bg-white/5'}`}>Uthmani</button>
+                      <button onClick={() => { setFontStyle('madinah'); setShowSettingsMenu(false); }} className={`w-full text-left px-3 py-2 rounded-md text-sm transition-colors cursor-pointer ${fontStyle === 'madinah' ? 'bg-amber-200/60 dark:bg-amber-900/40 text-amber-900 dark:text-amber-500 font-bold' : 'text-slate-700 dark:text-slate-300 hover:bg-black/5 dark:hover:bg-white/5'}`}>Madinah</button>
+                      <button onClick={() => { setFontStyle('uthmani'); setShowSettingsMenu(false); }} className={`w-full text-left px-3 py-2 rounded-md text-sm transition-colors cursor-pointer ${fontStyle === 'uthmani' ? 'bg-amber-200/60 dark:bg-amber-900/40 text-amber-900 dark:text-amber-500 font-bold' : 'text-slate-700 dark:text-slate-300 hover:bg-black/5 dark:hover:bg-white/5'}`}>Amiri</button>
                       <button onClick={() => { setFontStyle('xbzar'); setShowSettingsMenu(false); }} className={`w-full text-left px-3 py-2 rounded-md text-sm transition-colors cursor-pointer ${fontStyle === 'xbzar' ? 'bg-amber-200/60 dark:bg-amber-900/40 text-amber-900 dark:text-amber-500 font-bold' : 'text-slate-700 dark:text-slate-300 hover:bg-black/5 dark:hover:bg-white/5'}`}>XB Zar</button>
                     </div>
                   </div>
@@ -352,8 +359,9 @@ export default function App() {
 
   const [showMobileMenu, setShowMobileMenu] = useState(false);
 
-  const [fontStyle, setFontStyle] = useState('uthmani');
-  const activeFontFamily = fontStyle === 'uthmani' ? '"Amiri Quran", "Amiri", serif' : '"XB Zar", Arial, sans-serif';
+  // MADINAH KFGQPC IS NOW DEFAULT
+  const [fontStyle, setFontStyle] = useState('madinah');
+  const activeFontFamily = fontStyle === 'madinah' ? '"KFGQPC HAFS", "Amiri Quran", serif' : fontStyle === 'uthmani' ? '"Amiri Quran", "Amiri", serif' : '"XB Zar", Arial, sans-serif';
 
   const containerRef = useRef(null);
   const modalScrollRef = useRef(null);
@@ -442,6 +450,18 @@ export default function App() {
     <div className={`min-h-screen w-full overflow-hidden transition-colors duration-700 flex flex-col ${appBgClass}`}>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Amiri+Quran&family=Amiri:wght@400;700&display=swap');
+        
+        @font-face {
+          font-family: 'KFGQPC HAFS';
+          src: local('KFGQPC Uthmanic Script HAFS Regular'),
+               local('KFGQPC_Uthmanic_Script_HAFS_Regular'),
+               url('https://cdn.jsdelivr.net/npm/quran-font@1.1.2/dist/fonts/quran.woff2') format('woff2'),
+               url('https://cdn.jsdelivr.net/npm/quran-font@1.1.2/dist/fonts/quran.woff') format('woff');
+          font-weight: normal;
+          font-style: normal;
+          font-display: swap;
+        }
+
         .hide-scroll::-webkit-scrollbar { display: none; }
         .hide-scroll { -ms-overflow-style: none; scrollbar-width: none; -webkit-overflow-scrolling: touch; overscroll-behavior-y: contain; }
         .smart-scrollbar { --thumb-bg: transparent; scrollbar-width: thin; scrollbar-color: var(--thumb-bg) transparent; -webkit-overflow-scrolling: touch; overscroll-behavior-y: contain; }
@@ -472,16 +492,14 @@ export default function App() {
             <button onClick={() => setActiveTab('quran')} className={`p-2 rounded-full transition-all duration-300 cursor-pointer ${activeTab === 'quran' ? 'bg-amber-600/20 text-amber-800 dark:text-amber-500' : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}`} title="Quran Reader"><BookOpen className="w-4 h-4" /></button>
           </div>
 
-          {/* Desktop Nav */}
           <div className="hidden md:flex items-center gap-2 sm:gap-4">
             {activeTab === 'search' && data && !isKeyword && (<div className="flex items-center glass-panel rounded-full p-1 border-white/20"><button onClick={() => setViewMode('map')} className={`p-2 rounded-full transition-all duration-300 cursor-pointer ${viewMode === 'map' ? 'bg-indigo-500/20 text-indigo-400' : 'text-slate-500 hover:text-slate-300'}`}><Layout className="w-4 h-4" /></button><button onClick={() => setViewMode('list')} className={`p-2 rounded-full transition-all duration-300 cursor-pointer ${viewMode === 'list' ? 'bg-indigo-500/20 text-indigo-400' : 'text-slate-500 hover:text-slate-300'}`}><List className="w-4 h-4" /></button></div>)}
-            <AnimatePresence>{activeTab === 'search' && data && (<motion.button initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} onClick={() => { setData(null); setQuery(''); setActiveCluster(null); window.history.pushState({}, '', window.location.pathname); }} className="w-10 h-10 sm:w-11 sm:h-11 rounded-full bg-white/0 flex items-center justify-center group transition-all duration-300 hover:scale-110 cursor-pointer"><Home className="w-5 h-5 text-slate-400 group-hover:text-slate-900 dark:text-slate-500 dark:group-hover:text-white" /></motion.button>)}</AnimatePresence>
+            <AnimatePresence>{activeTab === 'search' && data && (<motion.button initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} onClick={() => { setData(null); setQuery(''); setActiveCluster(null); setHoveredCluster(null); window.history.pushState({}, '', window.location.pathname); }} className="w-10 h-10 sm:w-11 sm:h-11 rounded-full bg-white/0 flex items-center justify-center group transition-all duration-300 hover:scale-110 cursor-pointer"><Home className="w-5 h-5 text-slate-400 group-hover:text-slate-900 dark:text-slate-500 dark:group-hover:text-white" /></motion.button>)}</AnimatePresence>
             {activeTab === 'search' && (<button onClick={() => { navigator.clipboard.writeText(window.location.href); setCopiedLink(true); setTimeout(() => setCopiedLink(false), 2000); }} className={`w-10 h-10 sm:w-11 sm:h-11 rounded-full flex items-center justify-center group transition-all duration-300 hover:scale-110 cursor-pointer ${copiedLink ? 'text-emerald-500' : `text-slate-400 ${isKeyword ? 'hover:text-blue-500' : 'hover:text-indigo-500'}`}`}><Share2 className="w-5 h-5" /></button>)}
             <button onClick={() => setShowInfo(true)} className="w-10 h-10 sm:w-11 sm:h-11 rounded-full flex items-center justify-center group transition-all duration-300 hover:scale-110 cursor-pointer"><HelpCircle className={`w-5 h-5 text-slate-400 ${activeTab === 'search' && isKeyword ? 'group-hover:text-blue-500' : 'group-hover:text-indigo-500'}`} /></button>
             <button onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')} className="w-10 h-10 sm:w-11 sm:h-11 rounded-full flex items-center justify-center group transition-all duration-300 hover:scale-110 cursor-pointer">{theme === 'dark' ? <Sun className="w-5 h-5 text-slate-500 group-hover:text-yellow-400" /> : <Moon className="w-5 h-5 text-slate-400 group-hover:text-slate-900" />}</button>
           </div>
 
-          {/* Mobile Hamburger Menu */}
           <div className="md:hidden relative">
             <button onClick={() => setShowMobileMenu(!showMobileMenu)} className={`w-10 h-10 rounded-full flex items-center justify-center transition-all duration-300 cursor-pointer ${activeTab === 'quran' ? 'bg-white/40 dark:bg-slate-800/50 backdrop-blur-md shadow-sm border border-slate-300/30 dark:border-slate-700 text-slate-600 dark:text-slate-300' : 'glass-panel border-white/20 text-slate-500 dark:text-slate-400'}`}>
               <Menu className="w-5 h-5" />
