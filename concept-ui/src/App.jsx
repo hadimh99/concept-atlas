@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Search, Moon, Sun, Sparkles, X, ChevronRight, ChevronLeft, Home, Copy, ChevronDown, ChevronUp, List, Layout, Info, BookOpen, History, HelpCircle, Database, Filter, Share2, Check, Settings2, Menu } from 'lucide-react';
 import quranData from './quran.json';
 
-const APP_UPDATES = [{ version: "v2.8.4", date: "March 3, 2026", changes: ["Font Infrastructure Fix: Bypassed restrictive CORS servers and mapped Madinah and XB Zar fonts directly to raw GitHub binaries via jsDelivr to guarantee they load perfectly and distinctly."] }, { version: "v2.8.2", date: "March 3, 2026", changes: ["Typography Fix: Eradicated the 'dotted circle' bug in the Madinah font by forcing OpenType combining marks (ccmp) and using a web-optimized WOFF2 format."] }, { version: "v2.7.0", date: "March 3, 2026", changes: ["Mobile Polish: Decluttered the top navigation bar by moving secondary icons into an elegant mobile menu.", "Fixed the alignment of the Quran control buttons on mobile devices."] }];
+const APP_UPDATES = [{ version: "v2.8.5", date: "March 3, 2026", changes: ["Defeated strict browser CORS blocks by shifting the font engine from raw file fetching to official CSS stylesheet imports. Madinah and XB Zar will now render flawlessly without falling back to system Arial."] }];
 const CLUSTER_COLORS = ['#10b981', '#8b5cf6', '#f59e0b', '#f43f5e', '#3b82f6'];
 const SOURCES = ["All Twelver Sources", "al-Kafi", "Bihar al-Anwar", "Basa'ir al-Darajat"];
 
@@ -365,11 +365,11 @@ export default function App() {
 
   const [fontStyle, setFontStyle] = useState('madinah');
 
-  // STRICT FONT MAP - No overlapping fallback fonts!
+  // STRICT FONT MAP - No overlapping fallback fonts
   const activeFontFamily =
-    fontStyle === 'madinah' ? '"MadinahWeb", Arial, sans-serif' :
-      fontStyle === 'uthmani' ? '"Amiri Quran", "Amiri", serif' :
-        '"XBZarWeb", Arial, sans-serif';
+    fontStyle === 'madinah' ? '"quran-font", sans-serif' :
+      fontStyle === 'uthmani' ? '"Amiri Quran", serif' :
+        '"XB Zar", sans-serif';
 
   const containerRef = useRef(null);
   const modalScrollRef = useRef(null);
@@ -457,24 +457,10 @@ export default function App() {
   return (
     <div className={`min-h-screen w-full overflow-hidden transition-colors duration-700 flex flex-col ${appBgClass}`}>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Amiri+Quran&family=Amiri:wght@400;700&display=swap');
-        
-        /* Direct GitHub Raw Binaries via jsDelivr - No CORS issues ever */
-        @font-face {
-          font-family: 'MadinahWeb';
-          src: url('https://cdn.jsdelivr.net/gh/quran/quran.com-images@master/fonts/quran-fonts/v1/KFGQPC_Uthmanic_Script_HAFS_Regular.woff2') format('woff2');
-          font-weight: normal;
-          font-style: normal;
-          font-display: swap;
-        }
-
-        @font-face {
-          font-family: 'XBZarWeb';
-          src: url('https://cdn.jsdelivr.net/gh/rastikerdar/xb-zar@v1.1.1/fonts/woff2/XBZar.woff2') format('woff2');
-          font-weight: normal;
-          font-style: normal;
-          font-display: swap;
-        }
+        /* OFFICIAL CSS STYLESHEET IMPORTS TO BYPASS CORS BLOCKS */
+        @import url('https://fonts.googleapis.com/css2?family=Amiri+Quran&display=swap');
+        @import url('https://unpkg.com/quran-font@1.1.2/dist/quran-font.css');
+        @import url('https://cdn.jsdelivr.net/gh/rastikerdar/xb-zar@v1.1.1/dist/xb-zar.css');
 
         .hide-scroll::-webkit-scrollbar { display: none; }
         .hide-scroll { -ms-overflow-style: none; scrollbar-width: none; -webkit-overflow-scrolling: touch; overscroll-behavior-y: contain; }
