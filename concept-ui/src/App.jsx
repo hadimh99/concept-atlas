@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Search, Moon, Sun, Sparkles, X, ChevronRight, ChevronLeft, Home, Copy, ChevronDown, ChevronUp, List, Layout, Info, BookOpen, History, HelpCircle, Database, Filter, Share2, Check, Settings2, Menu } from 'lucide-react';
 import quranData from './quran.json';
 
-const APP_UPDATES = [{ version: "v2.8.0", date: "March 3, 2026", changes: ["Added the official KFGQPC Uthman Taha (Madinah) script as the default Quran font.", "Maintained Amiri and XB Zar as alternative font options.", "Added the third font toggle into the Customise menu for mobile users."] }, { version: "v2.7.0", date: "March 3, 2026", changes: ["Mobile Polish: Decluttered the top navigation bar by moving secondary icons into an elegant mobile menu.", "Fixed the alignment of the Quran control buttons on mobile devices."] }, { version: "v2.6.0", date: "March 3, 2026", changes: ["Decluttered the Quran reader UI by moving Font and Translation settings into a minimalist 'Customise' menu.", "Replaced the native OS Surah dropdown with a custom, theme-aware menu."] }];
+const APP_UPDATES = [{ version: "v2.8.1", date: "March 3, 2026", changes: ["Bug Fix: The Madinah (KFGQPC) font was falling back to Amiri due to a broken CDN link. Re-routed to a highly reliable font delivery network for actual Madinah script rendering!"] }, { version: "v2.8.0", date: "March 3, 2026", changes: ["Added the official KFGQPC Uthman Taha (Madinah) script as the default Quran font.", "Maintained Amiri and XB Zar as alternative font options.", "Added the third font toggle into the Customise menu for mobile users."] }, { version: "v2.7.0", date: "March 3, 2026", changes: ["Mobile Polish: Decluttered the top navigation bar by moving secondary icons into an elegant mobile menu.", "Fixed the alignment of the Quran control buttons on mobile devices."] }];
 const CLUSTER_COLORS = ['#10b981', '#8b5cf6', '#f59e0b', '#f43f5e', '#3b82f6'];
 const SOURCES = ["All Twelver Sources", "al-Kafi", "Bihar al-Anwar", "Basa'ir al-Darajat"];
 
@@ -359,9 +359,8 @@ export default function App() {
 
   const [showMobileMenu, setShowMobileMenu] = useState(false);
 
-  // MADINAH KFGQPC IS NOW DEFAULT
   const [fontStyle, setFontStyle] = useState('madinah');
-  const activeFontFamily = fontStyle === 'madinah' ? '"KFGQPC HAFS", "Amiri Quran", serif' : fontStyle === 'uthmani' ? '"Amiri Quran", "Amiri", serif' : '"XB Zar", Arial, sans-serif';
+  const activeFontFamily = fontStyle === 'madinah' ? '"KFGQPC HAFS", "KFGQPC Uthman Taha Naskh", Arial, sans-serif' : fontStyle === 'uthmani' ? '"Amiri Quran", "Amiri", serif' : '"XB Zar", Arial, sans-serif';
 
   const containerRef = useRef(null);
   const modalScrollRef = useRef(null);
@@ -450,13 +449,12 @@ export default function App() {
     <div className={`min-h-screen w-full overflow-hidden transition-colors duration-700 flex flex-col ${appBgClass}`}>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Amiri+Quran&family=Amiri:wght@400;700&display=swap');
+        @import url('https://fonts.cdnfonts.com/css/kfgqpc-uthman-taha-naskh');
         
         @font-face {
           font-family: 'KFGQPC HAFS';
           src: local('KFGQPC Uthmanic Script HAFS Regular'),
-               local('KFGQPC_Uthmanic_Script_HAFS_Regular'),
-               url('https://cdn.jsdelivr.net/npm/quran-font@1.1.2/dist/fonts/quran.woff2') format('woff2'),
-               url('https://cdn.jsdelivr.net/npm/quran-font@1.1.2/dist/fonts/quran.woff') format('woff');
+               url('https://cdn.jsdelivr.net/npm/kfgqpc-uthmanic-script-hafs-regular@1.0.0/arabic.otf') format('opentype');
           font-weight: normal;
           font-style: normal;
           font-display: swap;
@@ -670,7 +668,7 @@ export default function App() {
                   <button onClick={() => setQuranPopup(null)} className="p-2 hover:bg-slate-200 dark:hover:bg-slate-800 rounded-full transition-colors cursor-pointer shrink-0"><X className="w-5 h-5 text-slate-500" /></button>
                 </div>
                 <div className="p-6 sm:p-8 overflow-y-auto flex-grow smart-scrollbar">
-                  <div className="mb-6"><p className="font-arabic text-3xl sm:text-4xl text-right leading-[2.2] text-slate-800 dark:text-slate-100" dir="rtl" style={{ fontFamily: activeFontFamily }}>{quranPopup.data.ar}</p></div>
+                  <div className="mb-6"><p className="font-arabic text-3xl sm:text-4xl text-right leading-[2.2] text-slate-800 dark:text-slate-100" dir="rtl">{quranPopup.data.ar}</p></div>
                   <div className="border-t border-slate-100 dark:border-slate-800 pt-6"><p className="text-base sm:text-lg text-slate-600 dark:text-slate-300 leading-relaxed font-serif">{quranPopup.data.en}</p></div>
                 </div>
               </motion.div>
