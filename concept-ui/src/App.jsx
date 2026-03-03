@@ -1,9 +1,9 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Search, Moon, Sun, Sparkles, X, ChevronRight, ChevronLeft, Home, Copy, ChevronDown, ChevronUp, List, Layout, Info, BookOpen, History, HelpCircle, Database, Filter, Share2, Check, Settings2, Menu } from 'lucide-react';
 import quranData from './quran.json';
 
-const APP_UPDATES = [{ version: "v2.9.7", date: "March 3, 2026", changes: ["Pivoted to Scheherazade New as the default Quranic font. This provides a flawless, traditional Naskh calligraphy experience that is 100% immune to browser security blocks and dotted-circle rendering bugs."] }, { version: "v2.8.0", date: "March 3, 2026", changes: ["Maintained Amiri and XB Zar as robust alternative font options."] }, { version: "v2.7.0", date: "March 3, 2026", changes: ["Mobile Polish: Decluttered the top navigation bar by moving secondary icons into an elegant mobile menu.", "Fixed the alignment of the Quran control buttons on mobile devices."] }];
+const APP_UPDATES = [{ version: "v2.9.8", date: "March 3, 2026", changes: ["Added a Smart Quran Search bar above the reader. You can now instantly search for specific verses (e.g. '3:22') or fuzzy-search Surah names (e.g. 'surah fatiha', 'bani israeel').", "Added automatic smooth-scrolling and highlighting when jumping to a specific verse."] }, { version: "v2.9.7", date: "March 3, 2026", changes: ["Pivoted to Scheherazade New as the default Quranic font. This provides a flawless, traditional Naskh calligraphy experience that is 100% immune to browser security blocks and dotted-circle rendering bugs."] }, { version: "v2.8.0", date: "March 3, 2026", changes: ["Maintained Amiri and XB Zar as robust alternative font options."] }];
 const CLUSTER_COLORS = ['#10b981', '#8b5cf6', '#f59e0b', '#f43f5e', '#3b82f6'];
 const SOURCES = ["All Twelver Sources", "al-Kafi", "Bihar al-Anwar", "Basa'ir al-Darajat"];
 
@@ -177,9 +177,111 @@ const QuranReader = ({ activeFontFamily, fontStyle, setFontStyle }) => {
   const [showSurahMenu, setShowSurahMenu] = useState(false);
   const [showSettingsMenu, setShowSettingsMenu] = useState(false);
 
-  const surahs = [];
-  for (let i = 1; i <= 114; i++) { if (quranData[`${i}:1`]) surahs.push({ id: i, enName: quranData[`${i}:1`].surahName, arName: quranData[`${i}:1`].surahArName }); }
+  // Search State
+  const [quranSearchQuery, setQuranSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState([]);
+  const [targetVerse, setTargetVerse] = useState(null);
 
+  // Initialize Surah List
+  const surahs = useMemo(() => {
+    const list = [];
+    for (let i = 1; i <= 114; i++) {
+      if (quranData[`${i}:1`]) {
+        list.push({ id: i, enName: quranData[`${i}:1`].surahName, arName: quranData[`${i}:1`].surahArName });
+      }
+    }
+    return list;
+  }, []);
+
+  // Historic Surah Aliases Mapping
+  const surahAliases = {
+    1: ["fatiha", "fatihah", "hamd"],
+    9: ["tawbah", "baraah", "bara'ah", "tawba"],
+    17: ["isra", "bani israel", "bani israeel"],
+    40: ["ghafir", "mumin", "mu'min"],
+    41: ["fussilat", "ha mim sajdah"],
+    47: ["muhammad", "qital"],
+    76: ["insan", "dahr"],
+    94: ["sharh", "inshirah"],
+    111: ["masad", "lahab"]
+  };
+
+  // Normalization logic for fuzzy search
+  const normalize = (str) => {
+    if (!str) return '';
+    return str.toLowerCase()
+      .replace(/^(surah|sura)\s+/i, '')
+      .replace(/^al-/i, '')
+      .replace(/[^a-z0-9]/g, '')
+      .replace(/ee/g, 'i')
+      .replace(/oo/g, 'u')
+      .replace(/aa/g, 'a')
+      .replace(/ah$/g, 'a');
+  };
+
+  const searchableSurahs = useMemo(() => {
+    return surahs.map(s => {
+      let terms = [normalize(s.enName)];
+      if (surahAliases[s.id]) {
+        terms = [...terms, ...surahAliases[s.id].map(normalize)];
+      }
+      return { ...s, terms };
+    });
+  }, [surahs]);
+
+  const getMaxVerses = (surahId) => {
+    let aIdx = 1;
+    while (quranData[`${surahId}:${aIdx}`]) aIdx++;
+    return aIdx - 1;
+  };
+
+  const handleSearchChange = (val) => {
+    setQuranSearchQuery(val);
+    if (!val.trim()) {
+      setSearchResults([]);
+      return;
+    }
+
+    const query = val.trim();
+    const numMatch = query.match(/^(\d+)\s*:\s*(\d+)$/);
+    let results = [];
+
+    // User is searching for a specific verse (e.g., 3:22)
+    if (numMatch) {
+      const sId = parseInt(numMatch[1]);
+      const vId = parseInt(numMatch[2]);
+      if (sId >= 1 && sId <= 114) {
+        const maxV = getMaxVerses(sId);
+        if (vId >= 1 && vId <= maxV) {
+          results.push({ type: 'verse', surahId: sId, verseId: vId, label: `Surah ${surahs.find(s => s.id === sId)?.enName}, Verse ${vId}` });
+        }
+      }
+    } else {
+      // User is searching by name
+      const normQuery = normalize(query);
+      searchableSurahs.forEach(s => {
+        if (s.terms.some(t => t.includes(normQuery))) {
+          results.push({ type: 'surah', surahId: s.id, label: `${s.id}. Surah ${s.enName}` });
+        }
+      });
+    }
+    setSearchResults(results.slice(0, 5)); // Return top 5
+  };
+
+  const handleSelectResult = (res) => {
+    setQuranSearchQuery('');
+    setSearchResults([]);
+    setSelectedSurah(res.surahId);
+
+    if (res.type === 'verse') {
+      setReadingMode('verse'); // Force verse mode to ensure clean scrolling
+      setTargetVerse(res.verseId);
+    } else {
+      setTargetVerse(1); // Scroll to top
+    }
+  };
+
+  // Fetch Ayahs for current Surah
   const ayahsRaw = []; let aIdx = 1;
   while (quranData[`${selectedSurah}:${aIdx}`]) { ayahsRaw.push(quranData[`${selectedSurah}:${aIdx}`]); aIdx++; }
 
@@ -199,12 +301,59 @@ const QuranReader = ({ activeFontFamily, fontStyle, setFontStyle }) => {
     return { ...ayah, ar: arText };
   });
 
+  // Smooth Scroll Effect for Jump-to-Verse
+  useEffect(() => {
+    if (targetVerse && ayahs.length > 0) {
+      setTimeout(() => {
+        const el = document.getElementById(`verse-${selectedSurah}-${targetVerse}`);
+        if (el) {
+          el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          el.classList.add('bg-amber-500/20', 'dark:bg-amber-500/30');
+          setTimeout(() => {
+            el.classList.remove('bg-amber-500/20', 'dark:bg-amber-500/30');
+          }, 2000);
+        }
+        setTargetVerse(null);
+      }, 100); // 100ms delay ensures DOM paints before scrolling
+    }
+  }, [selectedSurah, targetVerse, readingMode, ayahs]);
+
   return (
     <div className="w-full max-w-4xl px-4 sm:px-6 pt-24 sm:pt-28 pb-12 h-full overflow-y-auto pointer-events-auto hide-scroll flex flex-col items-center">
 
-      {(showSurahMenu || showSettingsMenu) && (
-        <div className="fixed inset-0 z-[60] pointer-events-auto" onClick={() => { setShowSurahMenu(false); setShowSettingsMenu(false); }} />
+      {/* Invisible overlay to close dropdowns */}
+      {(showSurahMenu || showSettingsMenu || searchResults.length > 0) && (
+        <div className="fixed inset-0 z-[60] pointer-events-auto" onClick={() => { setShowSurahMenu(false); setShowSettingsMenu(false); setSearchResults([]); }} />
       )}
+
+      {/* SEARCH BAR UI */}
+      <div className="w-full relative mb-4 sm:mb-6 z-[70]">
+        <div className="flex items-center bg-white/40 dark:bg-black/30 backdrop-blur-sm border border-slate-300/50 dark:border-slate-800 rounded-2xl px-4 py-3 sm:py-3.5 shadow-sm transition-all focus-within:border-amber-500/50 dark:focus-within:border-amber-500/50 focus-within:bg-white/60 dark:focus-within:bg-black/50">
+          <Search className="w-4 h-4 sm:w-5 sm:h-5 text-slate-400 mr-3 shrink-0" />
+          <input
+            type="text"
+            value={quranSearchQuery}
+            onChange={(e) => handleSearchChange(e.target.value)}
+            placeholder="Search Surah (e.g. Baqarah) or Verse (e.g. 2:255)..."
+            className="w-full bg-transparent border-none outline-none text-slate-800 dark:text-slate-200 placeholder:text-slate-500 text-sm sm:text-base font-medium"
+          />
+          {quranSearchQuery && <button onClick={() => { setQuranSearchQuery(''); setSearchResults([]); }} className="p-1 hover:bg-slate-200 dark:hover:bg-slate-800 rounded-full transition-colors"><X className="w-4 h-4 text-slate-400" /></button>}
+        </div>
+
+        {/* SEARCH AUTOCOMPLETE DROPDOWN */}
+        <AnimatePresence>
+          {searchResults.length > 0 && (
+            <motion.div initial={{ opacity: 0, y: -5 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -5 }} className="absolute left-0 top-full mt-2 w-full bg-[#f4ecd8] dark:bg-[#1a1a1a] border border-slate-300 dark:border-slate-700 rounded-xl shadow-xl z-[75] overflow-hidden smart-scrollbar">
+              {searchResults.map((res, i) => (
+                <div key={i} onClick={() => handleSelectResult(res)} className="px-4 py-3.5 cursor-pointer border-b last:border-b-0 border-slate-200 dark:border-slate-800 hover:bg-amber-200/40 dark:hover:bg-amber-900/30 transition-colors flex items-center justify-between group">
+                  <span className="text-sm font-bold text-slate-800 dark:text-slate-200 group-hover:text-amber-900 dark:group-hover:text-amber-500 transition-colors">{res.label}</span>
+                  <span className="text-[10px] uppercase tracking-widest text-amber-600 dark:text-amber-500 font-bold opacity-80">{res.type}</span>
+                </div>
+              ))}
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
 
       <div className="w-full bg-white/40 dark:bg-black/30 backdrop-blur-sm p-4 sm:p-5 rounded-2xl mb-12 border border-slate-300/50 dark:border-slate-800 shadow-sm flex flex-col md:flex-row items-center justify-between gap-4 relative z-[65]">
 
@@ -296,7 +445,11 @@ const QuranReader = ({ activeFontFamily, fontStyle, setFontStyle }) => {
       {readingMode === 'flow' ? (
         <div className="w-full pb-10 max-w-4xl mx-auto px-2 sm:px-0">
           <div className="font-arabic text-3xl sm:text-4xl lg:text-[42px] text-right leading-[2.4] sm:leading-[2.6] text-slate-900 dark:text-slate-100 mb-12 text-justify" dir="rtl" lang="ar" style={{ fontFamily: activeFontFamily, fontVariantLigatures: 'normal', fontFeatureSettings: '"ccmp" 1, "mark" 1, "mkmk" 1' }}>
-            {ayahs.map((ayah, idx) => (<span key={`ar-${idx}`} className="inline">{ayah.ar} <span className="text-amber-700 dark:text-amber-500 opacity-80 text-xl mx-2 font-sans">﴾{toArabicNum(idx + 1)}﴿</span></span>))}
+            {ayahs.map((ayah, idx) => (
+              <span id={`verse-${selectedSurah}-${idx + 1}`} key={`ar-${idx}`} className="inline rounded-lg transition-colors duration-1000">
+                {ayah.ar} <span className="text-amber-700 dark:text-amber-500 opacity-80 text-xl mx-2 font-sans">﴾{toArabicNum(idx + 1)}﴿</span>
+              </span>
+            ))}
           </div>
           <AnimatePresence>
             {showTranslation && (
@@ -313,8 +466,8 @@ const QuranReader = ({ activeFontFamily, fontStyle, setFontStyle }) => {
       ) : (
         <div className="w-full flex flex-col pb-10">
           {ayahs.map((ayah, idx) => (
-            <div key={idx} className="py-8 sm:py-10 border-b border-[#d4c5b0] dark:border-[#2a2a2a] first:pt-0 relative group flex flex-col sm:block">
-              <div className="mb-4 sm:mb-0 sm:absolute sm:top-12 sm:left-0">
+            <div id={`verse-${selectedSurah}-${idx + 1}`} key={idx} className="py-8 sm:py-10 border-b border-[#d4c5b0] dark:border-[#2a2a2a] first:pt-0 relative group flex flex-col sm:block rounded-xl transition-colors duration-1000 px-2 sm:px-4">
+              <div className="mb-4 sm:mb-0 sm:absolute sm:top-12 sm:left-4">
                 <span className="text-[10px] sm:text-xs font-mono font-bold text-amber-900 dark:text-amber-500 bg-[#eaddc6] dark:bg-[#1a1a1a] border border-[#d4c5b0] dark:border-[#333] px-2 py-1 rounded shadow-sm inline-block">
                   {selectedSurah}:{idx + 1}
                 </span>
@@ -357,7 +510,6 @@ export default function App() {
 
   const [showMobileMenu, setShowMobileMenu] = useState(false);
 
-  // Set Scheherazade New as the bulletproof default
   const [fontStyle, setFontStyle] = useState('scheherazade');
 
   // THE ROCK SOLID FONT MAP - Guaranteed not to fail.
@@ -671,7 +823,7 @@ export default function App() {
                   <button onClick={() => setQuranPopup(null)} className="p-2 hover:bg-slate-200 dark:hover:bg-slate-800 rounded-full transition-colors cursor-pointer shrink-0"><X className="w-5 h-5 text-slate-500" /></button>
                 </div>
                 <div className="p-6 sm:p-8 overflow-y-auto flex-grow smart-scrollbar">
-                  <div className="mb-6"><p className="font-arabic text-3xl sm:text-4xl text-right leading-[2.2] text-slate-800 dark:text-slate-100" dir="rtl" lang="ar" style={{ fontFamily: activeFontFamily, fontVariantLigatures: 'normal', fontFeatureSettings: '"ccmp" 1, "mark" 1, "mkmk" 1' }}>{quranPopup.data.ar}</p></div>
+                  <div className="mb-6"><p className="font-arabic text-3xl sm:text-4xl text-right leading-[2.2] text-slate-800 dark:text-slate-100" dir="rtl" lang="ar" style={{ fontFamily: activeFontFamily }}>{quranPopup.data.ar}</p></div>
                   <div className="border-t border-slate-100 dark:border-slate-800 pt-6"><p className="text-base sm:text-lg text-slate-600 dark:text-slate-300 leading-relaxed font-serif">{quranPopup.data.en}</p></div>
                 </div>
               </motion.div>
