@@ -7,18 +7,13 @@ const APP_UPDATES = [{ version: "v3.1.0", date: "March 3, 2026", changes: ["Bran
 const CLUSTER_COLORS = ['#10b981', '#8b5cf6', '#f59e0b', '#f43f5e', '#3b82f6'];
 const SOURCES = ["All Twelver Sources", "al-Kafi", "Bihar al-Anwar", "Basa'ir al-Darajat"];
 
-// --- CUSTOM KISA BRAND EMBLEM ---
+// --- PREMIUM GEOMETRIC KAF MONOGRAM ---
 const KisaLogo = ({ className }) => (
   <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className={className}>
-    {/* The Enclosing Arc (The Cloak) */}
-    <path d="M6.5 17.5 A 8 8 0 1 1 17.5 17.5" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" />
-
-    {/* The Five Nodes (Sacred Centre) */}
-    <circle cx="12" cy="8" r="1.5" fill="currentColor" stroke="none" />
-    <circle cx="8.5" cy="11" r="1.5" fill="currentColor" stroke="none" />
-    <circle cx="15.5" cy="11" r="1.5" fill="currentColor" stroke="none" />
-    <circle cx="10" cy="15" r="1.5" fill="currentColor" stroke="none" />
-    <circle cx="14" cy="15" r="1.5" fill="currentColor" stroke="none" />
+    {/* Main Outer Structure of the Kaf */}
+    <path d="M18 4V18.5C18 19.3284 17.3284 20 16.5 20H6.5C5.67157 20 5 19.3284 5 18.5V14" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+    {/* Inner Mini-Kaf (Hamza-style geometric zigzag) */}
+    <path d="M13.5 8.5L9.5 11L12.5 13.5L8.5 16" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
   </svg>
 );
 
