@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Search, Moon, Sun, Sparkles, X, ChevronRight, ChevronLeft, Home, Copy, ChevronDown, ChevronUp, List, Layout, Info, BookOpen, History, HelpCircle, Database, Filter, Share2, Check, Settings2, Menu } from 'lucide-react';
 import quranData from './quran.json';
 
-const APP_UPDATES = [{ version: "v2.7.0", date: "March 3, 2026", changes: ["Mobile Polish: Decluttered the top navigation bar by moving secondary icons into an elegant mobile menu.", "Fixed the alignment of the Quran control buttons on mobile devices so they no longer wrap awkwardly."] }, { version: "v2.6.0", date: "March 3, 2026", changes: ["Decluttered the Quran reader UI by moving Font and Translation settings into a minimalist 'Customise' menu.", "Replaced the native OS Surah dropdown with a custom, theme-aware menu that features orange/amber hover states instead of system blue."] }, { version: "v2.5.0", date: "March 3, 2026", changes: ["Fixed overlapping map nodes with an inward-stagger layout.", "Restored beautiful multi-line text wrapping for long node labels."] }];
+const APP_UPDATES = [{ version: "v2.7.1", date: "March 3, 2026", changes: ["Bug Fix: Fixed an overlapping z-index issue that made mobile menu buttons unclickable.", "Increased the tap target size for mobile menu items."] }, { version: "v2.7.0", date: "March 3, 2026", changes: ["Mobile Polish: Decluttered the top navigation bar by moving secondary icons into an elegant mobile menu.", "Fixed the alignment of the Quran control buttons on mobile devices so they no longer wrap awkwardly."] }, { version: "v2.6.0", date: "March 3, 2026", changes: ["Decluttered the Quran reader UI by moving Font and Translation settings into a minimalist 'Customise' menu.", "Replaced the native OS Surah dropdown with a custom, theme-aware menu."] }];
 const CLUSTER_COLORS = ['#10b981', '#8b5cf6', '#f59e0b', '#f43f5e', '#3b82f6'];
 const SOURCES = ["All Twelver Sources", "al-Kafi", "Bihar al-Anwar", "Basa'ir al-Darajat"];
 
@@ -199,7 +199,7 @@ const QuranReader = ({ activeFontFamily, fontStyle, setFontStyle }) => {
     <div className="w-full max-w-4xl px-4 sm:px-6 pt-24 sm:pt-28 pb-12 h-full overflow-y-auto pointer-events-auto hide-scroll flex flex-col items-center">
 
       {(showSurahMenu || showSettingsMenu) && (
-        <div className="fixed inset-0 z-[60]" onClick={() => { setShowSurahMenu(false); setShowSettingsMenu(false); }} />
+        <div className="fixed inset-0 z-[60] pointer-events-auto" onClick={() => { setShowSurahMenu(false); setShowSettingsMenu(false); }} />
       )}
 
       <div className="w-full bg-white/40 dark:bg-black/30 backdrop-blur-sm p-4 sm:p-5 rounded-2xl mb-12 border border-slate-300/50 dark:border-slate-800 shadow-sm flex flex-col md:flex-row items-center justify-between gap-4 relative z-[65]">
@@ -232,6 +232,7 @@ const QuranReader = ({ activeFontFamily, fontStyle, setFontStyle }) => {
         </div>
 
         <div className="flex w-full md:w-auto items-center justify-between md:justify-end gap-3 relative">
+
           <div className="flex items-center bg-white/60 dark:bg-slate-900/60 p-1 rounded-lg border border-slate-300 dark:border-slate-700 shadow-sm">
             <button onClick={() => setReadingMode('verse')} className={`px-3 py-1.5 rounded-md text-[10px] sm:text-xs font-bold uppercase tracking-wider transition-colors cursor-pointer ${readingMode === 'verse' ? 'bg-amber-700 dark:bg-amber-600 text-white shadow-md' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'}`}>Verse</button>
             <button onClick={() => setReadingMode('flow')} className={`px-3 py-1.5 rounded-md text-[10px] sm:text-xs font-bold uppercase tracking-wider transition-colors cursor-pointer ${readingMode === 'flow' ? 'bg-amber-700 dark:bg-amber-600 text-white shadow-md' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'}`}>Flow</button>
@@ -248,14 +249,17 @@ const QuranReader = ({ activeFontFamily, fontStyle, setFontStyle }) => {
             <AnimatePresence>
               {showSettingsMenu && (
                 <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="absolute right-0 top-full mt-2 w-[220px] bg-[#f4ecd8] dark:bg-[#1a1a1a] border border-slate-300 dark:border-slate-700 rounded-xl shadow-xl z-[70] p-4 flex flex-col gap-4">
+
                   <div>
                     <p className="text-[10px] uppercase tracking-widest font-bold text-slate-500 dark:text-slate-400 mb-2">Quranic Font</p>
                     <div className="flex flex-col gap-1">
-                      <button onClick={() => { setFontStyle('uthmani'); setShowSettingsMenu(false); }} className={`text-left px-3 py-2 rounded-md text-sm transition-colors cursor-pointer ${fontStyle === 'uthmani' ? 'bg-amber-200/60 dark:bg-amber-900/40 text-amber-900 dark:text-amber-500 font-bold' : 'text-slate-700 dark:text-slate-300 hover:bg-black/5 dark:hover:bg-white/5'}`}>Uthmani</button>
-                      <button onClick={() => { setFontStyle('xbzar'); setShowSettingsMenu(false); }} className={`text-left px-3 py-2 rounded-md text-sm transition-colors cursor-pointer ${fontStyle === 'xbzar' ? 'bg-amber-200/60 dark:bg-amber-900/40 text-amber-900 dark:text-amber-500 font-bold' : 'text-slate-700 dark:text-slate-300 hover:bg-black/5 dark:hover:bg-white/5'}`}>XB Zar</button>
+                      <button onClick={() => { setFontStyle('uthmani'); setShowSettingsMenu(false); }} className={`w-full text-left px-3 py-2 rounded-md text-sm transition-colors cursor-pointer ${fontStyle === 'uthmani' ? 'bg-amber-200/60 dark:bg-amber-900/40 text-amber-900 dark:text-amber-500 font-bold' : 'text-slate-700 dark:text-slate-300 hover:bg-black/5 dark:hover:bg-white/5'}`}>Uthmani</button>
+                      <button onClick={() => { setFontStyle('xbzar'); setShowSettingsMenu(false); }} className={`w-full text-left px-3 py-2 rounded-md text-sm transition-colors cursor-pointer ${fontStyle === 'xbzar' ? 'bg-amber-200/60 dark:bg-amber-900/40 text-amber-900 dark:text-amber-500 font-bold' : 'text-slate-700 dark:text-slate-300 hover:bg-black/5 dark:hover:bg-white/5'}`}>XB Zar</button>
                     </div>
                   </div>
+
                   <hr className="border-slate-300 dark:border-slate-700" />
+
                   <div>
                     <p className="text-[10px] uppercase tracking-widest font-bold text-slate-500 dark:text-slate-400 mb-2">Translation</p>
                     <button onClick={() => setShowTranslation(!showTranslation)} className={`w-full text-left px-3 py-2 rounded-md text-sm transition-colors cursor-pointer flex items-center justify-between ${showTranslation ? 'bg-amber-200/60 dark:bg-amber-900/40 text-amber-900 dark:text-amber-500 font-bold' : 'text-slate-700 dark:text-slate-300 hover:bg-black/5 dark:hover:bg-white/5'}`}>
@@ -265,6 +269,7 @@ const QuranReader = ({ activeFontFamily, fontStyle, setFontStyle }) => {
                       </div>
                     </button>
                   </div>
+
                 </motion.div>
               )}
             </AnimatePresence>
@@ -447,34 +452,30 @@ export default function App() {
         .dark .smart-scrollbar::-webkit-scrollbar-thumb:hover { background-color: rgba(203, 213, 225, 0.8) !important; }
       `}</style>
 
-      {showMobileMenu && <div className="fixed inset-0 z-[55]" onClick={() => setShowMobileMenu(false)} />}
+      {showMobileMenu && <div className="fixed inset-0 z-[70] pointer-events-auto" onClick={() => setShowMobileMenu(false)} />}
 
-      <header className="fixed top-0 w-full z-50 p-4 sm:p-6 flex justify-between items-center pointer-events-none">
+      <header className="fixed top-0 w-full z-[75] p-4 sm:p-6 flex justify-between items-center pointer-events-none">
         <div className="flex items-center gap-3">
           <div className={`w-10 h-10 rounded-full flex items-center justify-center ${activeTab === 'search' && isKeyword ? 'bg-blue-500/10 border border-blue-500/20 shadow-sm' : 'glass-panel border-slate-400/20'}`}>
             {activeTab === 'quran' ? <BookOpen className="w-5 h-5 text-amber-700 dark:text-amber-500" /> : (isKeyword ? <Database className="w-5 h-5 text-blue-500" /> : <Sparkles className="w-5 h-5 text-[var(--color-cluster-emerald)]" />)}
           </div>
           <div>
             <h1 className="font-sans font-bold text-lg sm:text-xl tracking-tight hidden sm:block">Concept Atlas</h1>
-            <div className="flex items-center gap-2 sm:mt-0.5">
-              <p className="font-sans text-[10px] sm:text-xs opacity-60 hidden sm:block">{activeTab === 'quran' ? 'Quran Reader' : (isKeyword ? 'Database Index' : 'Semantic Explorer')}</p>
-              <span className="hidden sm:block w-1 h-1 rounded-full bg-slate-300 dark:bg-slate-600"></span>
-              <button onClick={() => setShowUpdates(true)} className={`hidden sm:flex pointer-events-auto text-[10px] font-bold uppercase tracking-wider transition-colors cursor-pointer items-center gap-1 px-1.5 py-0.5 rounded-md ${activeTab === 'search' && isKeyword ? 'text-blue-500 bg-blue-500/10 hover:text-blue-600' : 'text-indigo-500 bg-indigo-500/10 hover:text-indigo-600'}`}><Sparkles className="w-3 h-3" />What's New</button>
-            </div>
+            <div className="flex items-center gap-2 sm:mt-0.5"><p className="font-sans text-[10px] sm:text-xs opacity-60 hidden sm:block">{activeTab === 'quran' ? 'Quran Reader' : (isKeyword ? 'Database Index' : 'Semantic Explorer')}</p><span className="hidden sm:block w-1 h-1 rounded-full bg-slate-300 dark:bg-slate-600"></span><button onClick={() => setShowUpdates(true)} className={`hidden sm:flex pointer-events-auto text-[10px] font-bold uppercase tracking-wider transition-colors cursor-pointer items-center gap-1 px-1.5 py-0.5 rounded-md ${activeTab === 'search' && isKeyword ? 'text-blue-500 bg-blue-500/10 hover:text-blue-600' : 'text-indigo-500 bg-indigo-500/10 hover:text-indigo-600'}`}><Sparkles className="w-3 h-3" />What's New</button></div>
           </div>
         </div>
 
-        <div className="flex items-center gap-2 sm:gap-4 relative z-50 pointer-events-auto">
+        <div className="flex items-center gap-2 sm:gap-4 relative z-[75] pointer-events-auto">
 
           <div className={`flex items-center rounded-full p-1 mr-2 ${activeTab === 'quran' ? 'bg-white/40 dark:bg-slate-800/50 backdrop-blur-md shadow-sm border border-slate-300/30 dark:border-slate-700' : 'glass-panel border-white/20'}`}>
             <button onClick={() => setActiveTab('search')} className={`p-2 rounded-full transition-all duration-300 cursor-pointer ${activeTab === 'search' ? 'bg-indigo-500/20 text-indigo-500 dark:text-indigo-400' : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}`} title="Search Engine"><Search className="w-4 h-4" /></button>
             <button onClick={() => setActiveTab('quran')} className={`p-2 rounded-full transition-all duration-300 cursor-pointer ${activeTab === 'quran' ? 'bg-amber-600/20 text-amber-800 dark:text-amber-500' : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}`} title="Quran Reader"><BookOpen className="w-4 h-4" /></button>
           </div>
 
-          {/* Desktop Only Icons */}
+          {/* Desktop Nav */}
           <div className="hidden md:flex items-center gap-2 sm:gap-4">
             {activeTab === 'search' && data && !isKeyword && (<div className="flex items-center glass-panel rounded-full p-1 border-white/20"><button onClick={() => setViewMode('map')} className={`p-2 rounded-full transition-all duration-300 cursor-pointer ${viewMode === 'map' ? 'bg-indigo-500/20 text-indigo-400' : 'text-slate-500 hover:text-slate-300'}`}><Layout className="w-4 h-4" /></button><button onClick={() => setViewMode('list')} className={`p-2 rounded-full transition-all duration-300 cursor-pointer ${viewMode === 'list' ? 'bg-indigo-500/20 text-indigo-400' : 'text-slate-500 hover:text-slate-300'}`}><List className="w-4 h-4" /></button></div>)}
-            <AnimatePresence>{activeTab === 'search' && data && (<motion.button initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} onClick={() => { setData(null); setQuery(''); setActiveCluster(null); setHoveredCluster(null); window.history.pushState({}, '', window.location.pathname); }} className="w-10 h-10 sm:w-11 sm:h-11 rounded-full bg-white/0 flex items-center justify-center group transition-all duration-300 hover:scale-110 cursor-pointer"><Home className="w-5 h-5 text-slate-400 group-hover:text-slate-900 dark:text-slate-500 dark:group-hover:text-white" /></motion.button>)}</AnimatePresence>
+            <AnimatePresence>{activeTab === 'search' && data && (<motion.button initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} onClick={() => { setData(null); setQuery(''); setActiveCluster(null); window.history.pushState({}, '', window.location.pathname); }} className="w-10 h-10 sm:w-11 sm:h-11 rounded-full bg-white/0 flex items-center justify-center group transition-all duration-300 hover:scale-110 cursor-pointer"><Home className="w-5 h-5 text-slate-400 group-hover:text-slate-900 dark:text-slate-500 dark:group-hover:text-white" /></motion.button>)}</AnimatePresence>
             {activeTab === 'search' && (<button onClick={() => { navigator.clipboard.writeText(window.location.href); setCopiedLink(true); setTimeout(() => setCopiedLink(false), 2000); }} className={`w-10 h-10 sm:w-11 sm:h-11 rounded-full flex items-center justify-center group transition-all duration-300 hover:scale-110 cursor-pointer ${copiedLink ? 'text-emerald-500' : `text-slate-400 ${isKeyword ? 'hover:text-blue-500' : 'hover:text-indigo-500'}`}`}><Share2 className="w-5 h-5" /></button>)}
             <button onClick={() => setShowInfo(true)} className="w-10 h-10 sm:w-11 sm:h-11 rounded-full flex items-center justify-center group transition-all duration-300 hover:scale-110 cursor-pointer"><HelpCircle className={`w-5 h-5 text-slate-400 ${activeTab === 'search' && isKeyword ? 'group-hover:text-blue-500' : 'group-hover:text-indigo-500'}`} /></button>
             <button onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')} className="w-10 h-10 sm:w-11 sm:h-11 rounded-full flex items-center justify-center group transition-all duration-300 hover:scale-110 cursor-pointer">{theme === 'dark' ? <Sun className="w-5 h-5 text-slate-500 group-hover:text-yellow-400" /> : <Moon className="w-5 h-5 text-slate-400 group-hover:text-slate-900" />}</button>
@@ -482,18 +483,18 @@ export default function App() {
 
           {/* Mobile Hamburger Menu */}
           <div className="md:hidden relative">
-            <button onClick={() => setShowMobileMenu(!showMobileMenu)} className={`w-10 h-10 rounded-full flex items-center justify-center transition-all duration-300 ${activeTab === 'quran' ? 'bg-white/40 dark:bg-slate-800/50 backdrop-blur-md shadow-sm border border-slate-300/30 dark:border-slate-700 text-slate-600 dark:text-slate-300' : 'glass-panel border-white/20 text-slate-500 dark:text-slate-400'}`}>
+            <button onClick={() => setShowMobileMenu(!showMobileMenu)} className={`w-10 h-10 rounded-full flex items-center justify-center transition-all duration-300 cursor-pointer ${activeTab === 'quran' ? 'bg-white/40 dark:bg-slate-800/50 backdrop-blur-md shadow-sm border border-slate-300/30 dark:border-slate-700 text-slate-600 dark:text-slate-300' : 'glass-panel border-white/20 text-slate-500 dark:text-slate-400'}`}>
               <Menu className="w-5 h-5" />
             </button>
 
             <AnimatePresence>
               {showMobileMenu && (
-                <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className={`absolute right-0 top-full mt-2 w-48 rounded-xl shadow-xl p-2 flex flex-col gap-1 z-[60] ${activeTab === 'quran' ? 'bg-[#f4ecd8] dark:bg-[#1a1a1a] border border-slate-300 dark:border-slate-700' : 'bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800'}`}>
-                  {activeTab === 'search' && data && <button onClick={() => { setData(null); setQuery(''); setActiveCluster(null); setShowMobileMenu(false); }} className="flex items-center gap-3 p-3 rounded-lg text-sm text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10"><Home className="w-4 h-4" /> Reset Search</button>}
-                  {activeTab === 'search' && <button onClick={() => { navigator.clipboard.writeText(window.location.href); setCopiedLink(true); setTimeout(() => { setCopiedLink(false); setShowMobileMenu(false); }, 1000); }} className={`flex items-center gap-3 p-3 rounded-lg text-sm ${copiedLink ? 'text-emerald-500' : 'text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'}`}><Share2 className="w-4 h-4" /> Share Link</button>}
-                  <button onClick={() => { setShowUpdates(true); setShowMobileMenu(false); }} className="flex items-center gap-3 p-3 rounded-lg text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"><Sparkles className="w-4 h-4" /> What's New</button>
-                  <button onClick={() => { setShowInfo(true); setShowMobileMenu(false); }} className="flex items-center gap-3 p-3 rounded-lg text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"><HelpCircle className="w-4 h-4" /> Help & Guide</button>
-                  <button onClick={() => { setTheme(theme === 'dark' ? 'light' : 'dark'); setShowMobileMenu(false); }} className="flex items-center gap-3 p-3 rounded-lg text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800">{theme === 'dark' ? <Sun className="w-4 h-4 text-yellow-400" /> : <Moon className="w-4 h-4" />} Toggle Theme</button>
+                <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className={`absolute right-0 top-full mt-2 w-48 rounded-xl shadow-xl p-2 flex flex-col gap-1 z-[75] ${activeTab === 'quran' ? 'bg-[#f4ecd8] dark:bg-[#1a1a1a] border border-slate-300 dark:border-slate-700' : 'bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800'}`}>
+                  {activeTab === 'search' && data && <button onClick={() => { setData(null); setQuery(''); setActiveCluster(null); setShowMobileMenu(false); window.history.pushState({}, '', window.location.pathname); }} className="w-full text-left flex items-center gap-3 p-3 rounded-lg text-sm text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 cursor-pointer"><Home className="w-4 h-4 shrink-0" /> Reset Search</button>}
+                  {activeTab === 'search' && <button onClick={() => { navigator.clipboard.writeText(window.location.href); setCopiedLink(true); setTimeout(() => { setCopiedLink(false); setShowMobileMenu(false); }, 1000); }} className={`w-full text-left flex items-center gap-3 p-3 rounded-lg text-sm cursor-pointer ${copiedLink ? 'text-emerald-500' : 'text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'}`}><Share2 className="w-4 h-4 shrink-0" /> Share Link</button>}
+                  <button onClick={() => { setShowUpdates(true); setShowMobileMenu(false); }} className="w-full text-left flex items-center gap-3 p-3 rounded-lg text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer"><Sparkles className="w-4 h-4 shrink-0" /> What's New</button>
+                  <button onClick={() => { setShowInfo(true); setShowMobileMenu(false); }} className="w-full text-left flex items-center gap-3 p-3 rounded-lg text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer"><HelpCircle className="w-4 h-4 shrink-0" /> Help & Guide</button>
+                  <button onClick={() => { setTheme(theme === 'dark' ? 'light' : 'dark'); setShowMobileMenu(false); }} className="w-full text-left flex items-center gap-3 p-3 rounded-lg text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer">{theme === 'dark' ? <Sun className="w-4 h-4 shrink-0 text-amber-500" /> : <Moon className="w-4 h-4 shrink-0" />} Toggle Theme</button>
                 </motion.div>
               )}
             </AnimatePresence>
@@ -651,7 +652,7 @@ export default function App() {
                   <button onClick={() => setQuranPopup(null)} className="p-2 hover:bg-slate-200 dark:hover:bg-slate-800 rounded-full transition-colors cursor-pointer shrink-0"><X className="w-5 h-5 text-slate-500" /></button>
                 </div>
                 <div className="p-6 sm:p-8 overflow-y-auto flex-grow smart-scrollbar">
-                  <div className="mb-6"><p className="font-arabic text-3xl sm:text-4xl text-right leading-[2.2] text-slate-800 dark:text-slate-100" dir="rtl">{quranPopup.data.ar}</p></div>
+                  <div className="mb-6"><p className="font-arabic text-3xl sm:text-4xl text-right leading-[2.2] text-slate-800 dark:text-slate-100" dir="rtl" style={{ fontFamily: activeFontFamily }}>{quranPopup.data.ar}</p></div>
                   <div className="border-t border-slate-100 dark:border-slate-800 pt-6"><p className="text-base sm:text-lg text-slate-600 dark:text-slate-300 leading-relaxed font-serif">{quranPopup.data.en}</p></div>
                 </div>
               </motion.div>
