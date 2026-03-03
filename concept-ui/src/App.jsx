@@ -1,15 +1,16 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Search, Moon, Sun, Sparkles, X, ChevronRight, ChevronLeft, Home, Copy, ChevronDown, ChevronUp, List, Layout, Info, BookOpen, History, HelpCircle, Database, Filter, Share2, Book } from 'lucide-react';
+import { Search, Moon, Sun, Sparkles, X, ChevronRight, ChevronLeft, Home, Copy, ChevronDown, ChevronUp, List, Layout, Info, BookOpen, History, HelpCircle, Database, Filter, Share2, Check } from 'lucide-react';
 import quranData from './quran.json';
 
-const APP_UPDATES = [{ version: "v2.3.1", date: "March 3, 2026", changes: ["Bug Fixes: Restored Quran popup functionality from inside hadith cards.", "Fixed dark mode text contrast on the length filter buttons."] }, { version: "v2.3.0", date: "March 3, 2026", changes: ["Mobile Polish: Fixed an issue where scrolling felt 'stuck' on mobile devices.", "Quran verse reference boxes are now perfectly visible on phone screens.", "Long Quran popups now have proper internal scrolling and a sticky exit button."] }, { version: "v2.2.0", date: "March 3, 2026", changes: ["Converted all in-text verse numbers to native Arabic numerals.", "Smart Bismillah Detacher: The Bismillah is now properly separated from the first verse of every Surah and centered at the top of the page."] }];
+const APP_UPDATES = [{ version: "v2.4.0", date: "March 3, 2026", changes: ["Added visual 'Copied!' feedback to Hadith cards.", "Fixed overlapping map nodes with a staggered radial layout.", "Added XB Zar / Uthmani font toggle to the Quran reader.", "Replaced confusing UI icons with a clear open book for the Quran."] }, { version: "v2.3.0", date: "March 3, 2026", changes: ["Mobile Polish: Fixed an issue where scrolling felt 'stuck' on mobile devices.", "Quran verse reference boxes are now perfectly visible on phone screens.", "Long Quran popups now have proper internal scrolling and a sticky exit button."] }, { version: "v2.2.0", date: "March 3, 2026", changes: ["Converted all in-text verse numbers to native Arabic numerals.", "Smart Bismillah Detacher: The Bismillah is now properly separated from the first verse of every Surah and centered at the top of the page."] }];
 const CLUSTER_COLORS = ['#10b981', '#8b5cf6', '#f59e0b', '#f43f5e', '#3b82f6'];
 const SOURCES = ["All Twelver Sources", "al-Kafi", "Bihar al-Anwar", "Basa'ir al-Darajat"];
 
 const HadithCard = ({ item, handleCopyHadith, searchMode, onVerseClick }) => {
   const [showArabic, setShowArabic] = useState(false);
   const [showChain, setShowChain] = useState(false);
+  const [copied, setCopied] = useState(false);
   const isKeyword = searchMode === 'keyword';
 
   const getCleanData = () => {
@@ -93,6 +94,12 @@ const HadithCard = ({ item, handleCopyHadith, searchMode, onVerseClick }) => {
   const paragraphs = formatParagraphs(body);
   const textToCopy = chain ? `${chain}\n\n${paragraphs.join('\n\n')}` : paragraphs.join('\n\n');
 
+  const handleCopyClick = () => {
+    handleCopyHadith({ ...item, hadith_number: displayNum, english_text: textToCopy });
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
   const renderTextWithQuranLinks = (text) => {
     const regex = /\((\d+):(\d+)\)/g; const parts = []; let lastIndex = 0, match;
     while ((match = regex.exec(text)) !== null) {
@@ -145,8 +152,8 @@ const HadithCard = ({ item, handleCopyHadith, searchMode, onVerseClick }) => {
         ))}
       </div>
       <div className="mt-2 flex justify-end pt-4 border-t border-slate-50 dark:border-slate-700/50">
-        <button onClick={() => handleCopyHadith({ ...item, hadith_number: displayNum, english_text: textToCopy })} className={`flex items-center gap-2 text-xs font-mono transition-colors px-3 py-1.5 rounded-md cursor-pointer ${isKeyword ? 'text-slate-500 hover:text-blue-500 hover:bg-slate-200/50 dark:hover:bg-slate-700/50' : 'text-slate-400 hover:text-indigo-500 hover:bg-slate-100 dark:hover:bg-slate-700/50'}`}>
-          <Copy className="w-4 h-4" /><span>Copy Text</span>
+        <button onClick={handleCopyClick} className={`flex items-center gap-2 text-xs font-mono transition-colors px-3 py-1.5 rounded-md cursor-pointer ${copied ? 'text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-500/10' : (isKeyword ? 'text-slate-500 hover:text-blue-500 hover:bg-slate-200/50 dark:hover:bg-slate-700/50' : 'text-slate-400 hover:text-indigo-500 hover:bg-slate-100 dark:hover:bg-slate-700/50')}`}>
+          {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}<span>{copied ? 'Copied!' : 'Copy Text'}</span>
         </button>
       </div>
     </div>
@@ -162,6 +169,7 @@ const QuranReader = () => {
   const [selectedSurah, setSelectedSurah] = useState(1);
   const [showTranslation, setShowTranslation] = useState(true);
   const [readingMode, setReadingMode] = useState('verse');
+  const [fontStyle, setFontStyle] = useState('uthmani'); // 'uthmani' | 'xbzar'
 
   const surahs = [];
   for (let i = 1; i <= 114; i++) { if (quranData[`${i}:1`]) surahs.push({ id: i, enName: quranData[`${i}:1`].surahName, arName: quranData[`${i}:1`].surahArName }); }
@@ -185,13 +193,21 @@ const QuranReader = () => {
     return { ...ayah, ar: arText };
   });
 
+  const activeFontFamily = fontStyle === 'xbzar' ? '"XB Zar", "Amiri", serif' : 'inherit';
+
   return (
     <div className="w-full max-w-4xl px-4 sm:px-6 pt-24 sm:pt-28 pb-12 h-full overflow-y-auto pointer-events-auto hide-scroll flex flex-col items-center">
-      <div className="w-full bg-white/40 dark:bg-black/30 backdrop-blur-sm p-4 sm:p-5 rounded-2xl mb-12 border border-slate-300/50 dark:border-slate-800 shadow-sm flex flex-col sm:flex-row items-center justify-between gap-4">
-        <select value={selectedSurah} onChange={(e) => setSelectedSurah(Number(e.target.value))} className="w-full sm:w-[250px] bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-slate-800 dark:text-slate-100 text-sm rounded-lg px-4 py-2.5 outline-none focus:border-amber-600 dark:focus:border-amber-500 transition-colors font-medium shadow-sm">
+      <div className="w-full bg-white/40 dark:bg-black/30 backdrop-blur-sm p-4 sm:p-5 rounded-2xl mb-12 border border-slate-300/50 dark:border-slate-800 shadow-sm flex flex-col md:flex-row items-center justify-between gap-4">
+        <select value={selectedSurah} onChange={(e) => setSelectedSurah(Number(e.target.value))} className="w-full md:w-[250px] bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-slate-800 dark:text-slate-100 text-sm rounded-lg px-4 py-2.5 outline-none focus:border-amber-600 dark:focus:border-amber-500 transition-colors font-medium shadow-sm">
           {surahs.map(s => (<option key={s.id} value={s.id}>{s.id}. Surah {s.enName} ({s.arName})</option>))}
         </select>
-        <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto justify-end">
+
+        <div className="flex flex-wrap items-center gap-3 w-full md:w-auto justify-end">
+          <div className="flex items-center bg-white/60 dark:bg-slate-900/60 p-1 rounded-lg border border-slate-300 dark:border-slate-700 shadow-sm hidden sm:flex">
+            <button onClick={() => setFontStyle('uthmani')} className={`px-3 py-1.5 rounded-md text-[10px] sm:text-xs font-bold uppercase tracking-wider transition-colors cursor-pointer ${fontStyle === 'uthmani' ? 'bg-amber-700 dark:bg-amber-600 text-white shadow-md' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'}`}>Uthmani</button>
+            <button onClick={() => setFontStyle('xbzar')} className={`px-3 py-1.5 rounded-md text-[10px] sm:text-xs font-bold uppercase tracking-wider transition-colors cursor-pointer ${fontStyle === 'xbzar' ? 'bg-amber-700 dark:bg-amber-600 text-white shadow-md' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'}`}>XB Zar</button>
+          </div>
+
           <div className="flex items-center bg-white/60 dark:bg-slate-900/60 p-1 rounded-lg border border-slate-300 dark:border-slate-700 shadow-sm">
             <button onClick={() => setReadingMode('verse')} className={`px-3 py-1.5 rounded-md text-[10px] sm:text-xs font-bold uppercase tracking-wider transition-colors cursor-pointer ${readingMode === 'verse' ? 'bg-amber-700 dark:bg-amber-600 text-white shadow-md' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'}`}>Verse</button>
             <button onClick={() => setReadingMode('flow')} className={`px-3 py-1.5 rounded-md text-[10px] sm:text-xs font-bold uppercase tracking-wider transition-colors cursor-pointer ${readingMode === 'flow' ? 'bg-amber-700 dark:bg-amber-600 text-white shadow-md' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'}`}>Flow</button>
@@ -203,20 +219,20 @@ const QuranReader = () => {
       </div>
 
       <div className="text-center mb-10">
-        <h1 className="text-4xl sm:text-6xl font-arabic text-slate-900 dark:text-slate-50 mb-4 drop-shadow-sm">{surahs.find(s => s.id === selectedSurah)?.arName}</h1>
+        <h1 className="text-4xl sm:text-6xl font-arabic text-slate-900 dark:text-slate-50 mb-4 drop-shadow-sm" style={{ fontFamily: activeFontFamily }}>{surahs.find(s => s.id === selectedSurah)?.arName}</h1>
         <p className="text-amber-800 dark:text-amber-500 font-mono text-sm tracking-widest uppercase font-semibold">Surah {surahs.find(s => s.id === selectedSurah)?.enName}</p>
       </div>
 
       {surahBismillah && (
         <div className="text-center mb-12">
-          <h2 className="font-arabic text-3xl sm:text-4xl text-slate-800 dark:text-slate-200">{surahBismillah}</h2>
+          <h2 className="font-arabic text-3xl sm:text-4xl text-slate-800 dark:text-slate-200" style={{ fontFamily: activeFontFamily }}>{surahBismillah}</h2>
         </div>
       )}
 
       {readingMode === 'flow' ? (
         <div className="w-full pb-10 max-w-4xl mx-auto px-2 sm:px-0">
-          <div className="font-arabic text-3xl sm:text-4xl lg:text-[42px] text-right leading-[2.4] sm:leading-[2.6] text-slate-900 dark:text-slate-100 mb-12 text-justify" dir="rtl">
-            {ayahs.map((ayah, idx) => (<span key={`ar-${idx}`} className="inline">{ayah.ar} <span className="text-amber-700 dark:text-amber-500 opacity-80 text-xl mx-2">﴾{toArabicNum(idx + 1)}﴿</span></span>))}
+          <div className="font-arabic text-3xl sm:text-4xl lg:text-[42px] text-right leading-[2.4] sm:leading-[2.6] text-slate-900 dark:text-slate-100 mb-12 text-justify" dir="rtl" style={{ fontFamily: activeFontFamily }}>
+            {ayahs.map((ayah, idx) => (<span key={`ar-${idx}`} className="inline">{ayah.ar} <span className="text-amber-700 dark:text-amber-500 opacity-80 text-xl mx-2 font-sans">﴾{toArabicNum(idx + 1)}﴿</span></span>))}
           </div>
           <AnimatePresence>
             {showTranslation && (
@@ -240,7 +256,7 @@ const QuranReader = () => {
                 </span>
               </div>
               <div className="sm:pl-20">
-                <p className="font-arabic text-3xl sm:text-4xl lg:text-[40px] text-right leading-[2.4] sm:leading-[2.5] text-slate-900 dark:text-slate-100 mb-6" dir="rtl">{ayah.ar} <span className="text-amber-700 dark:text-amber-500 opacity-80 ml-2 text-xl">﴾{toArabicNum(idx + 1)}﴿</span></p>
+                <p className="font-arabic text-3xl sm:text-4xl lg:text-[40px] text-right leading-[2.4] sm:leading-[2.5] text-slate-900 dark:text-slate-100 mb-6" dir="rtl" style={{ fontFamily: activeFontFamily }}>{ayah.ar} <span className="text-amber-700 dark:text-amber-500 opacity-80 ml-2 text-xl font-sans">﴾{toArabicNum(idx + 1)}﴿</span></p>
                 <AnimatePresence>
                   {showTranslation && (
                     <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="overflow-hidden">
@@ -346,7 +362,13 @@ export default function App() {
   };
 
   const handleVerseClick = (surah, ayah) => { const key = `${surah}:${ayah}`; if (quranData && quranData[key]) setQuranPopup({ surah, ayah, data: quranData[key] }); };
-  const getRadialPosition = (index, total, rx, ry) => { const angle = (index * (360 / total) - 90) * (Math.PI / 180); return { x: Math.cos(angle) * rx, y: Math.sin(angle) * ry }; };
+
+  // FIXED STAGGERED MATH TO PREVENT OVERLAPPING NODES
+  const getRadialPosition = (index, total, rx, ry) => {
+    const angle = (index * (360 / total) - 90) * (Math.PI / 180);
+    const stagger = total > 4 && index % 2 !== 0 ? 50 : 0;
+    return { x: Math.cos(angle) * (rx + stagger), y: Math.sin(angle) * (ry + stagger) };
+  };
 
   const uniqueBooks = data ? Array.from(new Set(data.clusters.flatMap(c => c.items.map(item => item.book)))) : [];
   const isKeyword = searchMode === 'keyword';
@@ -363,6 +385,7 @@ export default function App() {
   return (
     <div className={`min-h-screen w-full overflow-hidden transition-colors duration-700 flex flex-col ${appBgClass}`}>
       <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&display=swap');
         .hide-scroll::-webkit-scrollbar { display: none; }
         .hide-scroll { -ms-overflow-style: none; scrollbar-width: none; -webkit-overflow-scrolling: touch; overscroll-behavior-y: contain; }
         .smart-scrollbar { --thumb-bg: transparent; scrollbar-width: thin; scrollbar-color: var(--thumb-bg) transparent; -webkit-overflow-scrolling: touch; overscroll-behavior-y: contain; }
@@ -375,7 +398,7 @@ export default function App() {
       <header className="fixed top-0 w-full z-50 p-4 sm:p-6 flex justify-between items-center pointer-events-none">
         <div className="flex items-center gap-3">
           <div className={`w-10 h-10 rounded-full flex items-center justify-center ${activeTab === 'search' && isKeyword ? 'bg-blue-500/10 border border-blue-500/20 shadow-sm' : 'glass-panel border-slate-400/20'}`}>
-            {activeTab === 'quran' ? <Book className="w-5 h-5 text-amber-700 dark:text-amber-500" /> : (isKeyword ? <Database className="w-5 h-5 text-blue-500" /> : <Sparkles className="w-5 h-5 text-[var(--color-cluster-emerald)]" />)}
+            {activeTab === 'quran' ? <BookOpen className="w-5 h-5 text-amber-700 dark:text-amber-500" /> : (isKeyword ? <Database className="w-5 h-5 text-blue-500" /> : <Sparkles className="w-5 h-5 text-[var(--color-cluster-emerald)]" />)}
           </div>
           <div>
             <h1 className="font-sans font-bold text-lg sm:text-xl tracking-tight hidden sm:block">Concept Atlas</h1>
@@ -385,7 +408,7 @@ export default function App() {
         <div className="flex items-center gap-2 sm:gap-4 relative z-50 pointer-events-auto">
           <div className={`flex items-center rounded-full p-1 mr-2 ${activeTab === 'quran' ? 'bg-white/40 dark:bg-slate-800/50 backdrop-blur-md shadow-sm border border-slate-300/30 dark:border-slate-700' : 'glass-panel border-white/20'}`}>
             <button onClick={() => setActiveTab('search')} className={`p-2 rounded-full transition-all duration-300 cursor-pointer ${activeTab === 'search' ? 'bg-indigo-500/20 text-indigo-500 dark:text-indigo-400' : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}`} title="Search Engine"><Search className="w-4 h-4" /></button>
-            <button onClick={() => setActiveTab('quran')} className={`p-2 rounded-full transition-all duration-300 cursor-pointer ${activeTab === 'quran' ? 'bg-amber-600/20 text-amber-800 dark:text-amber-500' : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}`} title="Quran Reader"><Book className="w-4 h-4" /></button>
+            <button onClick={() => setActiveTab('quran')} className={`p-2 rounded-full transition-all duration-300 cursor-pointer ${activeTab === 'quran' ? 'bg-amber-600/20 text-amber-800 dark:text-amber-500' : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}`} title="Quran Reader"><BookOpen className="w-4 h-4" /></button>
           </div>
           {activeTab === 'search' && data && !isKeyword && (<div className="flex items-center glass-panel rounded-full p-1 border-white/20"><button onClick={() => setViewMode('map')} className={`p-2 rounded-full transition-all duration-300 cursor-pointer ${viewMode === 'map' ? 'bg-indigo-500/20 text-indigo-400' : 'text-slate-500 hover:text-slate-300'}`}><Layout className="w-4 h-4" /></button><button onClick={() => setViewMode('list')} className={`p-2 rounded-full transition-all duration-300 cursor-pointer ${viewMode === 'list' ? 'bg-indigo-500/20 text-indigo-400' : 'text-slate-500 hover:text-slate-300'}`}><List className="w-4 h-4" /></button></div>)}
           <AnimatePresence>{activeTab === 'search' && data && (<motion.button initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} onClick={() => { setData(null); setQuery(''); setActiveCluster(null); setHoveredCluster(null); window.history.pushState({}, '', window.location.pathname); }} className="w-10 h-10 sm:w-11 sm:h-11 rounded-full bg-white/0 flex items-center justify-center group transition-all duration-300 hover:scale-110 cursor-pointer"><Home className="w-5 h-5 text-slate-400 group-hover:text-slate-900 dark:text-slate-500 dark:group-hover:text-white" /></motion.button>)}</AnimatePresence>
@@ -456,12 +479,12 @@ export default function App() {
                   </motion.div>
                   <svg className="absolute inset-0 w-full h-full pointer-events-none z-10">
                     {data.clusters.map((cluster, i) => {
-                      const rx = Math.min(Math.max(100, centerPos.x - 150), 450), ry = Math.min(Math.max(100, centerPos.y - 150), 300), pos = getRadialPosition(i, data.clusters.length, rx, ry), color = CLUSTER_COLORS[i % CLUSTER_COLORS.length], isActive = activeCluster === i, isHovered = hoveredCluster === i;
+                      const rx = Math.min(Math.max(150, centerPos.x - 150), 450), ry = Math.min(Math.max(150, centerPos.y - 150), 300), pos = getRadialPosition(i, data.clusters.length, rx, ry), color = CLUSTER_COLORS[i % CLUSTER_COLORS.length], isActive = activeCluster === i, isHovered = hoveredCluster === i;
                       return (<motion.line key={`line-${i}`} x1={centerPos.x} y1={centerPos.y} x2={centerPos.x + pos.x} y2={centerPos.y + pos.y} stroke={color} strokeWidth={isActive ? 2 : isHovered ? 1.5 : 1} strokeOpacity={isActive ? 0.8 : isHovered ? 0.6 : 0.15} initial={{ pathLength: 0 }} animate={{ pathLength: 1 }} transition={{ duration: 1, delay: i * 0.2 }} className="transition-all duration-300" />);
                     })}
                   </svg>
                   {data.clusters.map((cluster, i) => {
-                    const rx = Math.min(Math.max(100, centerPos.x - 150), 450), ry = Math.min(Math.max(100, centerPos.y - 150), 300), pos = getRadialPosition(i, data.clusters.length, rx, ry), color = CLUSTER_COLORS[i % CLUSTER_COLORS.length], isActive = activeCluster === i, isHovered = hoveredCluster === i, isFaded = activeCluster !== null && !isActive, maxClusterSize = Math.max(...data.clusters.map(c => c.items.length)), baseScale = Math.max(0.65, (0.85 + ((cluster.items.length / maxClusterSize) * 0.45)) * Math.min(1, windowWidth / 1200));
+                    const rx = Math.min(Math.max(150, centerPos.x - 150), 450), ry = Math.min(Math.max(150, centerPos.y - 150), 300), pos = getRadialPosition(i, data.clusters.length, rx, ry), color = CLUSTER_COLORS[i % CLUSTER_COLORS.length], isActive = activeCluster === i, isHovered = hoveredCluster === i, isFaded = activeCluster !== null && !isActive, maxClusterSize = Math.max(...data.clusters.map(c => c.items.length)), baseScale = Math.max(0.65, (0.85 + ((cluster.items.length / maxClusterSize) * 0.45)) * Math.min(1, windowWidth / 1200));
                     return (
                       <motion.div key={`cluster-${i}`} initial={{ opacity: 0, scale: 0 }} animate={{ opacity: isFaded ? 0.2 : 1, x: pos.x, y: pos.y, scale: isActive ? baseScale * 1.05 : baseScale }} transition={{ type: "spring", stiffness: 60, delay: i * 0.1 }} className={`absolute pointer-events-auto transition-all duration-300 z-20 ${isFaded ? 'pointer-events-none grayscale' : ''}`} onMouseEnter={() => setHoveredCluster(i)} onMouseLeave={() => setHoveredCluster(null)}>
                         <div className="glass-panel flex flex-col cursor-pointer transition-all duration-300 shadow-lg relative group min-w-[200px] sm:min-w-[240px]" style={{ borderColor: isActive || isHovered ? color : (theme === 'dark' ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.6)'), boxShadow: isActive || isHovered ? `0 0 24px ${color}60` : '0 8px 32px rgba(0,0,0,0.05)' }}>
