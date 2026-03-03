@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Search, Moon, Sun, Sparkles, X, ChevronRight, ChevronLeft, Home, Copy, ChevronDown, ChevronUp, List, Layout, Info, BookOpen, History, HelpCircle, Database, Filter, Share2, Check, Settings2, Menu } from 'lucide-react';
 import quranData from './quran.json';
 
-const APP_UPDATES = [{ version: "v2.10.1", date: "March 3, 2026", changes: ["Critical Bug Fix: Resolved a fatal React crash (Black Screen) on desktop Map View caused by a missing hover state variable.", "Visual Fix: Removed full-screen scaling on the loading screen to restore the beautiful, unclipped glowing orbs in the dead center of the screen."] }, { version: "v2.9.9", date: "March 3, 2026", changes: ["Mobile Polish: Fixed the iOS auto-zoom bug by enforcing 16px minimum text size on search inputs.", "Enabled 'Enter' key submission on all search bars and automatic keyboard dismissal.", "Rebuilt the scrolling architecture so tapping the top of an iPhone screen instantly scrolls to the top of the page."] }, { version: "v2.9.6", date: "March 3, 2026", changes: ["Defeated all external CORS server blocks by locally hosting the pristine me_quran.ttf font file directly inside the app."] }];
+const APP_UPDATES = [{ version: "v3.0.0", date: "March 3, 2026", changes: ["Rebranded the application to 'Kisa', inspired by the profound tradition of Hadith al-Kisa.", "Made the top-left logo and app name fully clickable to instantly return to the home screen.", "Updated browser tab titles to reflect the new identity."] }, { version: "v2.10.1", date: "March 3, 2026", changes: ["Critical Bug Fix: Resolved a fatal React crash (Black Screen) on desktop Map View caused by a missing hover state variable.", "Visual Fix: Removed full-screen scaling on the loading screen to restore the beautiful, unclipped glowing orbs in the dead center of the screen."] }, { version: "v2.9.9", date: "March 3, 2026", changes: ["Mobile Polish: Fixed the iOS auto-zoom bug by enforcing 16px minimum text size on search inputs.", "Enabled 'Enter' key submission on all search bars and automatic keyboard dismissal.", "Rebuilt the scrolling architecture so tapping the top of an iPhone screen instantly scrolls to the top of the page."] }];
 const CLUSTER_COLORS = ['#10b981', '#8b5cf6', '#f59e0b', '#f43f5e', '#3b82f6'];
 const SOURCES = ["All Twelver Sources", "al-Kafi", "Bihar al-Anwar", "Basa'ir al-Darajat"];
 
@@ -177,12 +177,14 @@ const QuranReader = ({ activeFontFamily, fontStyle, setFontStyle }) => {
   const [showSurahMenu, setShowSurahMenu] = useState(false);
   const [showSettingsMenu, setShowSettingsMenu] = useState(false);
 
+  // Search State
   const [quranSearchQuery, setQuranSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState([]);
   const [targetVerse, setTargetVerse] = useState(null);
 
   const quranSearchInputRef = useRef(null);
 
+  // Initialize Surah List
   const surahs = useMemo(() => {
     const list = [];
     for (let i = 1; i <= 114; i++) {
@@ -329,6 +331,7 @@ const QuranReader = ({ activeFontFamily, fontStyle, setFontStyle }) => {
         <div className="fixed inset-0 z-[60] pointer-events-auto" onClick={() => { setShowSurahMenu(false); setShowSettingsMenu(false); setSearchResults([]); }} />
       )}
 
+      {/* SMART QURAN SEARCH BAR */}
       <div className="w-full relative mb-4 sm:mb-6 z-[70]">
         <form onSubmit={handleQuranSearchSubmit} className="flex items-center bg-white/40 dark:bg-black/30 backdrop-blur-sm border border-slate-300/50 dark:border-slate-800 rounded-2xl px-4 py-3 sm:py-3.5 shadow-sm transition-all focus-within:border-amber-500/50 dark:focus-within:border-amber-500/50 focus-within:bg-white/60 dark:focus-within:bg-black/50">
           <Search className="w-4 h-4 sm:w-5 sm:h-5 text-slate-400 mr-3 shrink-0" />
@@ -534,8 +537,13 @@ export default function App() {
     setTimeout(() => el.style.setProperty('--thumb-bg', 'transparent'), 800);
   };
 
-  useEffect(() => { theme === 'dark' ? document.documentElement.classList.add('dark') : document.documentElement.classList.remove('dark'); }, [theme]);
+  useEffect(() => {
+    document.title = "Kisa"; // Dynamically update the browser tab title
+    theme === 'dark' ? document.documentElement.classList.add('dark') : document.documentElement.classList.remove('dark');
+  }, [theme]);
+
   useEffect(() => { const initialQ = urlParams.get('q'); if (initialQ && !data && !loading && activeTab === 'search') executeSearch(initialQ, searchMode, sourceFilter); }, []);
+
   useEffect(() => {
     if (!loading) return; let timeouts = [];
     if (searchMode === 'concept') {
@@ -553,6 +561,7 @@ export default function App() {
   }, [loading, searchMode]);
 
   useEffect(() => { setCurrentPage(1); setLengthFilter('All'); if (modalScrollRef.current) modalScrollRef.current.scrollTop = 0; }, [activeCluster]);
+
   useEffect(() => {
     const updateDimensions = () => {
       setWindowWidth(window.innerWidth);
@@ -584,6 +593,16 @@ export default function App() {
     executeSearch(query, searchMode, sourceFilter);
   };
 
+  // Master Home Click Handler
+  const handleHomeClick = () => {
+    setData(null);
+    setQuery('');
+    setActiveCluster(null);
+    setHoveredCluster(null);
+    setActiveTab('search');
+    window.history.pushState({}, '', window.location.pathname);
+  };
+
   const handleCopyHadith = (item) => {
     let formattedText = `Book ${item.book}, Volume ${item.volume}, ${item.sub_book}, Chapter: ${item.chapter}, Hadith ${item.hadith_number}\n\n${item.arabic_text}\n\n${item.english_text}`;
     const regex = /\((\d+):(\d+)\)/g; const matches = [...(item.english_text || "").matchAll(regex)]; const uniqueVerses = new Set();
@@ -592,7 +611,7 @@ export default function App() {
       formattedText += `\n\n--- Quranic References ---\n`;
       uniqueVerses.forEach(key => { if (quranData && quranData[key]) formattedText += `\n[Surah ${quranData[key].surahName} - ${key}]\n${quranData[key].ar}\n${quranData[key].en}\n`; });
     }
-    formattedText += `\n— Via Concept Atlas\n${window.location.href}`;
+    formattedText += `\n— Via Kisa\n${window.location.href}`;
     navigator.clipboard.writeText(formattedText).then(() => console.log("Copied!")).catch(err => console.error(err));
   };
 
@@ -615,6 +634,7 @@ export default function App() {
   return (
     <div className={`min-h-screen w-full transition-colors duration-700 flex flex-col ${lockMainScreen ? 'overflow-hidden h-screen' : 'overflow-x-hidden'} ${appBgClass}`}>
       <style>{`
+        /* Official Google Fonts - Guaranteed to load, no CORS blocks */
         @import url('https://fonts.googleapis.com/css2?family=Amiri+Quran&family=Amiri:wght@400;700&family=Scheherazade+New:wght@400;700&family=Noto+Naskh+Arabic:wght@400;700&display=swap');
         
         @font-face {
@@ -638,13 +658,21 @@ export default function App() {
       {showMobileMenu && <div className="fixed inset-0 z-[70] pointer-events-auto" onClick={() => setShowMobileMenu(false)} />}
 
       <header className="fixed top-0 w-full z-[75] p-4 sm:p-6 flex justify-between items-center pointer-events-none">
-        <div className="flex items-center gap-3">
-          <div className={`w-10 h-10 rounded-full flex items-center justify-center ${activeTab === 'search' && isKeyword ? 'bg-blue-500/10 border border-blue-500/20 shadow-sm' : 'glass-panel border-slate-400/20'}`}>
+
+        {/* Clickable Header Logo & Title */}
+        <div onClick={handleHomeClick} className="flex items-center gap-3 pointer-events-auto cursor-pointer group">
+          <div className={`w-10 h-10 rounded-full flex items-center justify-center transition-transform group-hover:scale-105 ${activeTab === 'search' && isKeyword ? 'bg-blue-500/10 border border-blue-500/20 shadow-sm' : 'glass-panel border-slate-400/20'}`}>
             {activeTab === 'quran' ? <BookOpen className="w-5 h-5 text-amber-700 dark:text-amber-500" /> : (isKeyword ? <Database className="w-5 h-5 text-blue-500" /> : <Sparkles className="w-5 h-5 text-[var(--color-cluster-emerald)]" />)}
           </div>
           <div>
-            <h1 className="font-sans font-bold text-lg sm:text-xl tracking-tight hidden sm:block">Concept Atlas</h1>
-            <div className="flex items-center gap-2 sm:mt-0.5"><p className="font-sans text-[10px] sm:text-xs opacity-60 hidden sm:block">{activeTab === 'quran' ? 'Quran Reader' : (isKeyword ? 'Database Index' : 'Semantic Explorer')}</p><span className="hidden sm:block w-1 h-1 rounded-full bg-slate-300 dark:bg-slate-600"></span><button onClick={() => setShowUpdates(true)} className={`hidden sm:flex pointer-events-auto text-[10px] font-bold uppercase tracking-wider transition-colors cursor-pointer items-center gap-1 px-1.5 py-0.5 rounded-md ${activeTab === 'search' && isKeyword ? 'text-blue-500 bg-blue-500/10 hover:text-blue-600' : 'text-indigo-500 bg-indigo-500/10 hover:text-indigo-600'}`}><Sparkles className="w-3 h-3" />What's New</button></div>
+            <h1 className="font-sans font-bold text-lg sm:text-xl tracking-tight hidden sm:block group-hover:opacity-80 transition-opacity">Kisa</h1>
+            <div className="flex items-center gap-2 sm:mt-0.5">
+              <p className="font-sans text-[10px] sm:text-xs opacity-60 hidden sm:block">{activeTab === 'quran' ? 'Quran Reader' : (isKeyword ? 'Database Index' : 'Semantic Explorer')}</p>
+              <span className="hidden sm:block w-1 h-1 rounded-full bg-slate-300 dark:bg-slate-600"></span>
+              <button onClick={(e) => { e.stopPropagation(); setShowUpdates(true); }} className={`hidden sm:flex pointer-events-auto text-[10px] font-bold uppercase tracking-wider transition-colors cursor-pointer items-center gap-1 px-1.5 py-0.5 rounded-md ${activeTab === 'search' && isKeyword ? 'text-blue-500 bg-blue-500/10 hover:text-blue-600' : 'text-indigo-500 bg-indigo-500/10 hover:text-indigo-600'}`}>
+                <Sparkles className="w-3 h-3" />What's New
+              </button>
+            </div>
           </div>
         </div>
 
@@ -657,7 +685,7 @@ export default function App() {
 
           <div className="hidden md:flex items-center gap-2 sm:gap-4">
             {activeTab === 'search' && data && !isKeyword && (<div className="flex items-center glass-panel rounded-full p-1 border-white/20"><button onClick={() => setViewMode('map')} className={`p-2 rounded-full transition-all duration-300 cursor-pointer ${viewMode === 'map' ? 'bg-indigo-500/20 text-indigo-400' : 'text-slate-500 hover:text-slate-300'}`}><Layout className="w-4 h-4" /></button><button onClick={() => setViewMode('list')} className={`p-2 rounded-full transition-all duration-300 cursor-pointer ${viewMode === 'list' ? 'bg-indigo-500/20 text-indigo-400' : 'text-slate-500 hover:text-slate-300'}`}><List className="w-4 h-4" /></button></div>)}
-            <AnimatePresence>{activeTab === 'search' && data && (<motion.button initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} onClick={() => { setData(null); setQuery(''); setActiveCluster(null); setHoveredCluster(null); window.history.pushState({}, '', window.location.pathname); }} className="w-10 h-10 sm:w-11 sm:h-11 rounded-full bg-white/0 flex items-center justify-center group transition-all duration-300 hover:scale-110 cursor-pointer"><Home className="w-5 h-5 text-slate-400 group-hover:text-slate-900 dark:text-slate-500 dark:group-hover:text-white" /></motion.button>)}</AnimatePresence>
+            <AnimatePresence>{activeTab === 'search' && data && (<motion.button initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} onClick={handleHomeClick} className="w-10 h-10 sm:w-11 sm:h-11 rounded-full bg-white/0 flex items-center justify-center group transition-all duration-300 hover:scale-110 cursor-pointer"><Home className="w-5 h-5 text-slate-400 group-hover:text-slate-900 dark:text-slate-500 dark:group-hover:text-white" /></motion.button>)}</AnimatePresence>
             {activeTab === 'search' && (<button onClick={() => { navigator.clipboard.writeText(window.location.href); setCopiedLink(true); setTimeout(() => setCopiedLink(false), 2000); }} className={`w-10 h-10 sm:w-11 sm:h-11 rounded-full flex items-center justify-center group transition-all duration-300 hover:scale-110 cursor-pointer ${copiedLink ? 'text-emerald-500' : `text-slate-400 ${isKeyword ? 'hover:text-blue-500' : 'hover:text-indigo-500'}`}`}><Share2 className="w-5 h-5" /></button>)}
             <button onClick={() => setShowInfo(true)} className="w-10 h-10 sm:w-11 sm:h-11 rounded-full flex items-center justify-center group transition-all duration-300 hover:scale-110 cursor-pointer"><HelpCircle className={`w-5 h-5 text-slate-400 ${activeTab === 'search' && isKeyword ? 'group-hover:text-blue-500' : 'group-hover:text-indigo-500'}`} /></button>
             <button onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')} className="w-10 h-10 sm:w-11 sm:h-11 rounded-full flex items-center justify-center group transition-all duration-300 hover:scale-110 cursor-pointer">{theme === 'dark' ? <Sun className="w-5 h-5 text-slate-500 group-hover:text-yellow-400" /> : <Moon className="w-5 h-5 text-slate-400 group-hover:text-slate-900" />}</button>
@@ -671,7 +699,7 @@ export default function App() {
             <AnimatePresence>
               {showMobileMenu && (
                 <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className={`absolute right-0 top-full mt-2 w-48 rounded-xl shadow-xl p-2 flex flex-col gap-1 z-[75] ${activeTab === 'quran' ? 'bg-[#f4ecd8] dark:bg-[#1a1a1a] border border-slate-300 dark:border-slate-700' : 'bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800'}`}>
-                  {activeTab === 'search' && data && <button onClick={() => { setData(null); setQuery(''); setActiveCluster(null); setShowMobileMenu(false); window.history.pushState({}, '', window.location.pathname); }} className="w-full text-left flex items-center gap-3 p-3 rounded-lg text-sm text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 cursor-pointer"><Home className="w-4 h-4 shrink-0" /> Reset Search</button>}
+                  {activeTab === 'search' && data && <button onClick={() => { handleHomeClick(); setShowMobileMenu(false); }} className="w-full text-left flex items-center gap-3 p-3 rounded-lg text-sm text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 cursor-pointer"><Home className="w-4 h-4 shrink-0" /> Reset Search</button>}
                   {activeTab === 'search' && <button onClick={() => { navigator.clipboard.writeText(window.location.href); setCopiedLink(true); setTimeout(() => { setCopiedLink(false); setShowMobileMenu(false); }, 1000); }} className={`w-full text-left flex items-center gap-3 p-3 rounded-lg text-sm cursor-pointer ${copiedLink ? 'text-emerald-500' : 'text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'}`}><Share2 className="w-4 h-4 shrink-0" /> Share Link</button>}
                   <button onClick={() => { setShowUpdates(true); setShowMobileMenu(false); }} className="w-full text-left flex items-center gap-3 p-3 rounded-lg text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer"><Sparkles className="w-4 h-4 shrink-0" /> What's New</button>
                   <button onClick={() => { setShowInfo(true); setShowMobileMenu(false); }} className="w-full text-left flex items-center gap-3 p-3 rounded-lg text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer"><HelpCircle className="w-4 h-4 shrink-0" /> Help & Guide</button>
@@ -723,28 +751,30 @@ export default function App() {
 
         <AnimatePresence>
           {activeTab === 'search' && loading && (
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0, filter: "blur(10px)" }} className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-[100] flex flex-col items-center justify-center pointer-events-none">
-              <div className="relative flex items-center justify-center">
-                {!isKeyword ? (
-                  <>
-                    <motion.div className="w-32 h-32 rounded-full absolute bg-[var(--color-cluster-emerald)]/30 blur-2xl" animate={{ scale: [1, 1.5, 1] }} transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }} />
-                    <motion.div className="w-24 h-24 rounded-full absolute bg-[var(--color-cluster-amethyst)]/30 blur-xl" animate={{ scale: [1.2, 0.8, 1.2], rotate: 180 }} transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }} />
-                    <div className="w-16 h-16 rounded-full glass-panel flex items-center justify-center border-white/40 shadow-[0_0_40px_rgba(255,255,255,0.2)]">
-                      <Sparkles className="w-6 h-6 animate-pulse text-white" />
-                    </div>
-                  </>
-                ) : (
-                  <>
-                    <motion.div className="w-32 h-32 rounded-full absolute bg-blue-500/20 blur-xl" animate={{ scale: [1, 1.2, 1] }} transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }} />
-                    <div className="w-16 h-16 rounded-full bg-white dark:bg-slate-800 border border-slate-200 flex items-center justify-center shadow-lg">
-                      <Database className="w-6 h-6 animate-pulse text-blue-500" />
-                    </div>
-                  </>
-                )}
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0, filter: "blur(10px)" }} className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-0 h-0 flex items-center justify-center z-[100] pointer-events-none">
+              <div className="flex flex-col items-center justify-center w-[300px]">
+                <div className="relative flex items-center justify-center">
+                  {!isKeyword ? (
+                    <>
+                      <motion.div className="w-32 h-32 rounded-full absolute bg-[var(--color-cluster-emerald)]/30 blur-2xl" animate={{ scale: [1, 1.5, 1] }} transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }} />
+                      <motion.div className="w-24 h-24 rounded-full absolute bg-[var(--color-cluster-amethyst)]/30 blur-xl" animate={{ scale: [1.2, 0.8, 1.2], rotate: 180 }} transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }} />
+                      <div className="w-16 h-16 rounded-full glass-panel flex items-center justify-center border-white/40 shadow-[0_0_40px_rgba(255,255,255,0.2)]">
+                        <Sparkles className="w-6 h-6 animate-pulse text-white" />
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <motion.div className="w-32 h-32 rounded-full absolute bg-blue-500/20 blur-xl" animate={{ scale: [1, 1.2, 1] }} transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }} />
+                      <div className="w-16 h-16 rounded-full bg-white dark:bg-slate-800 border border-slate-200 flex items-center justify-center shadow-lg">
+                        <Database className="w-6 h-6 animate-pulse text-blue-500" />
+                      </div>
+                    </>
+                  )}
+                </div>
+                <motion.p className="mt-8 font-sans tracking-widest uppercase text-xs sm:text-sm font-semibold opacity-70 whitespace-nowrap text-center">
+                  {loadingMessage}
+                </motion.p>
               </div>
-              <motion.p className="mt-8 font-sans tracking-widest uppercase text-xs sm:text-sm font-semibold opacity-70 whitespace-nowrap text-center">
-                {loadingMessage}
-              </motion.p>
             </motion.div>
           )}
         </AnimatePresence>
@@ -886,9 +916,9 @@ export default function App() {
             <div className="fixed inset-0 z-[2000] flex items-center justify-center pointer-events-auto p-4 sm:p-0">
               <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setShowInfo(false)} className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm cursor-pointer" />
               <motion.div initial={{ opacity: 0, scale: 0.95, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 20 }} className="relative bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 w-full sm:w-[90vw] max-w-[600px] max-h-[85vh] flex flex-col shadow-2xl rounded-2xl z-[2001]">
-                <div className="flex justify-between items-center bg-slate-50/90 dark:bg-slate-900/90 backdrop-blur-md pt-5 pb-4 px-5 z-10 border-b border-slate-200 dark:border-slate-800 rounded-t-2xl shrink-0"><h2 className="text-lg sm:text-xl font-mono font-bold tracking-tight text-slate-800 dark:text-slate-100 flex items-center gap-2"><HelpCircle className="w-5 h-5 text-emerald-500" />How to Use Concept Atlas</h2><button onClick={() => setShowInfo(false)} className="p-2 hover:bg-slate-200 dark:hover:bg-slate-800 rounded-full transition-colors cursor-pointer shrink-0"><X className="w-5 h-5" /></button></div>
+                <div className="flex justify-between items-center bg-slate-50/90 dark:bg-slate-900/90 backdrop-blur-md pt-5 pb-4 px-5 z-10 border-b border-slate-200 dark:border-slate-800 rounded-t-2xl shrink-0"><h2 className="text-lg sm:text-xl font-mono font-bold tracking-tight text-slate-800 dark:text-slate-100 flex items-center gap-2"><HelpCircle className="w-5 h-5 text-emerald-500" />How to Use Kisa</h2><button onClick={() => setShowInfo(false)} className="p-2 hover:bg-slate-200 dark:hover:bg-slate-800 rounded-full transition-colors cursor-pointer shrink-0"><X className="w-5 h-5" /></button></div>
                 <div className="p-5 sm:p-6 overflow-y-auto flex-grow smart-scrollbar flex flex-col gap-6 text-slate-700 dark:text-slate-300">
-                  <div><h3 className="font-bold text-base sm:text-lg mb-2 text-slate-900 dark:text-white">Welcome to the Explorer</h3><p className="leading-relaxed text-xs sm:text-sm">Concept Atlas is a semantic search engine designed specifically to explore authentic Twelver Shia literature, prioritizing core texts like <i>al-Kafi</i>, <i>Bihar al-Anwar</i>, and <i>Basa'ir al-Darajat</i>. It mathematically groups verified texts so you can explore concepts without AI hallucinations.</p></div>
+                  <div><h3 className="font-bold text-base sm:text-lg mb-2 text-slate-900 dark:text-white">Welcome to the Explorer</h3><p className="leading-relaxed text-xs sm:text-sm">Kisa is a semantic search engine designed specifically to explore authentic Twelver Shia literature, prioritizing core texts like <i>al-Kafi</i>, <i>Bihar al-Anwar</i>, and <i>Basa'ir al-Darajat</i>. It mathematically groups verified texts so you can explore concepts without AI hallucinations.</p></div>
                   <hr className="border-slate-200 dark:border-slate-700" />
                   <div><h3 className="font-bold text-base sm:text-lg flex items-center gap-2 mb-2 sm:mb-3 text-slate-900 dark:text-white"><Sparkles className="w-4 h-4 text-indigo-500" /> Concept Mode (Thematic Search)</h3><p className="leading-relaxed text-xs sm:text-sm mb-3">This mode uses AI vector math to find underlying themes, even if the exact words aren't used. It is perfect for exploring abstract theology like <i>"divine justice"</i> or <i>"the nature of the intellect."</i></p><div className="bg-orange-50 dark:bg-orange-500/10 border-l-4 border-orange-500 p-3 sm:p-4 rounded-r-lg"><p className="text-xs sm:text-sm font-semibold text-orange-800 dark:text-orange-300 mb-1">⚠️ The Historical Fact Trap</p><p className="text-xs sm:text-sm text-orange-700 dark:text-orange-200/80">Concept Mode finds themes, not historical facts. If you search <i>"How was Imam Jafar Sadiq martyred?"</i>, it won't give you a Wikipedia summary. Instead, it will pull dozens of thematic narrations about grief, martyrdom, and the Imam.</p></div></div>
                   <hr className="border-slate-200 dark:border-slate-700" />
