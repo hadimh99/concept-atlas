@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Search, Moon, Sun, Sparkles, X, ChevronRight, ChevronLeft, Home, Copy, ChevronDown, ChevronUp, List, Layout, Info, BookOpen, History, HelpCircle, Database, Filter, Share2, Check } from 'lucide-react';
+import { Search, Moon, Sun, Sparkles, X, ChevronRight, ChevronLeft, Home, Copy, ChevronDown, ChevronUp, List, Layout, BookOpen, History, HelpCircle, Database, Filter, Share2, Check } from 'lucide-react';
 import quranData from './quran.json';
 
-const APP_UPDATES = [{ version: "v2.4.0", date: "March 3, 2026", changes: ["Added visual 'Copied!' feedback to Hadith cards.", "Fixed overlapping map nodes with a staggered radial layout.", "Added XB Zar / Uthmani font toggle to the Quran reader.", "Replaced confusing UI icons with a clear open book for the Quran."] }, { version: "v2.3.0", date: "March 3, 2026", changes: ["Mobile Polish: Fixed an issue where scrolling felt 'stuck' on mobile devices.", "Quran verse reference boxes are now perfectly visible on phone screens.", "Long Quran popups now have proper internal scrolling and a sticky exit button."] }, { version: "v2.2.0", date: "March 3, 2026", changes: ["Converted all in-text verse numbers to native Arabic numerals.", "Smart Bismillah Detacher: The Bismillah is now properly separated from the first verse of every Surah and centered at the top of the page."] }];
+const APP_UPDATES = [{ version: "v2.5.0", date: "March 3, 2026", changes: ["Fixed overlapping nodes in map view by introducing an inward-stagger radial layout.", "Restored multi-line wrapping for long node titles so they don't stretch off screen.", "Removed the 'Roots' hover feature for a cleaner UI."] }, { version: "v2.4.0", date: "March 3, 2026", changes: ["Added visual 'Copied!' feedback to Hadith cards.", "Added XB Zar / Uthmani font toggle to the Quran reader.", "Replaced confusing UI icons with a clear open book for the Quran."] }, { version: "v2.3.0", date: "March 3, 2026", changes: ["Mobile Polish: Fixed an issue where scrolling felt 'stuck' on mobile devices.", "Quran verse reference boxes are now perfectly visible on phone screens."] }];
 const CLUSTER_COLORS = ['#10b981', '#8b5cf6', '#f59e0b', '#f43f5e', '#3b82f6'];
 const SOURCES = ["All Twelver Sources", "al-Kafi", "Bihar al-Anwar", "Basa'ir al-Darajat"];
 
@@ -169,7 +169,7 @@ const QuranReader = () => {
   const [selectedSurah, setSelectedSurah] = useState(1);
   const [showTranslation, setShowTranslation] = useState(true);
   const [readingMode, setReadingMode] = useState('verse');
-  const [fontStyle, setFontStyle] = useState('uthmani'); // 'uthmani' | 'xbzar'
+  const [fontStyle, setFontStyle] = useState('uthmani');
 
   const surahs = [];
   for (let i = 1; i <= 114; i++) { if (quranData[`${i}:1`]) surahs.push({ id: i, enName: quranData[`${i}:1`].surahName, arName: quranData[`${i}:1`].surahArName }); }
@@ -363,22 +363,14 @@ export default function App() {
 
   const handleVerseClick = (surah, ayah) => { const key = `${surah}:${ayah}`; if (quranData && quranData[key]) setQuranPopup({ surah, ayah, data: quranData[key] }); };
 
-  // FIXED STAGGERED MATH TO PREVENT OVERLAPPING NODES
   const getRadialPosition = (index, total, rx, ry) => {
     const angle = (index * (360 / total) - 90) * (Math.PI / 180);
-    const stagger = total > 4 && index % 2 !== 0 ? 50 : 0;
-    return { x: Math.cos(angle) * (rx + stagger), y: Math.sin(angle) * (ry + stagger) };
+    const pullIn = (total > 4 && index % 2 !== 0) ? 0.65 : 1;
+    return { x: Math.cos(angle) * (rx * pullIn), y: Math.sin(angle) * (ry * pullIn) };
   };
 
   const uniqueBooks = data ? Array.from(new Set(data.clusters.flatMap(c => c.items.map(item => item.book)))) : [];
   const isKeyword = searchMode === 'keyword';
-  const getTopKeywords = (items) => {
-    if (!items || items.length === 0) return [];
-    const stopWords = new Set(["the", "and", "to", "of", "a", "in", "that", "is", "for", "it", "with", "as", "he", "was", "on", "from", "who", "has", "said", "this", "they", "but", "are", "not", "have", "be", "upon", "him", "peace", "narrated", "which", "what", "their", "all", "your", "them", "those", "these", "would", "were", "had", "been", "also", "allah", "messenger", "imam", "ibn", "abu", "ali", "muhammad", "abdillah", "abdullah", "ja'far", "hasan", "husayn", "baqir", "sadiq", "prophet", "lord", "holy", "people", "man", "men", "woman", "women", "asked", "told", "heard", "came", "went", "saying", "some", "we", "you", "by", "or", "if", "when", "an", "at", "about", "then", "there", "his", "do", "did", "does", "can", "could", "should", "shall", "will"]);
-    const wordCounts = {};
-    items.forEach(item => { const words = item.english_text.toLowerCase().replace(/[^\w\s-]/g, '').split(/\s+/); words.forEach(word => { if (word.length > 4 && !stopWords.has(word)) wordCounts[word] = (wordCounts[word] || 0) + 1; }); });
-    return Object.entries(wordCounts).sort((a, b) => b[1] - a[1]).slice(0, 3).map(e => e[0]);
-  };
 
   const appBgClass = activeTab === 'quran' ? (theme === 'dark' ? 'bg-[#121212] text-slate-100' : 'bg-[#f4ecd8] text-slate-900') : (theme === 'dark' ? (isKeyword && activeTab === 'search' ? 'bg-slate-900 text-slate-100' : 'aurora-bg text-slate-100') : (isKeyword && activeTab === 'search' ? 'bg-slate-50 text-slate-900' : 'light-aurora-bg text-slate-900'));
 
@@ -479,17 +471,22 @@ export default function App() {
                   </motion.div>
                   <svg className="absolute inset-0 w-full h-full pointer-events-none z-10">
                     {data.clusters.map((cluster, i) => {
-                      const rx = Math.min(Math.max(150, centerPos.x - 150), 450), ry = Math.min(Math.max(150, centerPos.y - 150), 300), pos = getRadialPosition(i, data.clusters.length, rx, ry), color = CLUSTER_COLORS[i % CLUSTER_COLORS.length], isActive = activeCluster === i, isHovered = hoveredCluster === i;
+                      const rx = Math.max(120, centerPos.x - 140), ry = Math.max(120, centerPos.y - 140), pos = getRadialPosition(i, data.clusters.length, rx, ry), color = CLUSTER_COLORS[i % CLUSTER_COLORS.length], isActive = activeCluster === i, isHovered = hoveredCluster === i;
                       return (<motion.line key={`line-${i}`} x1={centerPos.x} y1={centerPos.y} x2={centerPos.x + pos.x} y2={centerPos.y + pos.y} stroke={color} strokeWidth={isActive ? 2 : isHovered ? 1.5 : 1} strokeOpacity={isActive ? 0.8 : isHovered ? 0.6 : 0.15} initial={{ pathLength: 0 }} animate={{ pathLength: 1 }} transition={{ duration: 1, delay: i * 0.2 }} className="transition-all duration-300" />);
                     })}
                   </svg>
                   {data.clusters.map((cluster, i) => {
-                    const rx = Math.min(Math.max(150, centerPos.x - 150), 450), ry = Math.min(Math.max(150, centerPos.y - 150), 300), pos = getRadialPosition(i, data.clusters.length, rx, ry), color = CLUSTER_COLORS[i % CLUSTER_COLORS.length], isActive = activeCluster === i, isHovered = hoveredCluster === i, isFaded = activeCluster !== null && !isActive, maxClusterSize = Math.max(...data.clusters.map(c => c.items.length)), baseScale = Math.max(0.65, (0.85 + ((cluster.items.length / maxClusterSize) * 0.45)) * Math.min(1, windowWidth / 1200));
+                    const rx = Math.max(120, centerPos.x - 140), ry = Math.max(120, centerPos.y - 140), pos = getRadialPosition(i, data.clusters.length, rx, ry), color = CLUSTER_COLORS[i % CLUSTER_COLORS.length], isActive = activeCluster === i, isHovered = hoveredCluster === i, isFaded = activeCluster !== null && !isActive;
                     return (
-                      <motion.div key={`cluster-${i}`} initial={{ opacity: 0, scale: 0 }} animate={{ opacity: isFaded ? 0.2 : 1, x: pos.x, y: pos.y, scale: isActive ? baseScale * 1.05 : baseScale }} transition={{ type: "spring", stiffness: 60, delay: i * 0.1 }} className={`absolute pointer-events-auto transition-all duration-300 z-20 ${isFaded ? 'pointer-events-none grayscale' : ''}`} onMouseEnter={() => setHoveredCluster(i)} onMouseLeave={() => setHoveredCluster(null)}>
-                        <div className="glass-panel flex flex-col cursor-pointer transition-all duration-300 shadow-lg relative group min-w-[200px] sm:min-w-[240px]" style={{ borderColor: isActive || isHovered ? color : (theme === 'dark' ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.6)'), boxShadow: isActive || isHovered ? `0 0 24px ${color}60` : '0 8px 32px rgba(0,0,0,0.05)' }}>
-                          <div onClick={() => setActiveCluster(isActive ? null : i)} className="px-4 py-3 sm:px-5 sm:py-4 flex items-center justify-between gap-3"><div className="absolute left-0 top-0 bottom-0 w-1.5 transition-all duration-300 group-hover:w-2" style={{ backgroundColor: color }} /><div className="pl-2"><h3 className="font-mono font-medium text-xs sm:text-sm lg:text-base leading-tight">{cluster.theme_label}</h3><p className="text-[10px] sm:text-xs opacity-60 mt-0.5">{cluster.items.length} Hadiths</p></div><div className="opacity-50 group-hover:opacity-100 transition-opacity">{isActive ? <X className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}</div></div>
-                          <div className="h-0 overflow-hidden group-hover:h-auto transition-all duration-300 bg-black/5 border-t border-white/10"><div className="px-4 py-2 sm:px-5 sm:py-2 flex items-center gap-2 text-[10px] sm:text-xs font-mono text-slate-500"><Info className="w-3 h-3 sm:w-3.5 sm:h-3.5 shrink-0" /><span className="truncate tracking-tight">Roots: {getTopKeywords(cluster.items).join(' • ')}</span></div></div>
+                      <motion.div key={`cluster-${i}`} initial={{ opacity: 0, scale: 0 }} animate={{ opacity: isFaded ? 0.2 : 1, x: pos.x, y: pos.y, scale: isActive ? 1.05 : 1 }} transition={{ type: "spring", stiffness: 60, delay: i * 0.1 }} className={`absolute pointer-events-auto transition-all duration-300 z-20 ${isFaded ? 'pointer-events-none grayscale' : ''}`} onMouseEnter={() => setHoveredCluster(i)} onMouseLeave={() => setHoveredCluster(null)}>
+                        <div className="glass-panel flex flex-col cursor-pointer transition-all duration-300 shadow-lg relative group w-[180px] sm:w-[220px]" style={{ borderColor: isActive || isHovered ? color : (theme === 'dark' ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.6)'), boxShadow: isActive || isHovered ? `0 0 24px ${color}60` : '0 8px 32px rgba(0,0,0,0.05)' }}>
+                          <div onClick={() => setActiveCluster(isActive ? null : i)} className="px-4 py-3 sm:px-5 sm:py-4 flex items-center justify-between gap-3"><div className="absolute left-0 top-0 bottom-0 w-1.5 transition-all duration-300 group-hover:w-2" style={{ backgroundColor: color }} />
+                            <div className="pl-2 pr-1 w-full">
+                              <h3 className="font-mono font-medium text-xs sm:text-sm lg:text-base leading-snug whitespace-normal break-words">{cluster.theme_label}</h3>
+                              <p className="text-[10px] sm:text-xs opacity-60 mt-0.5">{cluster.items.length} Hadiths</p>
+                            </div>
+                            <div className="opacity-50 group-hover:opacity-100 transition-opacity shrink-0">{isActive ? <X className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}</div>
+                          </div>
                         </div>
                       </motion.div>
                     );
