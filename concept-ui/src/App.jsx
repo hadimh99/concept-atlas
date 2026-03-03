@@ -1,8 +1,16 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Search, Moon, Sun, Sparkles, X, ChevronRight, ChevronLeft, Home, Copy, ChevronDown, ChevronUp, List, Layout, Info, BookOpen, Fingerprint, History, HelpCircle, Database, Filter } from 'lucide-react';
+import { Search, Moon, Sun, Sparkles, X, ChevronRight, ChevronLeft, Home, Copy, ChevronDown, ChevronUp, List, Layout, Info, BookOpen, Fingerprint, History, HelpCircle, Database, Filter, Share2 } from 'lucide-react';
 
 const APP_UPDATES = [
+  {
+    version: "v1.5.0",
+    date: "March 3, 2026",
+    changes: [
+      "Deep Linking is live! The URL now updates dynamically as you search. You can copy and share links to send your exact search results directly to others.",
+      "Added a new 'Share' button in the top navigation bar to instantly copy your current search URL."
+    ]
+  },
   {
     version: "v1.4.0",
     date: "March 2, 2026",
@@ -16,8 +24,7 @@ const APP_UPDATES = [
     date: "March 2, 2026",
     changes: [
       "Redesigned the UI for Keyword Mode to feature a strict, academic 'List-Only' interface, creating a clear visual distinction from the AI Concept map.",
-      "Added an interactive 'How to Use' guide (click the question mark icon) to help you master the search engine.",
-      "Included expert search tips to help you avoid common translation mismatches and get the most accurate results."
+      "Added an interactive 'How to Use' guide (click the question mark icon) to help you master the search engine."
     ]
   },
   {
@@ -26,28 +33,7 @@ const APP_UPDATES = [
     changes: [
       "Added a live 'Updates Log' timeline to track new features.",
       "Introduced a dynamic loading sequence that shows the exact steps the AI is taking during a deep search.",
-      "Upgraded the semantic search engine to cloud infrastructure for faster, highly reliable results.",
-      "Optimized database architecture to guarantee stability and prevent memory crashes during complex queries.",
-      "UI Tweak: Implemented 'smart' scrollbars that fade away when not in use for a cleaner reading interface."
-    ]
-  },
-  {
-    version: "v1.1.0",
-    date: "March 1, 2026",
-    changes: [
-      "Added a dual-search toggle: effortlessly switch between AI 'Concept' exploration and exact 'Keyword' matching.",
-      "Introduced source filtering to search across all Twelver collections or narrow down to specific books.",
-      "UI Tweak: Completely redesigned Hadith Cards! Original Arabic, English translations, and Chains of Narrators are now separated into clean, collapsible sections.",
-      "UI Tweak: Added a one-click 'Copy Text' button that instantly formats the narration and its citation for easy sharing."
-    ]
-  },
-  {
-    version: "v1.0.0",
-    date: "February 2026",
-    changes: [
-      "Launched the Concept Atlas Beta: A first-of-its-kind semantic explorer for Twelver Shia literature.",
-      "Integrated K-Means clustering and Gemini AI theme generation to automatically discover and label conceptual relationships between narrations.",
-      "UI Tweak: Added a beautiful Dark/Light mode toggle to suit your reading environment."
+      "Upgraded the semantic search engine to cloud infrastructure for faster, highly reliable results."
     ]
   }
 ];
@@ -332,24 +318,26 @@ const getTopKeywords = (items) => {
 };
 
 export default function App() {
-  const [query, setQuery] = useState('');
+  // --- GRAB INITIAL STATE FROM URL ---
+  const urlParams = new URLSearchParams(typeof window !== 'undefined' ? window.location.search : '');
+
+  const [query, setQuery] = useState(urlParams.get('q') || '');
+  const [searchMode, setSearchMode] = useState(urlParams.get('mode') || 'concept');
+  const [sourceFilter, setSourceFilter] = useState(urlParams.get('source') || SOURCES[0]);
+
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [theme, setTheme] = useState('dark');
-  const [viewMode, setViewMode] = useState(window.innerWidth < 768 ? 'list' : 'map');
+  const [viewMode, setViewMode] = useState(window.innerWidth < 768 || urlParams.get('mode') === 'keyword' ? 'list' : 'map');
   const [activeCluster, setActiveCluster] = useState(null);
   const [hoveredCluster, setHoveredCluster] = useState(null);
 
-  const [sourceFilter, setSourceFilter] = useState(SOURCES[0]);
   const [showDropdown, setShowDropdown] = useState(false);
-  const [searchMode, setSearchMode] = useState('concept');
-
-  // --- REDUCED TO 10 FOR EASIER READING ---
   const [currentPage, setCurrentPage] = useState(1);
   const ITEMS_PER_PAGE = 10;
-
-  // --- ADDED NEW LENGTH FILTER STATE ---
   const [lengthFilter, setLengthFilter] = useState('All');
+
+  const [copiedLink, setCopiedLink] = useState(false);
 
   const containerRef = useRef(null);
   const modalScrollRef = useRef(null);
@@ -382,6 +370,15 @@ export default function App() {
     }
   }, [theme]);
 
+  // --- AUTOMATIC INITIAL SEARCH ON LOAD ---
+  useEffect(() => {
+    const initialQ = urlParams.get('q');
+    if (initialQ && !data && !loading) {
+      executeSearch(initialQ, searchMode, sourceFilter);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   useEffect(() => {
     if (!loading) return;
     let timeouts = [];
@@ -403,7 +400,7 @@ export default function App() {
 
   useEffect(() => {
     setCurrentPage(1);
-    setLengthFilter('All'); // Reset filter when opening a new cluster
+    setLengthFilter('All');
     if (modalScrollRef.current) {
       modalScrollRef.current.scrollTop = 0;
     }
@@ -427,9 +424,16 @@ export default function App() {
     return () => window.removeEventListener('resize', updateDimensions);
   }, [data, viewMode]);
 
-  const handleSearch = async (e) => {
-    e.preventDefault();
-    if (!query.trim()) return;
+  // --- REFACTORED CORE SEARCH FUNCTION ---
+  const executeSearch = async (searchQuery, currentMode, currentSource) => {
+    if (!searchQuery.trim()) return;
+
+    // Silently update the browser URL
+    const newUrl = new URL(window.location);
+    newUrl.searchParams.set('q', searchQuery);
+    newUrl.searchParams.set('mode', currentMode);
+    newUrl.searchParams.set('source', currentSource);
+    window.history.pushState({}, '', newUrl);
 
     setLoading(true);
 
@@ -441,16 +445,16 @@ export default function App() {
           'Accept': 'application/json'
         },
         body: JSON.stringify({
-          query: query,
-          source: sourceFilter,
-          searchMode: searchMode
+          query: searchQuery,
+          source: currentSource,
+          searchMode: currentMode
         })
       });
 
       const result = await response.json();
       if (result.clusters && result.clusters.length > 0) {
         setData(result);
-        if (searchMode === 'keyword') {
+        if (currentMode === 'keyword') {
           setViewMode('list');
         }
       } else {
@@ -463,8 +467,13 @@ export default function App() {
     }
   };
 
+  const handleSearchSubmit = (e) => {
+    e.preventDefault();
+    executeSearch(query, searchMode, sourceFilter);
+  };
+
   const handleCopyHadith = (item) => {
-    const formattedText = `Book ${item.book}, Volume ${item.volume}, ${item.sub_book}, Chapter: ${item.chapter}, Hadith ${item.hadith_number}\n\n${item.arabic_text}\n\n${item.english_text}\n\n— Via Concept Atlas`;
+    const formattedText = `Book ${item.book}, Volume ${item.volume}, ${item.sub_book}, Chapter: ${item.chapter}, Hadith ${item.hadith_number}\n\n${item.arabic_text}\n\n${item.english_text}\n\n— Via Concept Atlas\n${window.location.href}`;
     navigator.clipboard.writeText(formattedText).then(() => {
       console.log("Hadith copied to clipboard!");
     }).catch(err => {
@@ -557,6 +566,7 @@ export default function App() {
                   setQuery('');
                   setActiveCluster(null);
                   setHoveredCluster(null);
+                  window.history.pushState({}, '', window.location.pathname); // Clear URL
                 }}
                 className="w-10 h-10 sm:w-11 sm:h-11 rounded-full appearance-none outline-none bg-white/0 flex items-center justify-center group transition-all duration-300 hover:scale-110 cursor-pointer"
                 title="Return Home"
@@ -565,6 +575,19 @@ export default function App() {
               </motion.button>
             )}
           </AnimatePresence>
+
+          {/* --- ADDED SHARE BUTTON --- */}
+          <button
+            onClick={() => {
+              navigator.clipboard.writeText(window.location.href);
+              setCopiedLink(true);
+              setTimeout(() => setCopiedLink(false), 2000);
+            }}
+            className={`w-10 h-10 sm:w-11 sm:h-11 rounded-full appearance-none outline-none bg-white/0 flex items-center justify-center group transition-all duration-300 hover:scale-110 cursor-pointer ${copiedLink ? 'text-emerald-500 drop-shadow-[0_0_8px_rgba(16,185,129,0.5)]' : `text-slate-400 ${isKeyword ? 'hover:text-blue-500 dark:hover:text-blue-400' : 'hover:text-indigo-500 dark:hover:text-indigo-400'}`}`}
+            title="Share this Search"
+          >
+            <Share2 className="w-5 h-5 transition-all duration-300" />
+          </button>
 
           <button
             onClick={() => setShowInfo(true)}
@@ -611,7 +634,7 @@ export default function App() {
                   }}
                 ></div>
 
-                <form onSubmit={handleSearch} className="relative z-10 flex flex-col p-2">
+                <form onSubmit={handleSearchSubmit} className="relative z-10 flex flex-col p-2">
                   <div className={`flex items-center border-b relative ${isKeyword ? 'border-slate-300 dark:border-slate-700' : 'border-slate-200/50 dark:border-slate-700/50'}`}>
                     <input
                       type="text"
@@ -936,7 +959,6 @@ export default function App() {
 
                   const clusterItems = data.clusters[activeCluster].items;
 
-                  // --- APPLY THE LENGTH FILTER ---
                   const filteredItems = clusterItems.filter(item => {
                     if (lengthFilter === 'All') return true;
                     const len = (item.english_text || '').length;
@@ -976,7 +998,6 @@ export default function App() {
                           </button>
                         </div>
 
-                        {/* --- THE LENGTH FILTER UI BAR --- */}
                         <div className={`px-4 sm:px-6 py-3 border-b shrink-0 flex flex-wrap gap-2 items-center ${isKeyword ? 'bg-slate-100/50 dark:bg-slate-800/30 border-slate-200 dark:border-slate-700' : 'bg-slate-200/30 dark:bg-slate-800/30 border-slate-200 dark:border-slate-800'}`}>
                           <div className="flex items-center gap-1.5 text-slate-500 dark:text-slate-400 mr-1">
                             <Filter className="w-3.5 h-3.5" />
