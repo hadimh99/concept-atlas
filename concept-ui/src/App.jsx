@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Search, Moon, Sun, Sparkles, X, ChevronRight, ChevronLeft, Home, Copy, ChevronDown, ChevronUp, List, Layout, Info, BookOpen, History, HelpCircle, Database, Filter, Share2, Book } from 'lucide-react';
 import quranData from './quran.json';
 
-const APP_UPDATES = [{ version: "v2.2.0", date: "March 3, 2026", changes: ["Polished the Quran UI: Added high-contrast boxes for verse references.", "Converted all in-text verse numbers to native Arabic numerals.", "Smart Bismillah Detacher: The Bismillah is now properly separated from the first verse of every Surah and centered at the top of the page."] }, { version: "v2.1.0", date: "March 3, 2026", changes: ["Revamped the Quran UI: Solid, distraction-free Sepia (Light) and Obsidian (Dark) backgrounds.", "Added 'Flow Mode': Toggle between verse-by-verse or continuous paragraph reading."] }, { version: "v2.0.0", date: "March 3, 2026", changes: ["The Quran is fully integrated! Click (2:255) references to view verses."] }];
+const APP_UPDATES = [{ version: "v2.3.0", date: "March 3, 2026", changes: ["Mobile Polish: Fixed an issue where scrolling felt 'stuck' on mobile devices.", "Quran verse reference boxes are now perfectly visible on phone screens.", "Long Quran popups now have proper internal scrolling and a sticky exit button."] }, { version: "v2.2.0", date: "March 3, 2026", changes: ["Polished the Quran UI: Added high-contrast boxes for verse references.", "Converted all in-text verse numbers to native Arabic numerals.", "Smart Bismillah Detacher: The Bismillah is now properly separated from the first verse of every Surah and centered at the top of the page."] }, { version: "v2.1.0", date: "March 3, 2026", changes: ["Revamped the Quran UI: Solid, distraction-free Sepia (Light) and Obsidian (Dark) backgrounds.", "Added 'Flow Mode': Toggle between verse-by-verse or continuous paragraph reading."] }];
 const CLUSTER_COLORS = ['#10b981', '#8b5cf6', '#f59e0b', '#f43f5e', '#3b82f6'];
 const SOURCES = ["All Twelver Sources", "al-Kafi", "Bihar al-Anwar", "Basa'ir al-Darajat"];
 
@@ -169,7 +169,6 @@ const QuranReader = () => {
   const ayahsRaw = []; let aIdx = 1;
   while (quranData[`${selectedSurah}:${aIdx}`]) { ayahsRaw.push(quranData[`${selectedSurah}:${aIdx}`]); aIdx++; }
 
-  // Smart Bismillah Detacher
   let surahBismillah = null;
   const ayahs = ayahsRaw.map((ayah, idx) => {
     let arText = ayah.ar;
@@ -234,8 +233,12 @@ const QuranReader = () => {
       ) : (
         <div className="w-full flex flex-col pb-10">
           {ayahs.map((ayah, idx) => (
-            <div key={idx} className="py-10 border-b border-[#d4c5b0] dark:border-[#2a2a2a] first:pt-0 relative group">
-              <span className="absolute top-10 sm:top-12 left-0 text-[10px] sm:text-xs font-mono font-bold text-amber-900 dark:text-amber-500 bg-[#eaddc6] dark:bg-[#1a1a1a] border border-[#d4c5b0] dark:border-[#333] px-2 py-1 rounded shadow-sm hidden sm:block">{selectedSurah}:{idx + 1}</span>
+            <div key={idx} className="py-8 sm:py-10 border-b border-[#d4c5b0] dark:border-[#2a2a2a] first:pt-0 relative group flex flex-col sm:block">
+              <div className="mb-4 sm:mb-0 sm:absolute sm:top-12 sm:left-0">
+                <span className="text-[10px] sm:text-xs font-mono font-bold text-amber-900 dark:text-amber-500 bg-[#eaddc6] dark:bg-[#1a1a1a] border border-[#d4c5b0] dark:border-[#333] px-2 py-1 rounded shadow-sm inline-block">
+                  {selectedSurah}:{idx + 1}
+                </span>
+              </div>
               <div className="sm:pl-20">
                 <p className="font-arabic text-3xl sm:text-4xl lg:text-[40px] text-right leading-[2.4] sm:leading-[2.5] text-slate-900 dark:text-slate-100 mb-6" dir="rtl">{ayah.ar} <span className="text-amber-700 dark:text-amber-500 opacity-80 ml-2 text-xl">﴾{toArabicNum(idx + 1)}﴿</span></p>
                 <AnimatePresence>
@@ -359,7 +362,16 @@ export default function App() {
 
   return (
     <div className={`min-h-screen w-full overflow-hidden transition-colors duration-700 flex flex-col ${appBgClass}`}>
-      <style>{`.hide-scroll::-webkit-scrollbar { display: none; } .hide-scroll { -ms-overflow-style: none; scrollbar-width: none; } .smart-scrollbar { --thumb-bg: transparent; scrollbar-width: thin; scrollbar-color: var(--thumb-bg) transparent; } .smart-scrollbar::-webkit-scrollbar { width: 8px; } .smart-scrollbar::-webkit-scrollbar-track { background: transparent; } .smart-scrollbar::-webkit-scrollbar-thumb { background-color: var(--thumb-bg); border-radius: 10px; } .smart-scrollbar::-webkit-scrollbar-thumb:hover { background-color: rgba(100, 116, 139, 0.8) !important; } .dark .smart-scrollbar::-webkit-scrollbar-thumb:hover { background-color: rgba(203, 213, 225, 0.8) !important; }`}</style>
+      <style>{`
+        .hide-scroll::-webkit-scrollbar { display: none; }
+        .hide-scroll { -ms-overflow-style: none; scrollbar-width: none; -webkit-overflow-scrolling: touch; overscroll-behavior-y: contain; }
+        .smart-scrollbar { --thumb-bg: transparent; scrollbar-width: thin; scrollbar-color: var(--thumb-bg) transparent; -webkit-overflow-scrolling: touch; overscroll-behavior-y: contain; }
+        .smart-scrollbar::-webkit-scrollbar { width: 8px; }
+        .smart-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .smart-scrollbar::-webkit-scrollbar-thumb { background-color: var(--thumb-bg); border-radius: 10px; }
+        .smart-scrollbar::-webkit-scrollbar-thumb:hover { background-color: rgba(100, 116, 139, 0.8) !important; }
+        .dark .smart-scrollbar::-webkit-scrollbar-thumb:hover { background-color: rgba(203, 213, 225, 0.8) !important; }
+      `}</style>
       <header className="fixed top-0 w-full z-50 p-4 sm:p-6 flex justify-between items-center pointer-events-none">
         <div className="flex items-center gap-3">
           <div className={`w-10 h-10 rounded-full flex items-center justify-center ${activeTab === 'search' && isKeyword ? 'bg-blue-500/10 border border-blue-500/20 shadow-sm' : 'glass-panel border-slate-400/20'}`}>
@@ -521,11 +533,15 @@ export default function App() {
           {quranPopup && (
             <div className="fixed inset-0 z-[3000] flex items-center justify-center pointer-events-auto p-4 sm:p-0">
               <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setQuranPopup(null)} className="absolute inset-0 bg-slate-900/80 backdrop-blur-md cursor-pointer" />
-              <motion.div initial={{ opacity: 0, scale: 0.9, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.9, y: 20 }} className="relative bg-white dark:bg-slate-900 w-full sm:w-[90vw] max-w-[600px] flex flex-col shadow-2xl rounded-2xl z-[3001] p-6 sm:p-8">
-                <button onClick={() => setQuranPopup(null)} className="absolute top-4 right-4 p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-colors cursor-pointer text-slate-400"><X className="w-5 h-5" /></button>
-                <div className="text-center mb-6 mt-2"><h3 className="font-mono text-sm tracking-widest uppercase text-indigo-500 font-bold mb-1">Surah {quranPopup.data.surahName}</h3><p className="text-xs text-slate-400 font-mono">Verse {quranPopup.ayah}</p></div>
-                <div className="mb-6"><p className="font-arabic text-3xl sm:text-4xl text-right leading-[2.2] text-slate-800 dark:text-slate-100" dir="rtl">{quranPopup.data.ar}</p></div>
-                <div className="border-t border-slate-100 dark:border-slate-800 pt-6"><p className="text-base sm:text-lg text-slate-600 dark:text-slate-300 leading-relaxed font-serif">{quranPopup.data.en}</p></div>
+              <motion.div initial={{ opacity: 0, scale: 0.9, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.9, y: 20 }} className="relative bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 w-full sm:w-[90vw] max-w-[600px] max-h-[85vh] flex flex-col shadow-2xl rounded-2xl z-[3001] overflow-hidden">
+                <div className="flex justify-between items-center bg-slate-50/90 dark:bg-slate-900/90 backdrop-blur-md pt-5 pb-4 px-6 z-10 border-b border-slate-200 dark:border-slate-800 shrink-0">
+                  <div><h3 className="font-mono text-sm tracking-widest uppercase text-indigo-500 font-bold mb-0.5">Surah {quranPopup.data.surahName}</h3><p className="text-xs text-slate-400 font-mono m-0">Verse {quranPopup.ayah}</p></div>
+                  <button onClick={() => setQuranPopup(null)} className="p-2 hover:bg-slate-200 dark:hover:bg-slate-800 rounded-full transition-colors cursor-pointer shrink-0"><X className="w-5 h-5 text-slate-500" /></button>
+                </div>
+                <div className="p-6 sm:p-8 overflow-y-auto flex-grow smart-scrollbar">
+                  <div className="mb-6"><p className="font-arabic text-3xl sm:text-4xl text-right leading-[2.2] text-slate-800 dark:text-slate-100" dir="rtl">{quranPopup.data.ar}</p></div>
+                  <div className="border-t border-slate-100 dark:border-slate-800 pt-6"><p className="text-base sm:text-lg text-slate-600 dark:text-slate-300 leading-relaxed font-serif">{quranPopup.data.en}</p></div>
+                </div>
               </motion.div>
             </div>
           )}
