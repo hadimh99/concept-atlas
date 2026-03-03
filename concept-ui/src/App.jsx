@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Search, Moon, Sun, Sparkles, X, ChevronRight, ChevronLeft, Home, Copy, ChevronDown, ChevronUp, List, Layout, Info, BookOpen, Fingerprint, History, HelpCircle, Database, Filter, Share2, Book } from 'lucide-react';
+import { Search, Moon, Sun, Sparkles, X, ChevronRight, ChevronLeft, Home, Copy, ChevronDown, ChevronUp, List, Layout, Info, BookOpen, History, HelpCircle, Database, Filter, Share2, Book } from 'lucide-react';
 
 import quranData from './quran.json';
 
@@ -53,7 +53,7 @@ const APP_UPDATES = [
 const CLUSTER_COLORS = ['#10b981', '#8b5cf6', '#f59e0b', '#f43f5e', '#3b82f6'];
 const SOURCES = ["All Twelver Sources", "al-Kafi", "Bihar al-Anwar", "Basa'ir al-Darajat"];
 
-const HadithCard = ({ item, handleCopyHadith, searchMode }) => {
+const HadithCard = ({ item, handleCopyHadith, searchMode, onVerseClick }) => {
   const [showArabic, setShowArabic] = useState(false);
   const [showChain, setShowChain] = useState(false);
   const isKeyword = searchMode === 'keyword';
@@ -228,7 +228,7 @@ const HadithCard = ({ item, handleCopyHadith, searchMode }) => {
         parts.push(
           <button
             key={`verse-${match.index}`}
-            onClick={(e) => { e.stopPropagation(); if (item.onVerseClick) item.onVerseClick(surah, ayah); }}
+            onClick={(e) => { e.stopPropagation(); if (onVerseClick) onVerseClick(surah, ayah); }}
             className={`font-semibold cursor-pointer underline decoration-2 underline-offset-4 transition-all ${isKeyword ? 'text-blue-500 hover:text-blue-700 decoration-blue-500/30 hover:decoration-blue-500' : 'text-indigo-500 hover:text-indigo-400 decoration-indigo-500/30 hover:decoration-indigo-500'}`}
             title="Read Verse"
           >
@@ -412,96 +412,6 @@ const QuranReader = () => {
       </div>
     </div>
   );
-};
-
-return (
-  <div className={`rounded-xl p-5 sm:p-6 relative shadow-sm border ${isKeyword ? 'bg-slate-50 dark:bg-slate-800/80 border-slate-200 dark:border-slate-700' : 'bg-white dark:bg-slate-800 border-slate-100 dark:border-slate-700'}`}>
-
-    <div className={`mb-5 border-b pb-3 ${isKeyword ? 'border-slate-200 dark:border-slate-700' : 'border-slate-100 dark:border-slate-700'}`}>
-      <span className="text-xs sm:text-sm md:text-base font-medium text-slate-500 dark:text-slate-400 leading-relaxed block">
-        Book: {item.book}, Vol: {item.volume}, {item.sub_book}, Chapter: {item.chapter}
-        {(displayNum && displayNum !== "Unknown") && `, Hadith: ${displayNum}`}
-      </span>
-    </div>
-
-    <div className="mb-3">
-      <button
-        onClick={() => setShowArabic(!showArabic)}
-        className={`flex items-center gap-1 text-sm font-medium transition-colors cursor-pointer ${isKeyword ? 'text-blue-500 hover:text-blue-600 dark:text-blue-400 dark:hover:text-blue-300' : 'text-indigo-500 hover:text-indigo-600 dark:text-indigo-400 dark:hover:text-indigo-300'}`}
-      >
-        {showArabic ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-        {showArabic ? "Hide Original Arabic" : "View Original Arabic"}
-      </button>
-
-      <AnimatePresence>
-        {showArabic && (
-          <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: 'auto' }}
-            exit={{ opacity: 0, height: 0 }}
-            className="overflow-hidden"
-          >
-            <div className={`p-4 sm:p-5 rounded-lg mt-2 mb-4 border ${isKeyword ? 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800' : 'bg-slate-50 dark:bg-slate-900/50 border-slate-100 dark:border-slate-800'}`}>
-              <p className="font-arabic text-xl md:text-2xl text-right leading-[2.2] text-slate-700 dark:text-slate-300" dir="rtl">
-                {(displayNum && displayNum !== "Unknown") && `${displayNum}. `}{araText}
-              </p>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </div>
-
-    <div className="mb-4">
-      <button
-        onClick={() => setShowChain(!showChain)}
-        className={`flex items-center gap-1 text-xs font-semibold uppercase tracking-wider transition-colors cursor-pointer ${isKeyword ? 'text-slate-500 hover:text-blue-500 dark:hover:text-blue-400' : 'text-slate-400 hover:text-indigo-500 dark:hover:text-indigo-400'}`}
-      >
-        {showChain ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
-        {showChain ? "Hide Chain of Narrators" : "View Chain of Narrators"}
-      </button>
-
-      <AnimatePresence>
-        {showChain && (
-          <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: 'auto' }}
-            exit={{ opacity: 0, height: 0 }}
-            className="overflow-hidden"
-          >
-            <p className={`mt-2 p-3 rounded-lg text-sm italic font-sans border ${isKeyword ? 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400' : 'bg-slate-50/50 dark:bg-slate-900/30 border-slate-100 dark:border-slate-800 text-slate-500 dark:text-slate-400'}`}>
-              {chain ? chain : "Chain information not explicitly found in English text."}
-            </p>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </div>
-
-    <div className="mb-6">
-      {paragraphs.map((para, idx) => (
-        <p
-          key={idx}
-          className={`text-base sm:text-lg md:text-xl leading-[1.8] text-slate-900 dark:text-slate-50 ${idx !== paragraphs.length - 1 ? 'mb-5' : ''}`}
-          style={{ fontFamily: "'Times New Roman', Times, serif" }}
-        >
-          {(idx === 0 && displayNum && displayNum !== "Unknown") && (
-            <span className={`font-bold mr-2 ${isKeyword ? 'text-blue-600 dark:text-blue-400' : 'text-indigo-600 dark:text-indigo-400'}`}>{displayNum}.</span>
-          )}
-          {para}
-        </p>
-      ))}
-    </div>
-
-    <div className="mt-2 flex justify-end pt-4 border-t border-slate-50 dark:border-slate-700/50">
-      <button
-        onClick={() => handleCopyHadith({ ...item, hadith_number: displayNum, english_text: textToCopy })}
-        className={`flex items-center gap-2 text-xs font-mono transition-colors px-3 py-1.5 rounded-md cursor-pointer ${isKeyword ? 'text-slate-500 hover:text-blue-500 dark:hover:text-blue-400 hover:bg-slate-200/50 dark:hover:bg-slate-700/50' : 'text-slate-400 hover:text-indigo-500 dark:hover:text-indigo-400 hover:bg-slate-100 dark:hover:bg-slate-700/50'}`}
-      >
-        <Copy className="w-4 h-4" />
-        <span>Copy Text</span>
-      </button>
-    </div>
-  </div>
-);
 };
 
 const getTopKeywords = (items) => {
@@ -1318,7 +1228,7 @@ export default function App() {
                             </div>
                           ) : (
                             paginatedItems.map((item, idx) => (
-                              <HadithCard key={idx} item={{ ...item, onVerseClick: handleVerseClick }} handleCopyHadith={handleCopyHadith} searchMode={searchMode} />
+                              <HadithCard key={idx} item={item} handleCopyHadith={handleCopyHadith} searchMode={searchMode} onVerseClick={handleVerseClick} />
                             ))
                           )}
 
