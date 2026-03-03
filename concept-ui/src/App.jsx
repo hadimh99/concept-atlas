@@ -3,16 +3,14 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Search, Moon, Sun, Sparkles, X, ChevronRight, ChevronLeft, Home, Copy, ChevronDown, ChevronUp, List, Layout, Info, BookOpen, History, HelpCircle, Database, Filter, Share2, Check, Settings2, Menu } from 'lucide-react';
 import quranData from './quran.json';
 
-const APP_UPDATES = [{ version: "v3.1.0", date: "March 3, 2026", changes: ["Brand Evolution: Replaced generic icons with a custom, abstract geometric Kisa emblem.", "The new logo represents 'Enclosure & The Sacred Centre'—a 3/4 circular arc sheltering a constellation of five nodes.", "Unified the logo across the header, loading screens, and modals with dynamic color adaptation."] }, { version: "v3.0.0", date: "March 3, 2026", changes: ["Rebranded the application to 'Kisa', inspired by the profound tradition of Hadith al-Kisa.", "Made the top-left logo and app name fully clickable to instantly return to the home screen.", "Updated browser tab titles to reflect the new identity."] }, { version: "v2.10.1", date: "March 3, 2026", changes: ["Critical Bug Fix: Resolved a fatal React crash (Black Screen) on desktop Map View caused by a missing hover state variable."] }];
+const APP_UPDATES = [{ version: "v3.1.1", date: "March 3, 2026", changes: ["Brand Refinement: Applied a premium gold finish to the Kisa Kaf monogram.", "UI Polish: The main header logo now remains a consistent gold while its enclosing box smoothly changes color to reflect the active search mode (Indigo, Blue, or Amber).", "Favicon updated with a solid white backing for better browser visibility."] }, { version: "v3.1.0", date: "March 3, 2026", changes: ["Brand Evolution: Replaced generic icons with a custom geometric Kisa emblem.", "Unified the logo across the header, loading screens, and modals."] }, { version: "v3.0.0", date: "March 3, 2026", changes: ["Rebranded the application to 'Kisa', inspired by the profound tradition of Hadith al-Kisa.", "Made the top-left logo and app name fully clickable to instantly return to the home screen."] }];
 const CLUSTER_COLORS = ['#10b981', '#8b5cf6', '#f59e0b', '#f43f5e', '#3b82f6'];
 const SOURCES = ["All Twelver Sources", "al-Kafi", "Bihar al-Anwar", "Basa'ir al-Darajat"];
 
 // --- PREMIUM GEOMETRIC KAF MONOGRAM ---
 const KisaLogo = ({ className }) => (
   <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className={className}>
-    {/* Main Outer Structure of the Kaf */}
     <path d="M18 4V18.5C18 19.3284 17.3284 20 16.5 20H6.5C5.67157 20 5 19.3284 5 18.5V14" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
-    {/* Inner Mini-Kaf (Hamza-style geometric zigzag) */}
     <path d="M13.5 8.5L9.5 11L12.5 13.5L8.5 16" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
   </svg>
 );
@@ -187,14 +185,12 @@ const QuranReader = ({ activeFontFamily, fontStyle, setFontStyle }) => {
   const [showSurahMenu, setShowSurahMenu] = useState(false);
   const [showSettingsMenu, setShowSettingsMenu] = useState(false);
 
-  // Search State
   const [quranSearchQuery, setQuranSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState([]);
   const [targetVerse, setTargetVerse] = useState(null);
 
   const quranSearchInputRef = useRef(null);
 
-  // Initialize Surah List
   const surahs = useMemo(() => {
     const list = [];
     for (let i = 1; i <= 114; i++) {
@@ -341,7 +337,6 @@ const QuranReader = ({ activeFontFamily, fontStyle, setFontStyle }) => {
         <div className="fixed inset-0 z-[60] pointer-events-auto" onClick={() => { setShowSurahMenu(false); setShowSettingsMenu(false); setSearchResults([]); }} />
       )}
 
-      {/* SMART QURAN SEARCH BAR */}
       <div className="w-full relative mb-4 sm:mb-6 z-[70]">
         <form onSubmit={handleQuranSearchSubmit} className="flex items-center bg-white/40 dark:bg-black/30 backdrop-blur-sm border border-slate-300/50 dark:border-slate-800 rounded-2xl px-4 py-3 sm:py-3.5 shadow-sm transition-all focus-within:border-amber-500/50 dark:focus-within:border-amber-500/50 focus-within:bg-white/60 dark:focus-within:bg-black/50">
           <Search className="w-4 h-4 sm:w-5 sm:h-5 text-slate-400 mr-3 shrink-0" />
@@ -667,10 +662,10 @@ export default function App() {
 
       <header className="fixed top-0 w-full z-[75] p-4 sm:p-6 flex justify-between items-center pointer-events-none">
 
-        {/* CLICKABLE MASTER LOGO */}
+        {/* CLICKABLE MASTER LOGO: Gold Letter, Dynamic Box Background */}
         <div onClick={handleHomeClick} className="flex items-center gap-3 pointer-events-auto cursor-pointer group">
-          <div className={`w-10 h-10 rounded-full flex items-center justify-center transition-transform group-hover:scale-105 ${activeTab === 'quran' ? 'bg-amber-500/10 border border-amber-500/20' : isKeyword ? 'bg-blue-500/10 border border-blue-500/20 shadow-sm' : 'glass-panel border-indigo-400/20'}`}>
-            <KisaLogo className={`w-5 h-5 ${activeTab === 'quran' ? 'text-amber-700 dark:text-amber-500' : isKeyword ? 'text-blue-600 dark:text-blue-500' : 'text-indigo-600 dark:text-[var(--color-cluster-emerald)]'}`} />
+          <div className={`w-10 h-10 rounded-full flex items-center justify-center transition-all duration-500 group-hover:scale-105 ${activeTab === 'quran' ? 'bg-amber-500/10 border border-amber-500/20' : isKeyword ? 'bg-blue-500/10 border border-blue-500/20 shadow-sm' : 'bg-indigo-500/10 border border-indigo-500/20'}`}>
+            <KisaLogo className="w-5 h-5 text-amber-600 dark:text-amber-500" />
           </div>
           <div>
             <h1 className="font-sans font-bold text-lg sm:text-xl tracking-tight hidden sm:block group-hover:opacity-80 transition-opacity">Kisa</h1>
@@ -767,14 +762,14 @@ export default function App() {
                       <motion.div className="w-32 h-32 rounded-full absolute bg-[var(--color-cluster-emerald)]/30 blur-2xl" animate={{ scale: [1, 1.5, 1] }} transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }} />
                       <motion.div className="w-24 h-24 rounded-full absolute bg-[var(--color-cluster-amethyst)]/30 blur-xl" animate={{ scale: [1.2, 0.8, 1.2], rotate: 180 }} transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }} />
                       <div className="w-16 h-16 rounded-full glass-panel flex items-center justify-center border-white/40 shadow-[0_0_40px_rgba(255,255,255,0.2)]">
-                        <KisaLogo className="w-8 h-8 animate-pulse text-white" />
+                        <KisaLogo className="w-8 h-8 animate-pulse text-amber-500" />
                       </div>
                     </>
                   ) : (
                     <>
                       <motion.div className="w-32 h-32 rounded-full absolute bg-blue-500/20 blur-xl" animate={{ scale: [1, 1.2, 1] }} transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }} />
                       <div className="w-16 h-16 rounded-full bg-white dark:bg-slate-800 border border-slate-200 flex items-center justify-center shadow-lg">
-                        <KisaLogo className="w-8 h-8 animate-pulse text-blue-500" />
+                        <KisaLogo className="w-8 h-8 animate-pulse text-amber-500" />
                       </div>
                     </>
                   )}
