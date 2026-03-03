@@ -1,8 +1,20 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Search, Moon, Sun, Sparkles, X, ChevronRight, ChevronLeft, Home, Copy, ChevronDown, ChevronUp, List, Layout, Info, BookOpen, Fingerprint, History, HelpCircle, Database, Filter, Share2 } from 'lucide-react';
+import { Search, Moon, Sun, Sparkles, X, ChevronRight, ChevronLeft, Home, Copy, ChevronDown, ChevronUp, List, Layout, Info, BookOpen, Fingerprint, History, HelpCircle, Database, Filter, Share2, Book } from 'lucide-react';
+
+import quranData from './quran.json';
 
 const APP_UPDATES = [
+  {
+    version: "v2.0.0",
+    date: "March 3, 2026",
+    changes: [
+      "Massive Upgrade: The Quran is now fully integrated into Concept Atlas!",
+      "Holy Grail Feature: Hadiths that reference a verse like (2:255) are now automatically clickable. Click the blue link to instantly read the Arabic and translation.",
+      "Smart Copy: When you copy a hadith that references the Quran, the app automatically appends the actual Arabic verse and translation to your clipboard!",
+      "Dedicated Quran Reader: Click the new Book icon in the top menu to read the entire Quran in beautiful Uthmani script with Ali Quli Qarai's translation."
+    ]
+  },
   {
     version: "v1.5.0",
     date: "March 3, 2026",
@@ -197,6 +209,44 @@ const HadithCard = ({ item, handleCopyHadith, searchMode }) => {
     ? `${chain}\n\n${paragraphs.join('\n\n')}`
     : paragraphs.join('\n\n');
 
+  const renderTextWithQuranLinks = (text) => {
+    const regex = /\((\d+):(\d+)\)/g;
+    const parts = [];
+    let lastIndex = 0;
+    let match;
+
+    while ((match = regex.exec(text)) !== null) {
+      if (match.index > lastIndex) {
+        parts.push(text.substring(lastIndex, match.index));
+      }
+
+      const surah = match[1];
+      const ayah = match[2];
+      const key = `${surah}:${ayah}`;
+
+      if (quranData[key]) {
+        parts.push(
+          <button
+            key={`verse-${match.index}`}
+            onClick={(e) => { e.stopPropagation(); if (item.onVerseClick) item.onVerseClick(surah, ayah); }}
+            className={`font-semibold cursor-pointer underline decoration-2 underline-offset-4 transition-all ${isKeyword ? 'text-blue-500 hover:text-blue-700 decoration-blue-500/30 hover:decoration-blue-500' : 'text-indigo-500 hover:text-indigo-400 decoration-indigo-500/30 hover:decoration-indigo-500'}`}
+            title="Read Verse"
+          >
+            {match[0]}
+          </button>
+        );
+      } else {
+        parts.push(match[0]);
+      }
+      lastIndex = regex.lastIndex;
+    }
+
+    if (lastIndex < text.length) {
+      parts.push(text.substring(lastIndex));
+    }
+    return parts;
+  };
+
   return (
     <div className={`rounded-xl p-5 sm:p-6 relative shadow-sm border ${isKeyword ? 'bg-slate-50 dark:bg-slate-800/80 border-slate-200 dark:border-slate-700' : 'bg-white dark:bg-slate-800 border-slate-100 dark:border-slate-700'}`}>
 
@@ -269,7 +319,7 @@ const HadithCard = ({ item, handleCopyHadith, searchMode }) => {
             {(idx === 0 && displayNum && displayNum !== "Unknown") && (
               <span className={`font-bold mr-2 ${isKeyword ? 'text-blue-600 dark:text-blue-400' : 'text-indigo-600 dark:text-indigo-400'}`}>{displayNum}.</span>
             )}
-            {para}
+            {renderTextWithQuranLinks(para)}
           </p>
         ))}
       </div>
@@ -285,6 +335,173 @@ const HadithCard = ({ item, handleCopyHadith, searchMode }) => {
       </div>
     </div>
   );
+};
+
+const QuranReader = () => {
+  const [selectedSurah, setSelectedSurah] = useState(1);
+  const [showTranslation, setShowTranslation] = useState(true);
+
+  const surahs = [];
+  for (let i = 1; i <= 114; i++) {
+    if (quranData[`${i}:1`]) {
+      surahs.push({ id: i, enName: quranData[`${i}:1`].surahName, arName: quranData[`${i}:1`].surahArName });
+    }
+  }
+
+  const ayahs = [];
+  let aIdx = 1;
+  while (quranData[`${selectedSurah}:${aIdx}`]) {
+    ayahs.push(quranData[`${selectedSurah}:${aIdx}`]);
+    aIdx++;
+  }
+
+  return (
+    <div className="w-full max-w-4xl px-4 sm:px-6 pt-24 sm:pt-28 pb-12 h-full overflow-y-auto pointer-events-auto hide-scroll flex flex-col items-center">
+
+      <div className="w-full glass-panel p-4 sm:p-5 rounded-2xl mb-8 border border-white/20 dark:border-slate-700/50 shadow-sm flex flex-col sm:flex-row items-center justify-between gap-4">
+        <div className="flex items-center w-full sm:w-auto">
+          <select
+            value={selectedSurah}
+            onChange={(e) => setSelectedSurah(Number(e.target.value))}
+            className="w-full sm:w-[250px] bg-white/50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100 text-sm rounded-lg px-4 py-2.5 outline-none focus:border-indigo-500 transition-colors font-medium"
+          >
+            {surahs.map(s => (
+              <option key={s.id} value={s.id}>{s.id}. Surah {s.enName} ({s.arName})</option>
+            ))}
+          </select>
+        </div>
+        <button
+          onClick={() => setShowTranslation(!showTranslation)}
+          className={`px-4 py-2.5 rounded-lg text-xs font-bold uppercase tracking-wider transition-colors border ${showTranslation ? 'bg-indigo-500 text-white border-indigo-500 shadow-md' : 'bg-transparent text-slate-500 dark:text-slate-400 border-slate-300 dark:border-slate-600 hover:bg-slate-100 dark:hover:bg-slate-800'}`}
+        >
+          {showTranslation ? 'Hide Translation' : 'Show Translation'}
+        </button>
+      </div>
+
+      <div className="text-center mb-10">
+        <h1 className="text-4xl sm:text-5xl font-arabic text-indigo-600 dark:text-indigo-400 mb-2">
+          {surahs.find(s => s.id === selectedSurah)?.arName}
+        </h1>
+        <p className="text-slate-500 font-mono text-sm tracking-widest uppercase">
+          Surah {surahs.find(s => s.id === selectedSurah)?.enName}
+        </p>
+      </div>
+
+      <div className="w-full flex flex-col gap-8 pb-10">
+        {ayahs.map((ayah, idx) => (
+          <div key={idx} className="bg-white/40 dark:bg-slate-800/40 p-6 sm:p-8 rounded-2xl border border-slate-200 dark:border-slate-700/50 relative group">
+            <span className="absolute top-4 left-4 text-xs font-mono font-bold text-slate-400 dark:text-slate-500 bg-slate-200/50 dark:bg-slate-700/50 px-2 py-1 rounded">
+              {selectedSurah}:{idx + 1}
+            </span>
+            <p className="font-arabic text-2xl sm:text-3xl lg:text-4xl text-right leading-[2.4] sm:leading-[2.5] text-slate-800 dark:text-slate-100 mb-4" dir="rtl">
+              {ayah.ar} <span className="text-indigo-400 opacity-60 ml-1 text-xl">﴾{idx + 1}﴿</span>
+            </p>
+            <AnimatePresence>
+              {showTranslation && (
+                <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="overflow-hidden">
+                  <div className="border-t border-slate-200 dark:border-slate-700/50 pt-4 mt-2">
+                    <p className="text-base sm:text-lg text-slate-600 dark:text-slate-300 leading-relaxed font-serif">
+                      {ayah.en}
+                    </p>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
+
+return (
+  <div className={`rounded-xl p-5 sm:p-6 relative shadow-sm border ${isKeyword ? 'bg-slate-50 dark:bg-slate-800/80 border-slate-200 dark:border-slate-700' : 'bg-white dark:bg-slate-800 border-slate-100 dark:border-slate-700'}`}>
+
+    <div className={`mb-5 border-b pb-3 ${isKeyword ? 'border-slate-200 dark:border-slate-700' : 'border-slate-100 dark:border-slate-700'}`}>
+      <span className="text-xs sm:text-sm md:text-base font-medium text-slate-500 dark:text-slate-400 leading-relaxed block">
+        Book: {item.book}, Vol: {item.volume}, {item.sub_book}, Chapter: {item.chapter}
+        {(displayNum && displayNum !== "Unknown") && `, Hadith: ${displayNum}`}
+      </span>
+    </div>
+
+    <div className="mb-3">
+      <button
+        onClick={() => setShowArabic(!showArabic)}
+        className={`flex items-center gap-1 text-sm font-medium transition-colors cursor-pointer ${isKeyword ? 'text-blue-500 hover:text-blue-600 dark:text-blue-400 dark:hover:text-blue-300' : 'text-indigo-500 hover:text-indigo-600 dark:text-indigo-400 dark:hover:text-indigo-300'}`}
+      >
+        {showArabic ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+        {showArabic ? "Hide Original Arabic" : "View Original Arabic"}
+      </button>
+
+      <AnimatePresence>
+        {showArabic && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            className="overflow-hidden"
+          >
+            <div className={`p-4 sm:p-5 rounded-lg mt-2 mb-4 border ${isKeyword ? 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800' : 'bg-slate-50 dark:bg-slate-900/50 border-slate-100 dark:border-slate-800'}`}>
+              <p className="font-arabic text-xl md:text-2xl text-right leading-[2.2] text-slate-700 dark:text-slate-300" dir="rtl">
+                {(displayNum && displayNum !== "Unknown") && `${displayNum}. `}{araText}
+              </p>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+
+    <div className="mb-4">
+      <button
+        onClick={() => setShowChain(!showChain)}
+        className={`flex items-center gap-1 text-xs font-semibold uppercase tracking-wider transition-colors cursor-pointer ${isKeyword ? 'text-slate-500 hover:text-blue-500 dark:hover:text-blue-400' : 'text-slate-400 hover:text-indigo-500 dark:hover:text-indigo-400'}`}
+      >
+        {showChain ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+        {showChain ? "Hide Chain of Narrators" : "View Chain of Narrators"}
+      </button>
+
+      <AnimatePresence>
+        {showChain && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            className="overflow-hidden"
+          >
+            <p className={`mt-2 p-3 rounded-lg text-sm italic font-sans border ${isKeyword ? 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400' : 'bg-slate-50/50 dark:bg-slate-900/30 border-slate-100 dark:border-slate-800 text-slate-500 dark:text-slate-400'}`}>
+              {chain ? chain : "Chain information not explicitly found in English text."}
+            </p>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+
+    <div className="mb-6">
+      {paragraphs.map((para, idx) => (
+        <p
+          key={idx}
+          className={`text-base sm:text-lg md:text-xl leading-[1.8] text-slate-900 dark:text-slate-50 ${idx !== paragraphs.length - 1 ? 'mb-5' : ''}`}
+          style={{ fontFamily: "'Times New Roman', Times, serif" }}
+        >
+          {(idx === 0 && displayNum && displayNum !== "Unknown") && (
+            <span className={`font-bold mr-2 ${isKeyword ? 'text-blue-600 dark:text-blue-400' : 'text-indigo-600 dark:text-indigo-400'}`}>{displayNum}.</span>
+          )}
+          {para}
+        </p>
+      ))}
+    </div>
+
+    <div className="mt-2 flex justify-end pt-4 border-t border-slate-50 dark:border-slate-700/50">
+      <button
+        onClick={() => handleCopyHadith({ ...item, hadith_number: displayNum, english_text: textToCopy })}
+        className={`flex items-center gap-2 text-xs font-mono transition-colors px-3 py-1.5 rounded-md cursor-pointer ${isKeyword ? 'text-slate-500 hover:text-blue-500 dark:hover:text-blue-400 hover:bg-slate-200/50 dark:hover:bg-slate-700/50' : 'text-slate-400 hover:text-indigo-500 dark:hover:text-indigo-400 hover:bg-slate-100 dark:hover:bg-slate-700/50'}`}
+      >
+        <Copy className="w-4 h-4" />
+        <span>Copy Text</span>
+      </button>
+    </div>
+  </div>
+);
 };
 
 const getTopKeywords = (items) => {
@@ -318,7 +535,6 @@ const getTopKeywords = (items) => {
 };
 
 export default function App() {
-  // --- GRAB INITIAL STATE FROM URL ---
   const urlParams = new URLSearchParams(typeof window !== 'undefined' ? window.location.search : '');
 
   const [query, setQuery] = useState(urlParams.get('q') || '');
@@ -338,6 +554,10 @@ export default function App() {
   const [lengthFilter, setLengthFilter] = useState('All');
 
   const [copiedLink, setCopiedLink] = useState(false);
+
+  // --- NEW STATES FOR QURAN ECOSYSTEM ---
+  const [activeTab, setActiveTab] = useState('search'); // 'search' | 'quran'
+  const [quranPopup, setQuranPopup] = useState(null);
 
   const containerRef = useRef(null);
   const modalScrollRef = useRef(null);
@@ -370,10 +590,9 @@ export default function App() {
     }
   }, [theme]);
 
-  // --- AUTOMATIC INITIAL SEARCH ON LOAD ---
   useEffect(() => {
     const initialQ = urlParams.get('q');
-    if (initialQ && !data && !loading) {
+    if (initialQ && !data && !loading && activeTab === 'search') {
       executeSearch(initialQ, searchMode, sourceFilter);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -422,13 +641,11 @@ export default function App() {
     updateDimensions();
     window.addEventListener('resize', updateDimensions);
     return () => window.removeEventListener('resize', updateDimensions);
-  }, [data, viewMode]);
+  }, [data, viewMode, activeTab]);
 
-  // --- REFACTORED CORE SEARCH FUNCTION ---
   const executeSearch = async (searchQuery, currentMode, currentSource) => {
     if (!searchQuery.trim()) return;
 
-    // Silently update the browser URL
     const newUrl = new URL(window.location);
     newUrl.searchParams.set('q', searchQuery);
     newUrl.searchParams.set('mode', currentMode);
@@ -472,13 +689,40 @@ export default function App() {
     executeSearch(query, searchMode, sourceFilter);
   };
 
+  // --- UPGRADED SMART COPY FUNCTION ---
   const handleCopyHadith = (item) => {
-    const formattedText = `Book ${item.book}, Volume ${item.volume}, ${item.sub_book}, Chapter: ${item.chapter}, Hadith ${item.hadith_number}\n\n${item.arabic_text}\n\n${item.english_text}\n\n— Via Concept Atlas\n${window.location.href}`;
+    let formattedText = `Book ${item.book}, Volume ${item.volume}, ${item.sub_book}, Chapter: ${item.chapter}, Hadith ${item.hadith_number}\n\n${item.arabic_text}\n\n${item.english_text}`;
+
+    // Scan for Quran verses
+    const regex = /\((\d+):(\d+)\)/g;
+    const matches = [...(item.english_text || "").matchAll(regex)];
+    const uniqueVerses = new Set();
+    matches.forEach(m => uniqueVerses.add(`${m[1]}:${m[2]}`));
+
+    if (uniqueVerses.size > 0) {
+      formattedText += `\n\n--- Quranic References ---\n`;
+      uniqueVerses.forEach(key => {
+        if (quranData && quranData[key]) {
+          formattedText += `\n[Surah ${quranData[key].surahName} - ${key}]\n${quranData[key].ar}\n${quranData[key].en}\n`;
+        }
+      });
+    }
+
+    formattedText += `\n— Via Concept Atlas\n${window.location.href}`;
+
     navigator.clipboard.writeText(formattedText).then(() => {
-      console.log("Hadith copied to clipboard!");
+      console.log("Hadith & Quran copied to clipboard!");
     }).catch(err => {
       console.error("Failed to copy: ", err);
     });
+  };
+
+  // --- NEW VERSE CLICK HANDLER ---
+  const handleVerseClick = (surah, ayah) => {
+    const key = `${surah}:${ayah}`;
+    if (quranData && quranData[key]) {
+      setQuranPopup({ surah, ayah, data: quranData[key] });
+    }
   };
 
   const getRadialPosition = (index, total, rx, ry) => {
@@ -493,7 +737,7 @@ export default function App() {
   const isKeyword = searchMode === 'keyword';
 
   return (
-    <div className={`min-h-screen w-full overflow-hidden transition-colors duration-700 flex flex-col ${theme === 'dark' ? (isKeyword ? 'bg-slate-900 text-slate-100' : 'aurora-bg text-slate-100') : (isKeyword ? 'bg-slate-50 text-slate-900' : 'light-aurora-bg text-slate-900')}`}>
+    <div className={`min-h-screen w-full overflow-hidden transition-colors duration-700 flex flex-col ${theme === 'dark' ? (isKeyword && activeTab === 'search' ? 'bg-slate-900 text-slate-100' : 'aurora-bg text-slate-100') : (isKeyword && activeTab === 'search' ? 'bg-slate-50 text-slate-900' : 'light-aurora-bg text-slate-900')}`}>
 
       <style>{`
         .hide-scroll::-webkit-scrollbar { display: none; }
@@ -516,17 +760,17 @@ export default function App() {
 
       <header className="fixed top-0 w-full z-50 p-4 sm:p-6 flex justify-between items-center pointer-events-none">
         <div className="flex items-center gap-3">
-          <div className={`w-10 h-10 rounded-full flex items-center justify-center ${isKeyword ? 'bg-blue-500/10 border border-blue-500/20 shadow-sm' : 'glass-panel'}`}>
-            {isKeyword ? <Database className="w-5 h-5 text-blue-500" /> : <Sparkles className="w-5 h-5 text-[var(--color-cluster-emerald)]" />}
+          <div className={`w-10 h-10 rounded-full flex items-center justify-center ${activeTab === 'search' && isKeyword ? 'bg-blue-500/10 border border-blue-500/20 shadow-sm' : 'glass-panel'}`}>
+            {activeTab === 'quran' ? <Book className="w-5 h-5 text-indigo-500" /> : (isKeyword ? <Database className="w-5 h-5 text-blue-500" /> : <Sparkles className="w-5 h-5 text-[var(--color-cluster-emerald)]" />)}
           </div>
           <div>
             <h1 className="font-sans font-bold text-lg sm:text-xl tracking-tight hidden sm:block">Concept Atlas</h1>
             <div className="flex items-center gap-2 sm:mt-0.5">
-              <p className="font-sans text-[10px] sm:text-xs opacity-60 hidden sm:block">{isKeyword ? 'Database Index' : 'Semantic Explorer'}</p>
+              <p className="font-sans text-[10px] sm:text-xs opacity-60 hidden sm:block">{activeTab === 'quran' ? 'Quran Reader' : (isKeyword ? 'Database Index' : 'Semantic Explorer')}</p>
               <span className="hidden sm:block w-1 h-1 rounded-full bg-slate-300 dark:bg-slate-600"></span>
               <button
                 onClick={() => setShowUpdates(true)}
-                className={`pointer-events-auto text-[10px] font-bold uppercase tracking-wider transition-colors cursor-pointer flex items-center gap-1 px-1.5 py-0.5 rounded-md ${isKeyword ? 'text-blue-500 dark:text-blue-400 bg-blue-500/10 hover:text-blue-600 dark:hover:text-blue-300' : 'text-indigo-500 dark:text-indigo-400 bg-indigo-500/10 hover:text-indigo-600 dark:hover:text-indigo-300'}`}
+                className={`pointer-events-auto text-[10px] font-bold uppercase tracking-wider transition-colors cursor-pointer flex items-center gap-1 px-1.5 py-0.5 rounded-md ${activeTab === 'search' && isKeyword ? 'text-blue-500 dark:text-blue-400 bg-blue-500/10 hover:text-blue-600 dark:hover:text-blue-300' : 'text-indigo-500 dark:text-indigo-400 bg-indigo-500/10 hover:text-indigo-600 dark:hover:text-indigo-300'}`}
               >
                 <Sparkles className="w-3 h-3" />
                 What's New
@@ -536,7 +780,26 @@ export default function App() {
         </div>
 
         <div className="flex items-center gap-2 sm:gap-4 relative z-50 pointer-events-auto">
-          {data && !isKeyword && (
+
+          {/* --- TAB SWITCHER --- */}
+          <div className="flex items-center glass-panel rounded-full p-1 border-white/20 mr-2">
+            <button
+              onClick={() => setActiveTab('search')}
+              className={`p-2 rounded-full transition-all duration-300 ${activeTab === 'search' ? 'bg-indigo-500/20 text-indigo-500 dark:text-indigo-400' : 'text-slate-500 hover:text-slate-300'}`}
+              title="Search Engine"
+            >
+              <Search className="w-4 h-4" />
+            </button>
+            <button
+              onClick={() => setActiveTab('quran')}
+              className={`p-2 rounded-full transition-all duration-300 ${activeTab === 'quran' ? 'bg-indigo-500/20 text-indigo-500 dark:text-indigo-400' : 'text-slate-500 hover:text-slate-300'}`}
+              title="Quran Reader"
+            >
+              <Book className="w-4 h-4" />
+            </button>
+          </div>
+
+          {activeTab === 'search' && data && !isKeyword && (
             <div className="flex items-center glass-panel rounded-full p-1 border-white/20">
               <button
                 onClick={() => setViewMode('map')}
@@ -556,7 +819,7 @@ export default function App() {
           )}
 
           <AnimatePresence>
-            {data && (
+            {activeTab === 'search' && data && (
               <motion.button
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
@@ -566,7 +829,7 @@ export default function App() {
                   setQuery('');
                   setActiveCluster(null);
                   setHoveredCluster(null);
-                  window.history.pushState({}, '', window.location.pathname); // Clear URL
+                  window.history.pushState({}, '', window.location.pathname);
                 }}
                 className="w-10 h-10 sm:w-11 sm:h-11 rounded-full appearance-none outline-none bg-white/0 flex items-center justify-center group transition-all duration-300 hover:scale-110 cursor-pointer"
                 title="Return Home"
@@ -576,25 +839,26 @@ export default function App() {
             )}
           </AnimatePresence>
 
-          {/* --- ADDED SHARE BUTTON --- */}
-          <button
-            onClick={() => {
-              navigator.clipboard.writeText(window.location.href);
-              setCopiedLink(true);
-              setTimeout(() => setCopiedLink(false), 2000);
-            }}
-            className={`w-10 h-10 sm:w-11 sm:h-11 rounded-full appearance-none outline-none bg-white/0 flex items-center justify-center group transition-all duration-300 hover:scale-110 cursor-pointer ${copiedLink ? 'text-emerald-500 drop-shadow-[0_0_8px_rgba(16,185,129,0.5)]' : `text-slate-400 ${isKeyword ? 'hover:text-blue-500 dark:hover:text-blue-400' : 'hover:text-indigo-500 dark:hover:text-indigo-400'}`}`}
-            title="Share this Search"
-          >
-            <Share2 className="w-5 h-5 transition-all duration-300" />
-          </button>
+          {activeTab === 'search' && (
+            <button
+              onClick={() => {
+                navigator.clipboard.writeText(window.location.href);
+                setCopiedLink(true);
+                setTimeout(() => setCopiedLink(false), 2000);
+              }}
+              className={`w-10 h-10 sm:w-11 sm:h-11 rounded-full appearance-none outline-none bg-white/0 flex items-center justify-center group transition-all duration-300 hover:scale-110 cursor-pointer ${copiedLink ? 'text-emerald-500 drop-shadow-[0_0_8px_rgba(16,185,129,0.5)]' : `text-slate-400 ${isKeyword ? 'hover:text-blue-500 dark:hover:text-blue-400' : 'hover:text-indigo-500 dark:hover:text-indigo-400'}`}`}
+              title="Share this Search"
+            >
+              <Share2 className="w-5 h-5 transition-all duration-300" />
+            </button>
+          )}
 
           <button
             onClick={() => setShowInfo(true)}
             className="w-10 h-10 sm:w-11 sm:h-11 rounded-full appearance-none outline-none bg-white/0 flex items-center justify-center group transition-all duration-300 hover:scale-110 cursor-pointer"
             title="How to use this tool"
           >
-            <HelpCircle className={`w-5 h-5 text-slate-400 transition-all duration-300 ${isKeyword ? 'group-hover:text-blue-500 dark:group-hover:text-blue-400' : 'group-hover:text-indigo-500 dark:group-hover:text-indigo-400'}`} />
+            <HelpCircle className={`w-5 h-5 text-slate-400 transition-all duration-300 ${activeTab === 'search' && isKeyword ? 'group-hover:text-blue-500 dark:group-hover:text-blue-400' : 'group-hover:text-indigo-500 dark:group-hover:text-indigo-400'}`} />
           </button>
 
           <button
@@ -612,8 +876,12 @@ export default function App() {
       </header>
 
       <main ref={containerRef} className="relative w-full flex-grow flex items-center justify-center h-screen">
+
+        {/* --- QURAN READER VIEW --- */}
+        {activeTab === 'quran' && <QuranReader />}
+
         <AnimatePresence>
-          {!data && !loading && (
+          {activeTab === 'search' && !data && !loading && (
             <motion.div
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
@@ -717,7 +985,7 @@ export default function App() {
         </AnimatePresence>
 
         <AnimatePresence>
-          {loading && (
+          {activeTab === 'search' && loading && (
             <motion.div
               initial={{ opacity: 0, scale: 0 }}
               animate={{ opacity: 1, scale: 1 }}
@@ -750,7 +1018,7 @@ export default function App() {
         </AnimatePresence>
 
         <AnimatePresence>
-          {data && !loading && (
+          {activeTab === 'search' && data && !loading && (
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -821,7 +1089,16 @@ export default function App() {
                     const finalBaseScale = Math.max(0.65, baseScale);
                     const targetScale = isActive ? finalBaseScale * 1.05 : finalBaseScale;
 
-                    const topKeywords = getTopKeywords(cluster.items);
+                    // Reuse the helper to show keywords
+                    const stopWords = new Set(["the", "and", "to", "of", "a", "in", "that", "is", "for", "it", "with", "as", "he", "was", "on", "from", "who", "has", "said", "this", "they", "but", "are", "not", "have", "be", "upon", "him", "peace", "narrated", "which", "what", "their", "all", "your", "them", "those", "these", "would", "were", "had", "been", "also", "allah", "messenger", "imam", "ibn", "abu", "ali", "muhammad", "abdillah", "abdullah", "ja'far", "hasan", "husayn", "baqir", "sadiq", "prophet", "lord", "holy", "people", "man", "men", "woman", "women", "asked", "told", "heard", "came", "went", "saying", "some", "we", "you", "by", "or", "if", "when", "an", "at", "about", "then", "there", "his", "do", "did", "does", "can", "could", "should", "shall", "will"]);
+                    const wordCounts = {};
+                    cluster.items.forEach(item => {
+                      const words = item.english_text.toLowerCase().replace(/[^\w\s-]/g, '').split(/\s+/);
+                      words.forEach(word => {
+                        if (word.length > 4 && !stopWords.has(word)) wordCounts[word] = (wordCounts[word] || 0) + 1;
+                      });
+                    });
+                    const topKeywords = Object.entries(wordCounts).sort((a, b) => b[1] - a[1]).slice(0, 3).map(e => e[0]);
 
                     return (
                       <motion.div
@@ -908,7 +1185,16 @@ export default function App() {
 
                   <div className={`flex flex-col border-t ${isKeyword ? 'border-slate-200 dark:border-slate-700' : 'border-slate-200 dark:border-slate-800'}`}>
                     {data.clusters.map((cluster, i) => {
-                      const topKeywords = getTopKeywords(cluster.items);
+                      // Inline TopKeywords helper for list view
+                      const stopWords = new Set(["the", "and", "to", "of", "a", "in", "that", "is", "for", "it", "with", "as", "he", "was", "on", "from", "who", "has", "said", "this", "they", "but", "are", "not", "have", "be", "upon", "him", "peace", "narrated", "which", "what", "their", "all", "your", "them", "those", "these", "would", "were", "had", "been", "also", "allah", "messenger", "imam", "ibn", "abu", "ali", "muhammad", "abdillah", "abdullah", "ja'far", "hasan", "husayn", "baqir", "sadiq", "prophet", "lord", "holy", "people", "man", "men", "woman", "women", "asked", "told", "heard", "came", "went", "saying", "some", "we", "you", "by", "or", "if", "when", "an", "at", "about", "then", "there", "his", "do", "did", "does", "can", "could", "should", "shall", "will"]);
+                      const wordCounts = {};
+                      cluster.items.forEach(item => {
+                        const words = item.english_text.toLowerCase().replace(/[^\w\s-]/g, '').split(/\s+/);
+                        words.forEach(word => {
+                          if (word.length > 4 && !stopWords.has(word)) wordCounts[word] = (wordCounts[word] || 0) + 1;
+                        });
+                      });
+                      const topKeywords = Object.entries(wordCounts).sort((a, b) => b[1] - a[1]).slice(0, 3).map(e => e[0]);
 
                       return (
                         <motion.div
@@ -953,7 +1239,7 @@ export default function App() {
                 </div>
               )}
 
-              {/* --- THE MODAL WITH ADDED FILTER LOGIC --- */}
+              {/* --- CLUSTER RESULTS MODAL --- */}
               <AnimatePresence>
                 {activeCluster !== null && data.clusters[activeCluster] && (() => {
 
@@ -1032,7 +1318,7 @@ export default function App() {
                             </div>
                           ) : (
                             paginatedItems.map((item, idx) => (
-                              <HadithCard key={idx} item={item} handleCopyHadith={handleCopyHadith} searchMode={searchMode} />
+                              <HadithCard key={idx} item={{ ...item, onVerseClick: handleVerseClick }} handleCopyHadith={handleCopyHadith} searchMode={searchMode} />
                             ))
                           )}
 
@@ -1073,6 +1359,54 @@ export default function App() {
               </AnimatePresence>
 
             </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* --- THE HOLY GRAIL QURAN POPUP MODAL --- */}
+        <AnimatePresence>
+          {quranPopup && (
+            <div className="fixed inset-0 z-[3000] flex items-center justify-center pointer-events-auto p-4 sm:p-0">
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                onClick={() => setQuranPopup(null)}
+                className="absolute inset-0 bg-slate-900/80 backdrop-blur-md cursor-pointer"
+              />
+
+              <motion.div
+                initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.9, y: 20 }}
+                className="relative bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 w-full sm:w-[90vw] max-w-[600px] flex flex-col shadow-2xl rounded-2xl z-[3001] p-6 sm:p-8"
+              >
+                <button
+                  onClick={() => setQuranPopup(null)}
+                  className="absolute top-4 right-4 p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-colors cursor-pointer text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+
+                <div className="text-center mb-6 mt-2">
+                  <h3 className="font-mono text-sm tracking-widest uppercase text-indigo-500 dark:text-indigo-400 font-bold mb-1">
+                    Surah {quranPopup.data.surahName}
+                  </h3>
+                  <p className="text-xs text-slate-400 font-mono">Verse {quranPopup.ayah}</p>
+                </div>
+
+                <div className="mb-6">
+                  <p className="font-arabic text-3xl sm:text-4xl text-right leading-[2.2] text-slate-800 dark:text-slate-100" dir="rtl">
+                    {quranPopup.data.ar}
+                  </p>
+                </div>
+
+                <div className="border-t border-slate-100 dark:border-slate-800 pt-6">
+                  <p className="text-base sm:text-lg text-slate-600 dark:text-slate-300 leading-relaxed font-serif">
+                    {quranPopup.data.en}
+                  </p>
+                </div>
+              </motion.div>
+            </div>
           )}
         </AnimatePresence>
 
