@@ -3,9 +3,24 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Search, Moon, Sun, Sparkles, X, ChevronRight, ChevronLeft, Home, Copy, ChevronDown, ChevronUp, List, Layout, Info, BookOpen, History, HelpCircle, Database, Filter, Share2, Check, Settings2, Menu } from 'lucide-react';
 import quranData from './quran.json';
 
-const APP_UPDATES = [{ version: "v3.0.0", date: "March 3, 2026", changes: ["Rebranded the application to 'Kisa', inspired by the profound tradition of Hadith al-Kisa.", "Made the top-left logo and app name fully clickable to instantly return to the home screen.", "Updated browser tab titles to reflect the new identity."] }, { version: "v2.10.1", date: "March 3, 2026", changes: ["Critical Bug Fix: Resolved a fatal React crash (Black Screen) on desktop Map View caused by a missing hover state variable.", "Visual Fix: Removed full-screen scaling on the loading screen to restore the beautiful, unclipped glowing orbs in the dead center of the screen."] }, { version: "v2.9.9", date: "March 3, 2026", changes: ["Mobile Polish: Fixed the iOS auto-zoom bug by enforcing 16px minimum text size on search inputs.", "Enabled 'Enter' key submission on all search bars and automatic keyboard dismissal.", "Rebuilt the scrolling architecture so tapping the top of an iPhone screen instantly scrolls to the top of the page."] }];
+const APP_UPDATES = [{ version: "v3.1.0", date: "March 3, 2026", changes: ["Brand Evolution: Replaced generic icons with a custom, abstract geometric Kisa emblem.", "The new logo represents 'Enclosure & The Sacred Centre'—a 3/4 circular arc sheltering a constellation of five nodes.", "Unified the logo across the header, loading screens, and modals with dynamic color adaptation."] }, { version: "v3.0.0", date: "March 3, 2026", changes: ["Rebranded the application to 'Kisa', inspired by the profound tradition of Hadith al-Kisa.", "Made the top-left logo and app name fully clickable to instantly return to the home screen.", "Updated browser tab titles to reflect the new identity."] }, { version: "v2.10.1", date: "March 3, 2026", changes: ["Critical Bug Fix: Resolved a fatal React crash (Black Screen) on desktop Map View caused by a missing hover state variable."] }];
 const CLUSTER_COLORS = ['#10b981', '#8b5cf6', '#f59e0b', '#f43f5e', '#3b82f6'];
 const SOURCES = ["All Twelver Sources", "al-Kafi", "Bihar al-Anwar", "Basa'ir al-Darajat"];
+
+// --- CUSTOM KISA BRAND EMBLEM ---
+const KisaLogo = ({ className }) => (
+  <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className={className}>
+    {/* The Enclosing Arc (The Cloak) */}
+    <path d="M6.5 17.5 A 8 8 0 1 1 17.5 17.5" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" />
+
+    {/* The Five Nodes (Sacred Centre) */}
+    <circle cx="12" cy="8" r="1.5" fill="currentColor" stroke="none" />
+    <circle cx="8.5" cy="11" r="1.5" fill="currentColor" stroke="none" />
+    <circle cx="15.5" cy="11" r="1.5" fill="currentColor" stroke="none" />
+    <circle cx="10" cy="15" r="1.5" fill="currentColor" stroke="none" />
+    <circle cx="14" cy="15" r="1.5" fill="currentColor" stroke="none" />
+  </svg>
+);
 
 const HadithCard = ({ item, handleCopyHadith, searchMode, onVerseClick }) => {
   const [showArabic, setShowArabic] = useState(false);
@@ -538,7 +553,7 @@ export default function App() {
   };
 
   useEffect(() => {
-    document.title = "Kisa"; // Dynamically update the browser tab title
+    document.title = "Kisa";
     theme === 'dark' ? document.documentElement.classList.add('dark') : document.documentElement.classList.remove('dark');
   }, [theme]);
 
@@ -593,7 +608,6 @@ export default function App() {
     executeSearch(query, searchMode, sourceFilter);
   };
 
-  // Master Home Click Handler
   const handleHomeClick = () => {
     setData(null);
     setQuery('');
@@ -634,7 +648,6 @@ export default function App() {
   return (
     <div className={`min-h-screen w-full transition-colors duration-700 flex flex-col ${lockMainScreen ? 'overflow-hidden h-screen' : 'overflow-x-hidden'} ${appBgClass}`}>
       <style>{`
-        /* Official Google Fonts - Guaranteed to load, no CORS blocks */
         @import url('https://fonts.googleapis.com/css2?family=Amiri+Quran&family=Amiri:wght@400;700&family=Scheherazade+New:wght@400;700&family=Noto+Naskh+Arabic:wght@400;700&display=swap');
         
         @font-face {
@@ -659,10 +672,10 @@ export default function App() {
 
       <header className="fixed top-0 w-full z-[75] p-4 sm:p-6 flex justify-between items-center pointer-events-none">
 
-        {/* Clickable Header Logo & Title */}
+        {/* CLICKABLE MASTER LOGO */}
         <div onClick={handleHomeClick} className="flex items-center gap-3 pointer-events-auto cursor-pointer group">
-          <div className={`w-10 h-10 rounded-full flex items-center justify-center transition-transform group-hover:scale-105 ${activeTab === 'search' && isKeyword ? 'bg-blue-500/10 border border-blue-500/20 shadow-sm' : 'glass-panel border-slate-400/20'}`}>
-            {activeTab === 'quran' ? <BookOpen className="w-5 h-5 text-amber-700 dark:text-amber-500" /> : (isKeyword ? <Database className="w-5 h-5 text-blue-500" /> : <Sparkles className="w-5 h-5 text-[var(--color-cluster-emerald)]" />)}
+          <div className={`w-10 h-10 rounded-full flex items-center justify-center transition-transform group-hover:scale-105 ${activeTab === 'quran' ? 'bg-amber-500/10 border border-amber-500/20' : isKeyword ? 'bg-blue-500/10 border border-blue-500/20 shadow-sm' : 'glass-panel border-indigo-400/20'}`}>
+            <KisaLogo className={`w-5 h-5 ${activeTab === 'quran' ? 'text-amber-700 dark:text-amber-500' : isKeyword ? 'text-blue-600 dark:text-blue-500' : 'text-indigo-600 dark:text-[var(--color-cluster-emerald)]'}`} />
           </div>
           <div>
             <h1 className="font-sans font-bold text-lg sm:text-xl tracking-tight hidden sm:block group-hover:opacity-80 transition-opacity">Kisa</h1>
@@ -759,14 +772,14 @@ export default function App() {
                       <motion.div className="w-32 h-32 rounded-full absolute bg-[var(--color-cluster-emerald)]/30 blur-2xl" animate={{ scale: [1, 1.5, 1] }} transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }} />
                       <motion.div className="w-24 h-24 rounded-full absolute bg-[var(--color-cluster-amethyst)]/30 blur-xl" animate={{ scale: [1.2, 0.8, 1.2], rotate: 180 }} transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }} />
                       <div className="w-16 h-16 rounded-full glass-panel flex items-center justify-center border-white/40 shadow-[0_0_40px_rgba(255,255,255,0.2)]">
-                        <Sparkles className="w-6 h-6 animate-pulse text-white" />
+                        <KisaLogo className="w-8 h-8 animate-pulse text-white" />
                       </div>
                     </>
                   ) : (
                     <>
                       <motion.div className="w-32 h-32 rounded-full absolute bg-blue-500/20 blur-xl" animate={{ scale: [1, 1.2, 1] }} transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }} />
                       <div className="w-16 h-16 rounded-full bg-white dark:bg-slate-800 border border-slate-200 flex items-center justify-center shadow-lg">
-                        <Database className="w-6 h-6 animate-pulse text-blue-500" />
+                        <KisaLogo className="w-8 h-8 animate-pulse text-blue-500" />
                       </div>
                     </>
                   )}
@@ -916,7 +929,7 @@ export default function App() {
             <div className="fixed inset-0 z-[2000] flex items-center justify-center pointer-events-auto p-4 sm:p-0">
               <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setShowInfo(false)} className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm cursor-pointer" />
               <motion.div initial={{ opacity: 0, scale: 0.95, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 20 }} className="relative bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 w-full sm:w-[90vw] max-w-[600px] max-h-[85vh] flex flex-col shadow-2xl rounded-2xl z-[2001]">
-                <div className="flex justify-between items-center bg-slate-50/90 dark:bg-slate-900/90 backdrop-blur-md pt-5 pb-4 px-5 z-10 border-b border-slate-200 dark:border-slate-800 rounded-t-2xl shrink-0"><h2 className="text-lg sm:text-xl font-mono font-bold tracking-tight text-slate-800 dark:text-slate-100 flex items-center gap-2"><HelpCircle className="w-5 h-5 text-emerald-500" />How to Use Kisa</h2><button onClick={() => setShowInfo(false)} className="p-2 hover:bg-slate-200 dark:hover:bg-slate-800 rounded-full transition-colors cursor-pointer shrink-0"><X className="w-5 h-5" /></button></div>
+                <div className="flex justify-between items-center bg-slate-50/90 dark:bg-slate-900/90 backdrop-blur-md pt-5 pb-4 px-5 z-10 border-b border-slate-200 dark:border-slate-800 rounded-t-2xl shrink-0"><h2 className="text-lg sm:text-xl font-mono font-bold tracking-tight text-slate-800 dark:text-slate-100 flex items-center gap-2"><KisaLogo className="w-5 h-5 text-emerald-500" />How to Use Kisa</h2><button onClick={() => setShowInfo(false)} className="p-2 hover:bg-slate-200 dark:hover:bg-slate-800 rounded-full transition-colors cursor-pointer shrink-0"><X className="w-5 h-5" /></button></div>
                 <div className="p-5 sm:p-6 overflow-y-auto flex-grow smart-scrollbar flex flex-col gap-6 text-slate-700 dark:text-slate-300">
                   <div><h3 className="font-bold text-base sm:text-lg mb-2 text-slate-900 dark:text-white">Welcome to the Explorer</h3><p className="leading-relaxed text-xs sm:text-sm">Kisa is a semantic search engine designed specifically to explore authentic Twelver Shia literature, prioritizing core texts like <i>al-Kafi</i>, <i>Bihar al-Anwar</i>, and <i>Basa'ir al-Darajat</i>. It mathematically groups verified texts so you can explore concepts without AI hallucinations.</p></div>
                   <hr className="border-slate-200 dark:border-slate-700" />
