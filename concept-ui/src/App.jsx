@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Search, Moon, Sun, Sparkles, X, ChevronRight, ChevronLeft, Home, Copy, ChevronDown, ChevronUp, List, Layout, BookOpen, History, HelpCircle, Database, Filter, Share2, Check } from 'lucide-react';
 import quranData from './quran.json';
 
-const APP_UPDATES = [{ version: "v2.5.0", date: "March 3, 2026", changes: ["Fixed overlapping nodes in map view by introducing an inward-stagger radial layout.", "Restored multi-line wrapping for long node titles so they don't stretch off screen.", "Removed the 'Roots' hover feature for a cleaner UI."] }, { version: "v2.4.0", date: "March 3, 2026", changes: ["Added visual 'Copied!' feedback to Hadith cards.", "Added XB Zar / Uthmani font toggle to the Quran reader.", "Replaced confusing UI icons with a clear open book for the Quran."] }, { version: "v2.3.0", date: "March 3, 2026", changes: ["Mobile Polish: Fixed an issue where scrolling felt 'stuck' on mobile devices.", "Quran verse reference boxes are now perfectly visible on phone screens."] }];
+const APP_UPDATES = [{ version: "v2.5.0", date: "March 3, 2026", changes: ["Fixed overlapping map nodes with an inward-stagger layout.", "Restored beautiful multi-line text wrapping for long node labels.", "Fixed Arabic font fallback bugs and made font toggle visible on mobile."] }, { version: "v2.4.0", date: "March 3, 2026", changes: ["Added visual 'Copied!' feedback to Hadith cards.", "Added XB Zar / Uthmani font toggle to the Quran reader.", "Replaced confusing UI icons with a clear open book for the Quran."] }, { version: "v2.3.0", date: "March 3, 2026", changes: ["Mobile Polish: Fixed an issue where scrolling felt 'stuck' on mobile devices.", "Quran verse reference boxes are now perfectly visible on phone screens.", "Long Quran popups now have proper internal scrolling and a sticky exit button."] }];
 const CLUSTER_COLORS = ['#10b981', '#8b5cf6', '#f59e0b', '#f43f5e', '#3b82f6'];
 const SOURCES = ["All Twelver Sources", "al-Kafi", "Bihar al-Anwar", "Basa'ir al-Darajat"];
 
@@ -165,11 +165,10 @@ const toArabicNum = (n) => {
   return n.toString().split('').map(d => digits[d]).join('');
 };
 
-const QuranReader = () => {
+const QuranReader = ({ activeFontFamily, fontStyle, setFontStyle }) => {
   const [selectedSurah, setSelectedSurah] = useState(1);
   const [showTranslation, setShowTranslation] = useState(true);
   const [readingMode, setReadingMode] = useState('verse');
-  const [fontStyle, setFontStyle] = useState('uthmani');
 
   const surahs = [];
   for (let i = 1; i <= 114; i++) { if (quranData[`${i}:1`]) surahs.push({ id: i, enName: quranData[`${i}:1`].surahName, arName: quranData[`${i}:1`].surahArName }); }
@@ -193,17 +192,15 @@ const QuranReader = () => {
     return { ...ayah, ar: arText };
   });
 
-  const activeFontFamily = fontStyle === 'xbzar' ? '"XB Zar", "Amiri", serif' : 'inherit';
-
   return (
     <div className="w-full max-w-4xl px-4 sm:px-6 pt-24 sm:pt-28 pb-12 h-full overflow-y-auto pointer-events-auto hide-scroll flex flex-col items-center">
       <div className="w-full bg-white/40 dark:bg-black/30 backdrop-blur-sm p-4 sm:p-5 rounded-2xl mb-12 border border-slate-300/50 dark:border-slate-800 shadow-sm flex flex-col md:flex-row items-center justify-between gap-4">
-        <select value={selectedSurah} onChange={(e) => setSelectedSurah(Number(e.target.value))} className="w-full md:w-[250px] bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-slate-800 dark:text-slate-100 text-sm rounded-lg px-4 py-2.5 outline-none focus:border-amber-600 dark:focus:border-amber-500 transition-colors font-medium shadow-sm">
+        <select value={selectedSurah} onChange={(e) => setSelectedSurah(Number(e.target.value))} className="w-full md:w-[250px] bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-slate-800 dark:text-slate-100 text-sm rounded-lg px-4 py-2.5 outline-none focus:border-amber-600 dark:focus:border-amber-500 transition-colors font-medium shadow-sm cursor-pointer">
           {surahs.map(s => (<option key={s.id} value={s.id}>{s.id}. Surah {s.enName} ({s.arName})</option>))}
         </select>
 
-        <div className="flex flex-wrap items-center gap-3 w-full md:w-auto justify-end">
-          <div className="flex items-center bg-white/60 dark:bg-slate-900/60 p-1 rounded-lg border border-slate-300 dark:border-slate-700 shadow-sm hidden sm:flex">
+        <div className="flex flex-wrap items-center gap-3 w-full md:w-auto justify-center md:justify-end">
+          <div className="flex items-center bg-white/60 dark:bg-slate-900/60 p-1 rounded-lg border border-slate-300 dark:border-slate-700 shadow-sm">
             <button onClick={() => setFontStyle('uthmani')} className={`px-3 py-1.5 rounded-md text-[10px] sm:text-xs font-bold uppercase tracking-wider transition-colors cursor-pointer ${fontStyle === 'uthmani' ? 'bg-amber-700 dark:bg-amber-600 text-white shadow-md' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'}`}>Uthmani</button>
             <button onClick={() => setFontStyle('xbzar')} className={`px-3 py-1.5 rounded-md text-[10px] sm:text-xs font-bold uppercase tracking-wider transition-colors cursor-pointer ${fontStyle === 'xbzar' ? 'bg-amber-700 dark:bg-amber-600 text-white shadow-md' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'}`}>XB Zar</button>
           </div>
@@ -281,7 +278,7 @@ export default function App() {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [theme, setTheme] = useState('dark');
-  const [viewMode, setViewMode] = useState(window.innerWidth < 768 || urlParams.get('mode') === 'keyword' ? 'list' : 'map');
+  const [viewMode, setViewMode] = useState(window.innerWidth < 800 || urlParams.get('mode') === 'keyword' ? 'list' : 'map');
   const [activeCluster, setActiveCluster] = useState(null);
   const [hoveredCluster, setHoveredCluster] = useState(null);
   const [showDropdown, setShowDropdown] = useState(false);
@@ -291,6 +288,11 @@ export default function App() {
   const [copiedLink, setCopiedLink] = useState(false);
   const [activeTab, setActiveTab] = useState('search');
   const [quranPopup, setQuranPopup] = useState(null);
+
+  // Font State Lifted Up so popups match the reader
+  const [fontStyle, setFontStyle] = useState('uthmani');
+  const activeFontFamily = fontStyle === 'uthmani' ? '"Amiri Quran", "Amiri", serif' : '"XB Zar", Arial, sans-serif';
+
   const containerRef = useRef(null);
   const modalScrollRef = useRef(null);
   const [centerPos, setCenterPos] = useState({ x: 0, y: 0 });
@@ -328,7 +330,7 @@ export default function App() {
     const updateDimensions = () => {
       setWindowWidth(window.innerWidth);
       if (containerRef.current) setCenterPos({ x: containerRef.current.clientWidth / 2, y: containerRef.current.clientHeight / 2 });
-      if (window.innerWidth < 768 && viewMode === 'map') setViewMode('list');
+      if (window.innerWidth < 800 && viewMode === 'map') setViewMode('list');
     };
     updateDimensions(); window.addEventListener('resize', updateDimensions); return () => window.removeEventListener('resize', updateDimensions);
   }, [data, viewMode, activeTab]);
@@ -365,7 +367,7 @@ export default function App() {
 
   const getRadialPosition = (index, total, rx, ry) => {
     const angle = (index * (360 / total) - 90) * (Math.PI / 180);
-    const pullIn = (total > 4 && index % 2 !== 0) ? 0.65 : 1;
+    const pullIn = (total > 4 && index % 2 !== 0) ? 0.55 : 1;
     return { x: Math.cos(angle) * (rx * pullIn), y: Math.sin(angle) * (ry * pullIn) };
   };
 
@@ -377,7 +379,7 @@ export default function App() {
   return (
     <div className={`min-h-screen w-full overflow-hidden transition-colors duration-700 flex flex-col ${appBgClass}`}>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Amiri+Quran&family=Amiri:wght@400;700&display=swap');
         .hide-scroll::-webkit-scrollbar { display: none; }
         .hide-scroll { -ms-overflow-style: none; scrollbar-width: none; -webkit-overflow-scrolling: touch; overscroll-behavior-y: contain; }
         .smart-scrollbar { --thumb-bg: transparent; scrollbar-width: thin; scrollbar-color: var(--thumb-bg) transparent; -webkit-overflow-scrolling: touch; overscroll-behavior-y: contain; }
@@ -411,7 +413,7 @@ export default function App() {
       </header>
 
       <main ref={containerRef} className="relative w-full flex-grow flex items-center justify-center h-screen">
-        {activeTab === 'quran' && <QuranReader theme={theme} />}
+        {activeTab === 'quran' && <QuranReader activeFontFamily={activeFontFamily} fontStyle={fontStyle} setFontStyle={setFontStyle} />}
         <AnimatePresence>
           {activeTab === 'search' && !data && !loading && (
             <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.9, filter: "blur(10px)" }} className="z-10 flex flex-col items-center w-full max-w-2xl px-4 sm:px-6">
@@ -425,7 +427,7 @@ export default function App() {
                   </div>
                   <div className="relative py-3 px-2 flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
                     <div className={`flex items-center rounded-lg p-1 border ${isKeyword ? 'bg-slate-100 dark:bg-slate-800 border-slate-300 dark:border-slate-700' : 'bg-white/30 dark:bg-slate-800/60 border-white/40 dark:border-slate-700/50'}`}>
-                      <button type="button" onClick={() => { setSearchMode('concept'); setViewMode(window.innerWidth < 768 ? 'list' : 'map'); }} className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[10px] sm:text-xs font-bold uppercase tracking-wider transition-all duration-300 flex-1 sm:flex-none justify-center cursor-pointer ${!isKeyword ? 'bg-indigo-500 text-white shadow-md' : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-200'}`}><Sparkles className="w-3.5 h-3.5" /> Concept</button>
+                      <button type="button" onClick={() => { setSearchMode('concept'); setViewMode(window.innerWidth < 800 ? 'list' : 'map'); }} className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[10px] sm:text-xs font-bold uppercase tracking-wider transition-all duration-300 flex-1 sm:flex-none justify-center cursor-pointer ${!isKeyword ? 'bg-indigo-500 text-white shadow-md' : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-200'}`}><Sparkles className="w-3.5 h-3.5" /> Concept</button>
                       <button type="button" onClick={() => { setSearchMode('keyword'); setViewMode('list'); }} className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[10px] sm:text-xs font-bold uppercase tracking-wider transition-all duration-300 flex-1 sm:flex-none justify-center cursor-pointer ${isKeyword ? 'bg-blue-500 text-white shadow-md' : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-200'}`}><Database className="w-3.5 h-3.5" /> Keyword</button>
                     </div>
                     <div className="flex items-center w-full sm:w-auto">
@@ -471,19 +473,19 @@ export default function App() {
                   </motion.div>
                   <svg className="absolute inset-0 w-full h-full pointer-events-none z-10">
                     {data.clusters.map((cluster, i) => {
-                      const rx = Math.max(120, centerPos.x - 140), ry = Math.max(120, centerPos.y - 140), pos = getRadialPosition(i, data.clusters.length, rx, ry), color = CLUSTER_COLORS[i % CLUSTER_COLORS.length], isActive = activeCluster === i, isHovered = hoveredCluster === i;
+                      const rx = Math.max(160, centerPos.x - 160), ry = Math.max(140, centerPos.y - 120), pos = getRadialPosition(i, data.clusters.length, rx, ry), color = CLUSTER_COLORS[i % CLUSTER_COLORS.length], isActive = activeCluster === i, isHovered = hoveredCluster === i;
                       return (<motion.line key={`line-${i}`} x1={centerPos.x} y1={centerPos.y} x2={centerPos.x + pos.x} y2={centerPos.y + pos.y} stroke={color} strokeWidth={isActive ? 2 : isHovered ? 1.5 : 1} strokeOpacity={isActive ? 0.8 : isHovered ? 0.6 : 0.15} initial={{ pathLength: 0 }} animate={{ pathLength: 1 }} transition={{ duration: 1, delay: i * 0.2 }} className="transition-all duration-300" />);
                     })}
                   </svg>
                   {data.clusters.map((cluster, i) => {
-                    const rx = Math.max(120, centerPos.x - 140), ry = Math.max(120, centerPos.y - 140), pos = getRadialPosition(i, data.clusters.length, rx, ry), color = CLUSTER_COLORS[i % CLUSTER_COLORS.length], isActive = activeCluster === i, isHovered = hoveredCluster === i, isFaded = activeCluster !== null && !isActive;
+                    const rx = Math.max(160, centerPos.x - 160), ry = Math.max(140, centerPos.y - 120), pos = getRadialPosition(i, data.clusters.length, rx, ry), color = CLUSTER_COLORS[i % CLUSTER_COLORS.length], isActive = activeCluster === i, isHovered = hoveredCluster === i, isFaded = activeCluster !== null && !isActive;
                     return (
                       <motion.div key={`cluster-${i}`} initial={{ opacity: 0, scale: 0 }} animate={{ opacity: isFaded ? 0.2 : 1, x: pos.x, y: pos.y, scale: isActive ? 1.05 : 1 }} transition={{ type: "spring", stiffness: 60, delay: i * 0.1 }} className={`absolute pointer-events-auto transition-all duration-300 z-20 ${isFaded ? 'pointer-events-none grayscale' : ''}`} onMouseEnter={() => setHoveredCluster(i)} onMouseLeave={() => setHoveredCluster(null)}>
-                        <div className="glass-panel flex flex-col cursor-pointer transition-all duration-300 shadow-lg relative group w-[180px] sm:w-[220px]" style={{ borderColor: isActive || isHovered ? color : (theme === 'dark' ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.6)'), boxShadow: isActive || isHovered ? `0 0 24px ${color}60` : '0 8px 32px rgba(0,0,0,0.05)' }}>
+                        <div className="glass-panel flex flex-col cursor-pointer transition-all duration-300 shadow-lg relative group w-max max-w-[220px] sm:max-w-[280px]" style={{ borderColor: isActive || isHovered ? color : (theme === 'dark' ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.6)'), boxShadow: isActive || isHovered ? `0 0 24px ${color}60` : '0 8px 32px rgba(0,0,0,0.05)' }}>
                           <div onClick={() => setActiveCluster(isActive ? null : i)} className="px-4 py-3 sm:px-5 sm:py-4 flex items-center justify-between gap-3"><div className="absolute left-0 top-0 bottom-0 w-1.5 transition-all duration-300 group-hover:w-2" style={{ backgroundColor: color }} />
                             <div className="pl-2 pr-1 w-full">
-                              <h3 className="font-mono font-medium text-xs sm:text-sm lg:text-base leading-snug whitespace-normal break-words">{cluster.theme_label}</h3>
-                              <p className="text-[10px] sm:text-xs opacity-60 mt-0.5">{cluster.items.length} Hadiths</p>
+                              <h3 className="font-mono font-medium text-xs sm:text-sm lg:text-base leading-snug">{cluster.theme_label}</h3>
+                              <p className="text-[10px] sm:text-xs opacity-60 mt-1">{cluster.items.length} Hadiths</p>
                             </div>
                             <div className="opacity-50 group-hover:opacity-100 transition-opacity shrink-0">{isActive ? <X className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}</div>
                           </div>
@@ -559,7 +561,7 @@ export default function App() {
                   <button onClick={() => setQuranPopup(null)} className="p-2 hover:bg-slate-200 dark:hover:bg-slate-800 rounded-full transition-colors cursor-pointer shrink-0"><X className="w-5 h-5 text-slate-500" /></button>
                 </div>
                 <div className="p-6 sm:p-8 overflow-y-auto flex-grow smart-scrollbar">
-                  <div className="mb-6"><p className="font-arabic text-3xl sm:text-4xl text-right leading-[2.2] text-slate-800 dark:text-slate-100" dir="rtl">{quranPopup.data.ar}</p></div>
+                  <div className="mb-6"><p className="font-arabic text-3xl sm:text-4xl text-right leading-[2.2] text-slate-800 dark:text-slate-100" dir="rtl" style={{ fontFamily: activeFontFamily }}>{quranPopup.data.ar}</p></div>
                   <div className="border-t border-slate-100 dark:border-slate-800 pt-6"><p className="text-base sm:text-lg text-slate-600 dark:text-slate-300 leading-relaxed font-serif">{quranPopup.data.en}</p></div>
                 </div>
               </motion.div>
