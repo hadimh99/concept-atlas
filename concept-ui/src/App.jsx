@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Search, Moon, Sun, Sparkles, X, ChevronRight, ChevronLeft, Home, Copy, ChevronDown, ChevronUp, List, Layout, Info, BookOpen, History, HelpCircle, Database, Filter, Share2, Check, Settings2, Menu } from 'lucide-react';
 import quranData from './quran.json';
 
-const APP_UPDATES = [{ version: "v2.10.0", date: "March 3, 2026", changes: ["Bug Fix: Restored the loading screen to the absolute center of the display.", "Fixed an animation clipping bug that caused an ugly square box to appear around the loading icon.", "Hard-anchored the map nodes to the center of the screen to prevent Safari from defaulting them to the top-left corner."] }, { version: "v2.9.9", date: "March 3, 2026", changes: ["Mobile Polish: Fixed the iOS auto-zoom bug by enforcing 16px minimum text size on search inputs.", "Enabled 'Enter' key submission on all search bars and automatic keyboard dismissal.", "Rebuilt the scrolling architecture so tapping the top of an iPhone screen instantly scrolls to the top of the page."] }, { version: "v2.9.6", date: "March 3, 2026", changes: ["Defeated all external CORS server blocks by locally hosting the pristine me_quran.ttf font file directly inside the app."] }];
+const APP_UPDATES = [{ version: "v2.10.1", date: "March 3, 2026", changes: ["Critical Bug Fix: Resolved a fatal React crash (Black Screen) on desktop Map View caused by a missing hover state variable.", "Visual Fix: Removed full-screen scaling on the loading screen to restore the beautiful, unclipped glowing orbs in the dead center of the screen."] }, { version: "v2.9.9", date: "March 3, 2026", changes: ["Mobile Polish: Fixed the iOS auto-zoom bug by enforcing 16px minimum text size on search inputs.", "Enabled 'Enter' key submission on all search bars and automatic keyboard dismissal.", "Rebuilt the scrolling architecture so tapping the top of an iPhone screen instantly scrolls to the top of the page."] }, { version: "v2.9.6", date: "March 3, 2026", changes: ["Defeated all external CORS server blocks by locally hosting the pristine me_quran.ttf font file directly inside the app."] }];
 const CLUSTER_COLORS = ['#10b981', '#8b5cf6', '#f59e0b', '#f43f5e', '#3b82f6'];
 const SOURCES = ["All Twelver Sources", "al-Kafi", "Bihar al-Anwar", "Basa'ir al-Darajat"];
 
@@ -127,7 +127,7 @@ const HadithCard = ({ item, handleCopyHadith, searchMode, onVerseClick }) => {
           {showArabic && (
             <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="overflow-hidden">
               <div className={`p-4 sm:p-5 rounded-lg mt-2 mb-4 border ${isKeyword ? 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800' : 'bg-slate-50 dark:bg-slate-900/50 border-slate-100 dark:border-slate-800'}`}>
-                <p className="font-arabic text-xl md:text-2xl text-right leading-[2.2] text-slate-700 dark:text-slate-300" dir="rtl" lang="ar" style={{ fontVariantLigatures: 'normal', fontFeatureSettings: '"ccmp" 1, "mark" 1, "mkmk" 1' }}>
+                <p className="font-arabic text-xl md:text-2xl text-right leading-[2.2] text-slate-700 dark:text-slate-300" dir="rtl" lang="ar">
                   {(displayNum && displayNum !== "Unknown") && `${displayNum}. `}{araText}
                 </p>
               </div>
@@ -177,14 +177,12 @@ const QuranReader = ({ activeFontFamily, fontStyle, setFontStyle }) => {
   const [showSurahMenu, setShowSurahMenu] = useState(false);
   const [showSettingsMenu, setShowSettingsMenu] = useState(false);
 
-  // Search State
   const [quranSearchQuery, setQuranSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState([]);
   const [targetVerse, setTargetVerse] = useState(null);
 
   const quranSearchInputRef = useRef(null);
 
-  // Initialize Surah List
   const surahs = useMemo(() => {
     const list = [];
     for (let i = 1; i <= 114; i++) {
@@ -331,7 +329,6 @@ const QuranReader = ({ activeFontFamily, fontStyle, setFontStyle }) => {
         <div className="fixed inset-0 z-[60] pointer-events-auto" onClick={() => { setShowSurahMenu(false); setShowSettingsMenu(false); setSearchResults([]); }} />
       )}
 
-      {/* SMART QURAN SEARCH BAR */}
       <div className="w-full relative mb-4 sm:mb-6 z-[70]">
         <form onSubmit={handleQuranSearchSubmit} className="flex items-center bg-white/40 dark:bg-black/30 backdrop-blur-sm border border-slate-300/50 dark:border-slate-800 rounded-2xl px-4 py-3 sm:py-3.5 shadow-sm transition-all focus-within:border-amber-500/50 dark:focus-within:border-amber-500/50 focus-within:bg-white/60 dark:focus-within:bg-black/50">
           <Search className="w-4 h-4 sm:w-5 sm:h-5 text-slate-400 mr-3 shrink-0" />
@@ -411,7 +408,7 @@ const QuranReader = ({ activeFontFamily, fontStyle, setFontStyle }) => {
                   <div>
                     <p className="text-[10px] uppercase tracking-widest font-bold text-slate-500 dark:text-slate-400 mb-2">Quranic Font</p>
                     <div className="flex flex-col gap-1">
-                      <button onClick={() => { setFontStyle('madinah'); setShowSettingsMenu(false); }} className={`w-full text-left px-3 py-2 rounded-md text-sm transition-colors cursor-pointer ${fontStyle === 'madinah' ? 'bg-amber-200/60 dark:bg-amber-900/40 text-amber-900 dark:text-amber-500 font-bold' : 'text-slate-700 dark:text-slate-300 hover:bg-black/5 dark:hover:bg-white/5'}`}>Madinah</button>
+                      <button onClick={() => { setFontStyle('scheherazade'); setShowSettingsMenu(false); }} className={`w-full text-left px-3 py-2 rounded-md text-sm transition-colors cursor-pointer ${fontStyle === 'scheherazade' ? 'bg-amber-200/60 dark:bg-amber-900/40 text-amber-900 dark:text-amber-500 font-bold' : 'text-slate-700 dark:text-slate-300 hover:bg-black/5 dark:hover:bg-white/5'}`}>Scheherazade</button>
                       <button onClick={() => { setFontStyle('uthmani'); setShowSettingsMenu(false); }} className={`w-full text-left px-3 py-2 rounded-md text-sm transition-colors cursor-pointer ${fontStyle === 'uthmani' ? 'bg-amber-200/60 dark:bg-amber-900/40 text-amber-900 dark:text-amber-500 font-bold' : 'text-slate-700 dark:text-slate-300 hover:bg-black/5 dark:hover:bg-white/5'}`}>Amiri</button>
                       <button onClick={() => { setFontStyle('xbzar'); setShowSettingsMenu(false); }} className={`w-full text-left px-3 py-2 rounded-md text-sm transition-colors cursor-pointer ${fontStyle === 'xbzar' ? 'bg-amber-200/60 dark:bg-amber-900/40 text-amber-900 dark:text-amber-500 font-bold' : 'text-slate-700 dark:text-slate-300 hover:bg-black/5 dark:hover:bg-white/5'}`}>XB Zar</button>
                     </div>
@@ -437,19 +434,19 @@ const QuranReader = ({ activeFontFamily, fontStyle, setFontStyle }) => {
       </div>
 
       <div className="text-center mb-10">
-        <h1 className="text-4xl sm:text-6xl font-arabic text-slate-900 dark:text-slate-50 pb-2 sm:pb-4 mb-4 sm:mb-5 leading-[1.5] sm:leading-[1.5] drop-shadow-sm" style={{ fontFamily: activeFontFamily, fontVariantLigatures: 'normal', fontFeatureSettings: '"ccmp" 1, "mark" 1, "mkmk" 1' }} dir="rtl" lang="ar">{surahs.find(s => s.id === selectedSurah)?.arName}</h1>
+        <h1 className="text-4xl sm:text-6xl font-arabic text-slate-900 dark:text-slate-50 pb-2 sm:pb-4 mb-4 sm:mb-5 leading-[1.5] sm:leading-[1.5] drop-shadow-sm" style={{ fontFamily: activeFontFamily }} dir="rtl" lang="ar">{surahs.find(s => s.id === selectedSurah)?.arName}</h1>
         <p className="text-amber-800 dark:text-amber-500 font-mono text-sm tracking-widest uppercase font-semibold">Surah {surahs.find(s => s.id === selectedSurah)?.enName}</p>
       </div>
 
       {surahBismillah && (
         <div className="text-center mb-12">
-          <h2 className="font-arabic text-3xl sm:text-4xl text-slate-800 dark:text-slate-200 pb-2 leading-[1.5]" style={{ fontFamily: activeFontFamily, fontVariantLigatures: 'normal', fontFeatureSettings: '"ccmp" 1, "mark" 1, "mkmk" 1' }} dir="rtl" lang="ar">{surahBismillah}</h2>
+          <h2 className="font-arabic text-3xl sm:text-4xl text-slate-800 dark:text-slate-200 pb-2 leading-[1.5]" style={{ fontFamily: activeFontFamily }} dir="rtl" lang="ar">{surahBismillah}</h2>
         </div>
       )}
 
       {readingMode === 'flow' ? (
         <div className="w-full pb-10 max-w-4xl mx-auto px-2 sm:px-0">
-          <div className="font-arabic text-3xl sm:text-4xl lg:text-[42px] text-right leading-[2.4] sm:leading-[2.6] text-slate-900 dark:text-slate-100 mb-12 text-justify" dir="rtl" lang="ar" style={{ fontFamily: activeFontFamily, fontVariantLigatures: 'normal', fontFeatureSettings: '"ccmp" 1, "mark" 1, "mkmk" 1' }}>
+          <div className="font-arabic text-3xl sm:text-4xl lg:text-[42px] text-right leading-[2.4] sm:leading-[2.6] text-slate-900 dark:text-slate-100 mb-12 text-justify" dir="rtl" lang="ar" style={{ fontFamily: activeFontFamily }}>
             {ayahs.map((ayah, idx) => (
               <span id={`verse-${selectedSurah}-${idx + 1}`} key={`ar-${idx}`} className="inline rounded-lg transition-colors duration-1000">
                 {ayah.ar} <span className="text-amber-700 dark:text-amber-500 opacity-80 text-xl mx-2 font-sans">﴾{toArabicNum(idx + 1)}﴿</span>
@@ -478,7 +475,7 @@ const QuranReader = ({ activeFontFamily, fontStyle, setFontStyle }) => {
                 </span>
               </div>
               <div className="sm:pl-20">
-                <p className="font-arabic text-3xl sm:text-4xl lg:text-[40px] text-right leading-[2.4] sm:leading-[2.5] text-slate-900 dark:text-slate-100 mb-6" dir="rtl" lang="ar" style={{ fontFamily: activeFontFamily, fontVariantLigatures: 'normal', fontFeatureSettings: '"ccmp" 1, "mark" 1, "mkmk" 1' }}>{ayah.ar} <span className="text-amber-700 dark:text-amber-500 opacity-80 ml-2 text-xl font-sans">﴾{toArabicNum(idx + 1)}﴿</span></p>
+                <p className="font-arabic text-3xl sm:text-4xl lg:text-[40px] text-right leading-[2.4] sm:leading-[2.5] text-slate-900 dark:text-slate-100 mb-6" dir="rtl" lang="ar" style={{ fontFamily: activeFontFamily }}>{ayah.ar} <span className="text-amber-700 dark:text-amber-500 opacity-80 ml-2 text-xl font-sans">﴾{toArabicNum(idx + 1)}﴿</span></p>
                 <AnimatePresence>
                   {showTranslation && (
                     <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="overflow-hidden">
@@ -505,6 +502,7 @@ export default function App() {
   const [theme, setTheme] = useState('dark');
   const [viewMode, setViewMode] = useState(window.innerWidth < 800 || urlParams.get('mode') === 'keyword' ? 'list' : 'map');
   const [activeCluster, setActiveCluster] = useState(null);
+  const [hoveredCluster, setHoveredCluster] = useState(null);
   const [showDropdown, setShowDropdown] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const ITEMS_PER_PAGE = 10;
@@ -515,13 +513,12 @@ export default function App() {
 
   const [showMobileMenu, setShowMobileMenu] = useState(false);
 
-  const [fontStyle, setFontStyle] = useState('madinah');
+  const [fontStyle, setFontStyle] = useState('scheherazade');
 
-  // Clean font map loading your local me_quran.ttf
   const activeFontFamily =
-    fontStyle === 'madinah' ? '"MadinahFont", Arial, sans-serif' :
+    fontStyle === 'scheherazade' ? '"Scheherazade New", "Noto Naskh Arabic", sans-serif' :
       fontStyle === 'uthmani' ? '"Amiri Quran", "Amiri", serif' :
-        '"XBZarFont", Arial, sans-serif';
+        '"XBZarFont", "Noto Naskh Arabic", sans-serif';
 
   const containerRef = useRef(null);
   const modalScrollRef = useRef(null);
@@ -613,21 +610,13 @@ export default function App() {
   const appBgClass = activeTab === 'quran' ? (theme === 'dark' ? 'bg-[#121212] text-slate-100' : 'bg-[#f4ecd8] text-slate-900') : (theme === 'dark' ? (isKeyword && activeTab === 'search' ? 'bg-slate-900 text-slate-100' : 'aurora-bg text-slate-100') : (isKeyword && activeTab === 'search' ? 'bg-slate-50 text-slate-900' : 'light-aurora-bg text-slate-900'));
 
   const isMapView = activeTab === 'search' && data && viewMode === 'map' && !loading;
-  const lockMainScreen = isMapView; // Only lock scroll if map is actively displayed
+  const lockMainScreen = isMapView;
 
   return (
     <div className={`min-h-screen w-full transition-colors duration-700 flex flex-col ${lockMainScreen ? 'overflow-hidden h-screen' : 'overflow-x-hidden'} ${appBgClass}`}>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Amiri+Quran&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Amiri+Quran&family=Amiri:wght@400;700&family=Scheherazade+New:wght@400;700&family=Noto+Naskh+Arabic:wght@400;700&display=swap');
         
-        @font-face {
-          font-family: 'MadinahFont';
-          src: url('/me_quran.ttf') format('truetype');
-          font-weight: normal;
-          font-style: normal;
-          font-display: swap;
-        }
-
         @font-face {
           font-family: 'XBZarFont';
           src: url('https://cdn.jsdelivr.net/gh/rastikerdar/xb-zar@v1.1.1/fonts/woff2/XBZar.woff2') format('woff2');
@@ -734,30 +723,28 @@ export default function App() {
 
         <AnimatePresence>
           {activeTab === 'search' && loading && (
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0, filter: "blur(10px)" }} className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-0 h-0 flex items-center justify-center z-[100] pointer-events-none">
-              <div className="flex flex-col items-center justify-center w-[300px]">
-                <div className="relative flex items-center justify-center">
-                  {!isKeyword ? (
-                    <>
-                      <motion.div className="w-32 h-32 rounded-full absolute bg-[var(--color-cluster-emerald)]/30 blur-2xl" animate={{ scale: [1, 1.5, 1] }} transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }} />
-                      <motion.div className="w-24 h-24 rounded-full absolute bg-[var(--color-cluster-amethyst)]/30 blur-xl" animate={{ scale: [1.2, 0.8, 1.2], rotate: 180 }} transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }} />
-                      <div className="w-16 h-16 rounded-full glass-panel flex items-center justify-center border-white/40 shadow-[0_0_40px_rgba(255,255,255,0.2)]">
-                        <Sparkles className="w-6 h-6 animate-pulse text-white" />
-                      </div>
-                    </>
-                  ) : (
-                    <>
-                      <motion.div className="w-32 h-32 rounded-full absolute bg-blue-500/20 blur-xl" animate={{ scale: [1, 1.2, 1] }} transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }} />
-                      <div className="w-16 h-16 rounded-full bg-white dark:bg-slate-800 border border-slate-200 flex items-center justify-center shadow-lg">
-                        <Database className="w-6 h-6 animate-pulse text-blue-500" />
-                      </div>
-                    </>
-                  )}
-                </div>
-                <motion.p className="mt-8 font-sans tracking-widest uppercase text-xs sm:text-sm font-semibold opacity-70 whitespace-nowrap text-center">
-                  {loadingMessage}
-                </motion.p>
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0, filter: "blur(10px)" }} className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-[100] flex flex-col items-center justify-center pointer-events-none">
+              <div className="relative flex items-center justify-center">
+                {!isKeyword ? (
+                  <>
+                    <motion.div className="w-32 h-32 rounded-full absolute bg-[var(--color-cluster-emerald)]/30 blur-2xl" animate={{ scale: [1, 1.5, 1] }} transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }} />
+                    <motion.div className="w-24 h-24 rounded-full absolute bg-[var(--color-cluster-amethyst)]/30 blur-xl" animate={{ scale: [1.2, 0.8, 1.2], rotate: 180 }} transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }} />
+                    <div className="w-16 h-16 rounded-full glass-panel flex items-center justify-center border-white/40 shadow-[0_0_40px_rgba(255,255,255,0.2)]">
+                      <Sparkles className="w-6 h-6 animate-pulse text-white" />
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <motion.div className="w-32 h-32 rounded-full absolute bg-blue-500/20 blur-xl" animate={{ scale: [1, 1.2, 1] }} transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }} />
+                    <div className="w-16 h-16 rounded-full bg-white dark:bg-slate-800 border border-slate-200 flex items-center justify-center shadow-lg">
+                      <Database className="w-6 h-6 animate-pulse text-blue-500" />
+                    </div>
+                  </>
+                )}
               </div>
+              <motion.p className="mt-8 font-sans tracking-widest uppercase text-xs sm:text-sm font-semibold opacity-70 whitespace-nowrap text-center">
+                {loadingMessage}
+              </motion.p>
             </motion.div>
           )}
         </AnimatePresence>
@@ -779,16 +766,16 @@ export default function App() {
                   <svg className="absolute inset-0 w-full h-full pointer-events-none z-10">
                     {data.clusters.map((cluster, i) => {
                       const rx = Math.max(160, centerPos.x - 160), ry = Math.max(140, centerPos.y - 120), pos = getRadialPosition(i, data.clusters.length, rx, ry), color = CLUSTER_COLORS[i % CLUSTER_COLORS.length], isActive = activeCluster === i, isHovered = hoveredCluster === i;
-                      return (<motion.line key={`line-${i}`} x1={centerPos.x} y1={centerPos.y} x2={centerPos.x + pos.x} y2={centerPos.y + pos.y} stroke={color} strokeWidth={isActive ? 2 : 1} strokeOpacity={isActive ? 0.8 : 0.15} initial={{ pathLength: 0 }} animate={{ pathLength: 1 }} transition={{ duration: 1, delay: i * 0.2 }} className="transition-all duration-300" />);
+                      return (<motion.line key={`line-${i}`} x1={centerPos.x} y1={centerPos.y} x2={centerPos.x + pos.x} y2={centerPos.y + pos.y} stroke={color} strokeWidth={isActive ? 2 : isHovered ? 1.5 : 1} strokeOpacity={isActive ? 0.8 : isHovered ? 0.6 : 0.15} initial={{ pathLength: 0 }} animate={{ pathLength: 1 }} transition={{ duration: 1, delay: i * 0.2 }} className="transition-all duration-300" />);
                     })}
                   </svg>
 
                   {data.clusters.map((cluster, i) => {
-                    const rx = Math.max(160, centerPos.x - 160), ry = Math.max(140, centerPos.y - 120), pos = getRadialPosition(i, data.clusters.length, rx, ry), color = CLUSTER_COLORS[i % CLUSTER_COLORS.length], isActive = activeCluster === i, isFaded = activeCluster !== null && !isActive, maxClusterSize = Math.max(...data.clusters.map(c => c.items.length)), baseScale = Math.max(0.65, (0.85 + ((cluster.items.length / maxClusterSize) * 0.45)) * Math.min(1, windowWidth / 1200));
+                    const rx = Math.max(160, centerPos.x - 160), ry = Math.max(140, centerPos.y - 120), pos = getRadialPosition(i, data.clusters.length, rx, ry), color = CLUSTER_COLORS[i % CLUSTER_COLORS.length], isActive = activeCluster === i, isHovered = hoveredCluster === i, isFaded = activeCluster !== null && !isActive, maxClusterSize = Math.max(...data.clusters.map(c => c.items.length)), baseScale = Math.max(0.65, (0.85 + ((cluster.items.length / maxClusterSize) * 0.45)) * Math.min(1, windowWidth / 1200));
                     return (
                       <div key={`cluster-wrap-${i}`} className="absolute top-1/2 left-1/2 w-0 h-0 flex items-center justify-center z-20 pointer-events-none">
-                        <motion.div initial={{ opacity: 0, scale: 0 }} animate={{ opacity: isFaded ? 0.2 : 1, x: pos.x, y: pos.y, scale: isActive ? baseScale * 1.05 : baseScale }} transition={{ type: "spring", stiffness: 60, delay: i * 0.1 }} className={`pointer-events-auto transition-all duration-300 ${isFaded ? 'pointer-events-none grayscale' : ''}`}>
-                          <div className="glass-panel flex flex-col cursor-pointer transition-all duration-300 shadow-lg relative group w-max max-w-[220px] sm:max-w-[280px]" style={{ borderColor: isActive ? color : (theme === 'dark' ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.6)'), boxShadow: isActive ? `0 0 24px ${color}60` : '0 8px 32px rgba(0,0,0,0.05)' }}>
+                        <motion.div initial={{ opacity: 0, scale: 0 }} animate={{ opacity: isFaded ? 0.2 : 1, x: pos.x, y: pos.y, scale: isActive ? baseScale * 1.05 : baseScale }} transition={{ type: "spring", stiffness: 60, delay: i * 0.1 }} className={`pointer-events-auto transition-all duration-300 ${isFaded ? 'pointer-events-none grayscale' : ''}`} onMouseEnter={() => setHoveredCluster(i)} onMouseLeave={() => setHoveredCluster(null)}>
+                          <div className="glass-panel flex flex-col cursor-pointer transition-all duration-300 shadow-lg relative group w-max max-w-[220px] sm:max-w-[280px]" style={{ borderColor: isActive || isHovered ? color : (theme === 'dark' ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.6)'), boxShadow: isActive || isHovered ? `0 0 24px ${color}60` : '0 8px 32px rgba(0,0,0,0.05)' }}>
                             <div onClick={() => setActiveCluster(isActive ? null : i)} className="px-4 py-3 sm:px-5 sm:py-4 flex items-center justify-between gap-3">
                               <div className="absolute left-0 top-0 bottom-0 w-1.5 transition-all duration-300 group-hover:w-2" style={{ backgroundColor: color }} />
                               <div className="pl-2 pr-1 w-full">
@@ -870,7 +857,7 @@ export default function App() {
                   <button onClick={() => setQuranPopup(null)} className="p-2 hover:bg-slate-200 dark:hover:bg-slate-800 rounded-full transition-colors cursor-pointer shrink-0"><X className="w-5 h-5 text-slate-500" /></button>
                 </div>
                 <div className="p-6 sm:p-8 overflow-y-auto flex-grow smart-scrollbar">
-                  <div className="mb-6"><p className="font-arabic text-3xl sm:text-4xl text-right leading-[2.2] text-slate-800 dark:text-slate-100" dir="rtl" lang="ar" style={{ fontFamily: activeFontFamily, fontVariantLigatures: 'normal', fontFeatureSettings: '"ccmp" 1, "mark" 1, "mkmk" 1' }}>{quranPopup.data.ar}</p></div>
+                  <div className="mb-6"><p className="font-arabic text-3xl sm:text-4xl text-right leading-[2.2] text-slate-800 dark:text-slate-100" dir="rtl" lang="ar" style={{ fontFamily: activeFontFamily }}>{quranPopup.data.ar}</p></div>
                   <div className="border-t border-slate-100 dark:border-slate-800 pt-6"><p className="text-base sm:text-lg text-slate-600 dark:text-slate-300 leading-relaxed font-serif">{quranPopup.data.en}</p></div>
                 </div>
               </motion.div>
