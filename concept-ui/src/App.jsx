@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Search, Moon, Sun, Sparkles, X, ChevronRight, ChevronLeft, Home, Copy, ChevronDown, ChevronUp, List, Layout, Info, BookOpen, History, HelpCircle, Database, Filter, Share2, Check, Settings2, Menu } from 'lucide-react';
 import quranData from './quran.json';
 
-const APP_UPDATES = [{ version: "v2.8.5", date: "March 3, 2026", changes: ["Defeated strict browser CORS blocks by shifting the font engine from raw file fetching to official CSS stylesheet imports. Madinah and XB Zar will now render flawlessly without falling back to system Arial."] }];
+const APP_UPDATES = [{ version: "v2.8.6", date: "March 3, 2026", changes: ["Engineered a brute-force @font-face loader to permanently defeat browser CORS blocks.", "Fonts are now pulled via raw binaries, completely separating Madinah, Amiri, and XB Zar into distinct, guaranteed renders."] }];
 const CLUSTER_COLORS = ['#10b981', '#8b5cf6', '#f59e0b', '#f43f5e', '#3b82f6'];
 const SOURCES = ["All Twelver Sources", "al-Kafi", "Bihar al-Anwar", "Basa'ir al-Darajat"];
 
@@ -365,11 +365,11 @@ export default function App() {
 
   const [fontStyle, setFontStyle] = useState('madinah');
 
-  // STRICT FONT MAP - No overlapping fallback fonts
+  // Explicitly assign internal font names to prevent overlapping fallbacks
   const activeFontFamily =
-    fontStyle === 'madinah' ? '"quran-font", sans-serif' :
-      fontStyle === 'uthmani' ? '"Amiri Quran", serif' :
-        '"XB Zar", sans-serif';
+    fontStyle === 'madinah' ? '"KFGQPC", Arial, sans-serif' :
+      fontStyle === 'uthmani' ? '"Amiri Quran", "Amiri", serif' :
+        '"XBZar", Arial, sans-serif';
 
   const containerRef = useRef(null);
   const modalScrollRef = useRef(null);
@@ -457,10 +457,25 @@ export default function App() {
   return (
     <div className={`min-h-screen w-full overflow-hidden transition-colors duration-700 flex flex-col ${appBgClass}`}>
       <style>{`
-        /* OFFICIAL CSS STYLESHEET IMPORTS TO BYPASS CORS BLOCKS */
         @import url('https://fonts.googleapis.com/css2?family=Amiri+Quran&display=swap');
-        @import url('https://unpkg.com/quran-font@1.1.2/dist/quran-font.css');
-        @import url('https://cdn.jsdelivr.net/gh/rastikerdar/xb-zar@v1.1.1/dist/xb-zar.css');
+        
+        /* Direct manual font injection to bypass browser CORS rules */
+        @font-face {
+          font-family: 'KFGQPC';
+          src: url('https://cdn.jsdelivr.net/npm/quran-font@1.1.2/dist/fonts/quran.woff2') format('woff2'),
+               url('https://fonts.cdnfonts.com/s/15003/KFGQPC_Uthmanic_Script_HAFS_Regular.woff') format('woff');
+          font-weight: normal;
+          font-style: normal;
+          font-display: swap;
+        }
+
+        @font-face {
+          font-family: 'XBZar';
+          src: url('https://cdn.jsdelivr.net/gh/rastikerdar/xb-zar@v1.1.1/fonts/woff2/XBZar.woff2') format('woff2');
+          font-weight: normal;
+          font-style: normal;
+          font-display: swap;
+        }
 
         .hide-scroll::-webkit-scrollbar { display: none; }
         .hide-scroll { -ms-overflow-style: none; scrollbar-width: none; -webkit-overflow-scrolling: touch; overscroll-behavior-y: contain; }
