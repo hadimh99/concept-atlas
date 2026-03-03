@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Search, Moon, Sun, Sparkles, X, ChevronRight, ChevronLeft, Home, Copy, ChevronDown, ChevronUp, List, Layout, BookOpen, History, HelpCircle, Database, Filter, Share2, Check } from 'lucide-react';
+import { Search, Moon, Sun, Sparkles, X, ChevronRight, ChevronLeft, Home, Copy, ChevronDown, ChevronUp, List, Layout, Info, BookOpen, History, HelpCircle, Database, Filter, Share2, Check, Settings2 } from 'lucide-react';
 import quranData from './quran.json';
 
-const APP_UPDATES = [{ version: "v2.5.1", date: "March 3, 2026", changes: ["Fixed an issue where the Uthmani font's harakat overlapped the English Surah name."] }, { version: "v2.5.0", date: "March 3, 2026", changes: ["Fixed overlapping map nodes with an inward-stagger layout.", "Restored beautiful multi-line text wrapping for long node labels.", "Fixed Arabic font fallback bugs and made font toggle visible on mobile."] }, { version: "v2.4.0", date: "March 3, 2026", changes: ["Added visual 'Copied!' feedback to Hadith cards.", "Added XB Zar / Uthmani font toggle to the Quran reader.", "Replaced confusing UI icons with a clear open book for the Quran."] }];
+const APP_UPDATES = [{ version: "v2.6.0", date: "March 3, 2026", changes: ["Decluttered the Quran reader UI by moving Font and Translation settings into a minimalist 'Customise' menu.", "Replaced the native OS Surah dropdown with a custom, theme-aware menu that features orange/amber hover states instead of system blue."] }, { version: "v2.5.0", date: "March 3, 2026", changes: ["Fixed overlapping map nodes with an inward-stagger layout.", "Restored beautiful multi-line text wrapping for long node labels.", "Fixed Arabic font fallback bugs and made font toggle visible on mobile."] }, { version: "v2.4.0", date: "March 3, 2026", changes: ["Added visual 'Copied!' feedback to Hadith cards."] }];
 const CLUSTER_COLORS = ['#10b981', '#8b5cf6', '#f59e0b', '#f43f5e', '#3b82f6'];
 const SOURCES = ["All Twelver Sources", "al-Kafi", "Bihar al-Anwar", "Basa'ir al-Darajat"];
 
@@ -170,6 +170,10 @@ const QuranReader = ({ activeFontFamily, fontStyle, setFontStyle }) => {
   const [showTranslation, setShowTranslation] = useState(true);
   const [readingMode, setReadingMode] = useState('verse');
 
+  // New UI states for custom dropdowns
+  const [showSurahMenu, setShowSurahMenu] = useState(false);
+  const [showSettingsMenu, setShowSettingsMenu] = useState(false);
+
   const surahs = [];
   for (let i = 1; i <= 114; i++) { if (quranData[`${i}:1`]) surahs.push({ id: i, enName: quranData[`${i}:1`].surahName, arName: quranData[`${i}:1`].surahArName }); }
 
@@ -194,27 +198,95 @@ const QuranReader = ({ activeFontFamily, fontStyle, setFontStyle }) => {
 
   return (
     <div className="w-full max-w-4xl px-4 sm:px-6 pt-24 sm:pt-28 pb-12 h-full overflow-y-auto pointer-events-auto hide-scroll flex flex-col items-center">
-      <div className="w-full bg-white/40 dark:bg-black/30 backdrop-blur-sm p-4 sm:p-5 rounded-2xl mb-12 border border-slate-300/50 dark:border-slate-800 shadow-sm flex flex-col md:flex-row items-center justify-between gap-4">
-        <select value={selectedSurah} onChange={(e) => setSelectedSurah(Number(e.target.value))} className="w-full md:w-[250px] bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-slate-800 dark:text-slate-100 text-sm rounded-lg px-4 py-2.5 outline-none focus:border-amber-600 dark:focus:border-amber-500 transition-colors font-medium shadow-sm cursor-pointer">
-          {surahs.map(s => (<option key={s.id} value={s.id}>{s.id}. Surah {s.enName} ({s.arName})</option>))}
-        </select>
 
-        <div className="flex flex-wrap items-center gap-3 w-full md:w-auto justify-center md:justify-end">
-          <div className="flex items-center bg-white/60 dark:bg-slate-900/60 p-1 rounded-lg border border-slate-300 dark:border-slate-700 shadow-sm hidden sm:flex">
-            <button onClick={() => setFontStyle('uthmani')} className={`px-3 py-1.5 rounded-md text-[10px] sm:text-xs font-bold uppercase tracking-wider transition-colors cursor-pointer ${fontStyle === 'uthmani' ? 'bg-amber-700 dark:bg-amber-600 text-white shadow-md' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'}`}>Uthmani</button>
-            <button onClick={() => setFontStyle('xbzar')} className={`px-3 py-1.5 rounded-md text-[10px] sm:text-xs font-bold uppercase tracking-wider transition-colors cursor-pointer ${fontStyle === 'xbzar' ? 'bg-amber-700 dark:bg-amber-600 text-white shadow-md' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'}`}>XB Zar</button>
-          </div>
+      {/* Invisible overlay to close dropdowns when clicking outside */}
+      {(showSurahMenu || showSettingsMenu) && (
+        <div className="fixed inset-0 z-[60]" onClick={() => { setShowSurahMenu(false); setShowSettingsMenu(false); }} />
+      )}
 
+      {/* TOP BAR */}
+      <div className="w-full bg-white/40 dark:bg-black/30 backdrop-blur-sm p-4 sm:p-5 rounded-2xl mb-12 border border-slate-300/50 dark:border-slate-800 shadow-sm flex flex-col md:flex-row items-center justify-between gap-4 relative z-[65]">
+
+        {/* CUSTOM SURAH SELECTOR */}
+        <div className="relative w-full md:w-[280px]">
+          <button
+            onClick={() => { setShowSurahMenu(!showSurahMenu); setShowSettingsMenu(false); }}
+            className="w-full bg-white dark:bg-[#1a1a1a] border border-slate-300 dark:border-slate-700 text-slate-800 dark:text-slate-200 text-sm rounded-lg px-4 py-2.5 flex justify-between items-center transition-colors font-medium shadow-sm hover:border-amber-500 dark:hover:border-amber-500 cursor-pointer"
+          >
+            <span className="truncate">{selectedSurah}. Surah {surahs.find(s => s.id === selectedSurah)?.enName}</span>
+            <ChevronDown className="w-4 h-4 opacity-50" />
+          </button>
+
+          <AnimatePresence>
+            {showSurahMenu && (
+              <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="absolute top-full left-0 mt-2 w-full max-h-[300px] overflow-y-auto bg-[#f4ecd8] dark:bg-[#1a1a1a] border border-slate-300 dark:border-slate-700 rounded-xl shadow-xl z-[70] smart-scrollbar">
+                {surahs.map(s => (
+                  <div
+                    key={s.id}
+                    onClick={() => { setSelectedSurah(s.id); setShowSurahMenu(false); }}
+                    className={`px-4 py-2.5 text-sm cursor-pointer transition-colors flex justify-between items-center ${selectedSurah === s.id ? 'bg-amber-200/60 dark:bg-amber-900/40 text-amber-900 dark:text-amber-500 font-bold' : 'text-slate-800 dark:text-slate-200 hover:bg-amber-200/40 dark:hover:bg-amber-600/20 hover:text-amber-900 dark:hover:text-amber-400'}`}
+                  >
+                    <span>{s.id}. Surah {s.enName}</span>
+                    <span className="font-arabic text-base opacity-70" dir="rtl">{s.arName}</span>
+                  </div>
+                ))}
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+
+        {/* RIGHT SIDE SETTINGS */}
+        <div className="flex flex-wrap items-center gap-3 w-full md:w-auto justify-end relative">
+
+          {/* VERSE/FLOW TOGGLE */}
           <div className="flex items-center bg-white/60 dark:bg-slate-900/60 p-1 rounded-lg border border-slate-300 dark:border-slate-700 shadow-sm">
             <button onClick={() => setReadingMode('verse')} className={`px-3 py-1.5 rounded-md text-[10px] sm:text-xs font-bold uppercase tracking-wider transition-colors cursor-pointer ${readingMode === 'verse' ? 'bg-amber-700 dark:bg-amber-600 text-white shadow-md' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'}`}>Verse</button>
             <button onClick={() => setReadingMode('flow')} className={`px-3 py-1.5 rounded-md text-[10px] sm:text-xs font-bold uppercase tracking-wider transition-colors cursor-pointer ${readingMode === 'flow' ? 'bg-amber-700 dark:bg-amber-600 text-white shadow-md' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'}`}>Flow</button>
           </div>
-          <button onClick={() => setShowTranslation(!showTranslation)} className={`cursor-pointer px-4 py-2.5 rounded-lg text-xs font-bold uppercase tracking-wider transition-colors border shadow-sm ${showTranslation ? 'bg-slate-800 dark:bg-slate-200 text-white dark:text-slate-900 border-transparent' : 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 border-slate-300 dark:border-slate-700 hover:bg-slate-50'}`}>
-            {showTranslation ? 'Hide English' : 'Show English'}
-          </button>
+
+          {/* CUSTOMISE BUTTON */}
+          <div className="relative">
+            <button
+              onClick={() => { setShowSettingsMenu(!showSettingsMenu); setShowSurahMenu(false); }}
+              className={`px-4 py-2.5 rounded-lg text-xs font-bold uppercase tracking-wider transition-colors border shadow-sm flex items-center gap-2 cursor-pointer ${showSettingsMenu ? 'bg-slate-800 dark:bg-slate-200 text-white dark:text-slate-900 border-transparent' : 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 border-slate-300 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800'}`}
+            >
+              <Settings2 className="w-4 h-4" /> Customise
+            </button>
+
+            <AnimatePresence>
+              {showSettingsMenu && (
+                <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="absolute right-0 top-full mt-2 w-[220px] bg-[#f4ecd8] dark:bg-[#1a1a1a] border border-slate-300 dark:border-slate-700 rounded-xl shadow-xl z-[70] p-4 flex flex-col gap-4">
+
+                  {/* Font Toggle */}
+                  <div>
+                    <p className="text-[10px] uppercase tracking-widest font-bold text-slate-500 dark:text-slate-400 mb-2">Quranic Font</p>
+                    <div className="flex flex-col gap-1">
+                      <button onClick={() => { setFontStyle('uthmani'); setShowSettingsMenu(false); }} className={`text-left px-3 py-2 rounded-md text-sm transition-colors cursor-pointer ${fontStyle === 'uthmani' ? 'bg-amber-200/60 dark:bg-amber-900/40 text-amber-900 dark:text-amber-500 font-bold' : 'text-slate-700 dark:text-slate-300 hover:bg-black/5 dark:hover:bg-white/5'}`}>Uthmani</button>
+                      <button onClick={() => { setFontStyle('xbzar'); setShowSettingsMenu(false); }} className={`text-left px-3 py-2 rounded-md text-sm transition-colors cursor-pointer ${fontStyle === 'xbzar' ? 'bg-amber-200/60 dark:bg-amber-900/40 text-amber-900 dark:text-amber-500 font-bold' : 'text-slate-700 dark:text-slate-300 hover:bg-black/5 dark:hover:bg-white/5'}`}>XB Zar</button>
+                    </div>
+                  </div>
+
+                  <hr className="border-slate-300 dark:border-slate-700" />
+
+                  {/* Translation Toggle */}
+                  <div>
+                    <p className="text-[10px] uppercase tracking-widest font-bold text-slate-500 dark:text-slate-400 mb-2">Translation</p>
+                    <button onClick={() => setShowTranslation(!showTranslation)} className={`w-full text-left px-3 py-2 rounded-md text-sm transition-colors cursor-pointer flex items-center justify-between ${showTranslation ? 'bg-amber-200/60 dark:bg-amber-900/40 text-amber-900 dark:text-amber-500 font-bold' : 'text-slate-700 dark:text-slate-300 hover:bg-black/5 dark:hover:bg-white/5'}`}>
+                      Show English
+                      <div className={`w-8 h-4 rounded-full relative transition-colors ${showTranslation ? 'bg-amber-600 dark:bg-amber-500' : 'bg-slate-300 dark:bg-slate-600'}`}>
+                        <div className={`absolute top-0.5 left-0.5 w-3 h-3 rounded-full bg-white transition-transform ${showTranslation ? 'translate-x-4' : 'translate-x-0'}`} />
+                      </div>
+                    </button>
+                  </div>
+
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
         </div>
       </div>
 
+      {/* TITLE SECTION - Added pb-2/pb-4 to fix Uthmani harakat overlap */}
       <div className="text-center mb-10">
         <h1 className="text-4xl sm:text-6xl font-arabic text-slate-900 dark:text-slate-50 pb-2 sm:pb-4 mb-4 sm:mb-5 leading-[1.5] sm:leading-[1.5] drop-shadow-sm" style={{ fontFamily: activeFontFamily }}>{surahs.find(s => s.id === selectedSurah)?.arName}</h1>
         <p className="text-amber-800 dark:text-amber-500 font-mono text-sm tracking-widest uppercase font-semibold">Surah {surahs.find(s => s.id === selectedSurah)?.enName}</p>
@@ -471,7 +543,7 @@ export default function App() {
                   </motion.div>
                   <svg className="absolute inset-0 w-full h-full pointer-events-none z-10">
                     {data.clusters.map((cluster, i) => {
-                      const rx = Math.max(160, centerPos.x - 160), ry = Math.max(140, centerPos.y - 120), pos = getRadialPosition(i, data.clusters.length, rx, ry), color = CLUSTER_COLORS[i % CLUSTER_COLORS.length], isActive = activeCluster === i;
+                      const rx = Math.max(160, centerPos.x - 160), ry = Math.max(140, centerPos.y - 120), pos = getRadialPosition(i, data.clusters.length, rx, ry), color = CLUSTER_COLORS[i % CLUSTER_COLORS.length], isActive = activeCluster === i, isHovered = hoveredCluster === i;
                       return (<motion.line key={`line-${i}`} x1={centerPos.x} y1={centerPos.y} x2={centerPos.x + pos.x} y2={centerPos.y + pos.y} stroke={color} strokeWidth={isActive ? 2 : 1} strokeOpacity={isActive ? 0.8 : 0.15} initial={{ pathLength: 0 }} animate={{ pathLength: 1 }} transition={{ duration: 1, delay: i * 0.2 }} className="transition-all duration-300" />);
                     })}
                   </svg>
@@ -482,7 +554,7 @@ export default function App() {
                         <div className="glass-panel flex flex-col cursor-pointer transition-all duration-300 shadow-lg relative group w-max max-w-[220px] sm:max-w-[280px]" style={{ borderColor: isActive ? color : (theme === 'dark' ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.6)'), boxShadow: isActive ? `0 0 24px ${color}60` : '0 8px 32px rgba(0,0,0,0.05)' }}>
                           <div onClick={() => setActiveCluster(isActive ? null : i)} className="px-4 py-3 sm:px-5 sm:py-4 flex items-center justify-between gap-3"><div className="absolute left-0 top-0 bottom-0 w-1.5 transition-all duration-300 group-hover:w-2" style={{ backgroundColor: color }} />
                             <div className="pl-2 pr-1 w-full">
-                              <h3 className="font-mono font-medium text-xs sm:text-sm lg:text-base leading-snug">{cluster.theme_label}</h3>
+                              <h3 className="font-mono font-medium text-xs sm:text-sm lg:text-base leading-snug whitespace-normal break-words">{cluster.theme_label}</h3>
                               <p className="text-[10px] sm:text-xs opacity-60 mt-1">{cluster.items.length} Hadiths</p>
                             </div>
                             <div className="opacity-50 group-hover:opacity-100 transition-opacity shrink-0">{isActive ? <X className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}</div>
