@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Search, Moon, Sun, Sparkles, X, ChevronRight, ChevronLeft, Home, Copy, ChevronDown, ChevronUp, List, Layout, Info, BookOpen, History, HelpCircle, Database, Filter, Share2, Check, Settings2, Menu } from 'lucide-react';
 import quranData from './quran.json';
 
-const APP_UPDATES = [{ version: "v2.8.1", date: "March 3, 2026", changes: ["Bug Fix: The Madinah (KFGQPC) font was falling back to Amiri due to a broken CDN link. Re-routed to a highly reliable font delivery network for actual Madinah script rendering!"] }, { version: "v2.8.0", date: "March 3, 2026", changes: ["Added the official KFGQPC Uthman Taha (Madinah) script as the default Quran font.", "Maintained Amiri and XB Zar as alternative font options.", "Added the third font toggle into the Customise menu for mobile users."] }, { version: "v2.7.0", date: "March 3, 2026", changes: ["Mobile Polish: Decluttered the top navigation bar by moving secondary icons into an elegant mobile menu.", "Fixed the alignment of the Quran control buttons on mobile devices."] }];
+const APP_UPDATES = [{ version: "v2.8.2", date: "March 3, 2026", changes: ["Typography Fix: Eradicated the 'dotted circle' bug in the Madinah font by forcing OpenType combining marks (ccmp) and using a web-optimized WOFF2 format."] }, { version: "v2.8.1", date: "March 3, 2026", changes: ["Bug Fix: The Madinah (KFGQPC) font was falling back to Amiri due to a broken CDN link. Re-routed to a highly reliable font delivery network for actual Madinah script rendering!"] }, { version: "v2.8.0", date: "March 3, 2026", changes: ["Added the official KFGQPC Uthman Taha (Madinah) script as the default Quran font.", "Maintained Amiri and XB Zar as alternative font options.", "Added the third font toggle into the Customise menu for mobile users."] }];
 const CLUSTER_COLORS = ['#10b981', '#8b5cf6', '#f59e0b', '#f43f5e', '#3b82f6'];
 const SOURCES = ["All Twelver Sources", "al-Kafi", "Bihar al-Anwar", "Basa'ir al-Darajat"];
 
@@ -126,7 +126,11 @@ const HadithCard = ({ item, handleCopyHadith, searchMode, onVerseClick }) => {
         <AnimatePresence>
           {showArabic && (
             <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="overflow-hidden">
-              <div className={`p-4 sm:p-5 rounded-lg mt-2 mb-4 border ${isKeyword ? 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800' : 'bg-slate-50 dark:bg-slate-900/50 border-slate-100 dark:border-slate-800'}`}><p className="font-arabic text-xl md:text-2xl text-right leading-[2.2] text-slate-700 dark:text-slate-300" dir="rtl">{(displayNum && displayNum !== "Unknown") && `${displayNum}. `}{araText}</p></div>
+              <div className={`p-4 sm:p-5 rounded-lg mt-2 mb-4 border ${isKeyword ? 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800' : 'bg-slate-50 dark:bg-slate-900/50 border-slate-100 dark:border-slate-800'}`}>
+                <p className="font-arabic text-xl md:text-2xl text-right leading-[2.2] text-slate-700 dark:text-slate-300" dir="rtl" lang="ar" style={{ fontVariantLigatures: 'normal', fontFeatureSettings: '"ccmp" 1, "mark" 1, "mkmk" 1' }}>
+                  {(displayNum && displayNum !== "Unknown") && `${displayNum}. `}{araText}
+                </p>
+              </div>
             </motion.div>
           )}
         </AnimatePresence>
@@ -223,7 +227,7 @@ const QuranReader = ({ activeFontFamily, fontStyle, setFontStyle }) => {
                     className={`px-4 py-2.5 text-sm cursor-pointer transition-colors flex justify-between items-center ${selectedSurah === s.id ? 'bg-amber-200/60 dark:bg-amber-900/40 text-amber-900 dark:text-amber-500 font-bold' : 'text-slate-800 dark:text-slate-200 hover:bg-amber-200/40 dark:hover:bg-amber-600/20 hover:text-amber-900 dark:hover:text-amber-400'}`}
                   >
                     <span>{s.id}. Surah {s.enName}</span>
-                    <span className="font-arabic text-base opacity-70" dir="rtl">{s.arName}</span>
+                    <span className="font-arabic text-base opacity-70" dir="rtl" lang="ar">{s.arName}</span>
                   </div>
                 ))}
               </motion.div>
@@ -285,19 +289,19 @@ const QuranReader = ({ activeFontFamily, fontStyle, setFontStyle }) => {
       </div>
 
       <div className="text-center mb-10">
-        <h1 className="text-4xl sm:text-6xl font-arabic text-slate-900 dark:text-slate-50 pb-2 sm:pb-4 mb-4 sm:mb-5 leading-[1.5] sm:leading-[1.5] drop-shadow-sm" style={{ fontFamily: activeFontFamily }}>{surahs.find(s => s.id === selectedSurah)?.arName}</h1>
+        <h1 className="text-4xl sm:text-6xl font-arabic text-slate-900 dark:text-slate-50 pb-2 sm:pb-4 mb-4 sm:mb-5 leading-[1.5] sm:leading-[1.5] drop-shadow-sm" style={{ fontFamily: activeFontFamily, fontVariantLigatures: 'normal', fontFeatureSettings: '"ccmp" 1, "mark" 1, "mkmk" 1' }} dir="rtl" lang="ar">{surahs.find(s => s.id === selectedSurah)?.arName}</h1>
         <p className="text-amber-800 dark:text-amber-500 font-mono text-sm tracking-widest uppercase font-semibold">Surah {surahs.find(s => s.id === selectedSurah)?.enName}</p>
       </div>
 
       {surahBismillah && (
         <div className="text-center mb-12">
-          <h2 className="font-arabic text-3xl sm:text-4xl text-slate-800 dark:text-slate-200 pb-2 leading-[1.5]" style={{ fontFamily: activeFontFamily }}>{surahBismillah}</h2>
+          <h2 className="font-arabic text-3xl sm:text-4xl text-slate-800 dark:text-slate-200 pb-2 leading-[1.5]" style={{ fontFamily: activeFontFamily, fontVariantLigatures: 'normal', fontFeatureSettings: '"ccmp" 1, "mark" 1, "mkmk" 1' }} dir="rtl" lang="ar">{surahBismillah}</h2>
         </div>
       )}
 
       {readingMode === 'flow' ? (
         <div className="w-full pb-10 max-w-4xl mx-auto px-2 sm:px-0">
-          <div className="font-arabic text-3xl sm:text-4xl lg:text-[42px] text-right leading-[2.4] sm:leading-[2.6] text-slate-900 dark:text-slate-100 mb-12 text-justify" dir="rtl" style={{ fontFamily: activeFontFamily }}>
+          <div className="font-arabic text-3xl sm:text-4xl lg:text-[42px] text-right leading-[2.4] sm:leading-[2.6] text-slate-900 dark:text-slate-100 mb-12 text-justify" dir="rtl" lang="ar" style={{ fontFamily: activeFontFamily, fontVariantLigatures: 'normal', fontFeatureSettings: '"ccmp" 1, "mark" 1, "mkmk" 1' }}>
             {ayahs.map((ayah, idx) => (<span key={`ar-${idx}`} className="inline">{ayah.ar} <span className="text-amber-700 dark:text-amber-500 opacity-80 text-xl mx-2 font-sans">﴾{toArabicNum(idx + 1)}﴿</span></span>))}
           </div>
           <AnimatePresence>
@@ -322,7 +326,7 @@ const QuranReader = ({ activeFontFamily, fontStyle, setFontStyle }) => {
                 </span>
               </div>
               <div className="sm:pl-20">
-                <p className="font-arabic text-3xl sm:text-4xl lg:text-[40px] text-right leading-[2.4] sm:leading-[2.5] text-slate-900 dark:text-slate-100 mb-6" dir="rtl" style={{ fontFamily: activeFontFamily }}>{ayah.ar} <span className="text-amber-700 dark:text-amber-500 opacity-80 ml-2 text-xl font-sans">﴾{toArabicNum(idx + 1)}﴿</span></p>
+                <p className="font-arabic text-3xl sm:text-4xl lg:text-[40px] text-right leading-[2.4] sm:leading-[2.5] text-slate-900 dark:text-slate-100 mb-6" dir="rtl" lang="ar" style={{ fontFamily: activeFontFamily, fontVariantLigatures: 'normal', fontFeatureSettings: '"ccmp" 1, "mark" 1, "mkmk" 1' }}>{ayah.ar} <span className="text-amber-700 dark:text-amber-500 opacity-80 ml-2 text-xl font-sans">﴾{toArabicNum(idx + 1)}﴿</span></p>
                 <AnimatePresence>
                   {showTranslation && (
                     <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="overflow-hidden">
@@ -360,7 +364,7 @@ export default function App() {
   const [showMobileMenu, setShowMobileMenu] = useState(false);
 
   const [fontStyle, setFontStyle] = useState('madinah');
-  const activeFontFamily = fontStyle === 'madinah' ? '"KFGQPC HAFS", "KFGQPC Uthman Taha Naskh", Arial, sans-serif' : fontStyle === 'uthmani' ? '"Amiri Quran", "Amiri", serif' : '"XB Zar", Arial, sans-serif';
+  const activeFontFamily = fontStyle === 'madinah' ? '"MadinahWeb", "Amiri Quran", serif' : fontStyle === 'uthmani' ? '"Amiri Quran", "Amiri", serif' : '"XB Zar", Arial, sans-serif';
 
   const containerRef = useRef(null);
   const modalScrollRef = useRef(null);
@@ -452,9 +456,9 @@ export default function App() {
         @import url('https://fonts.cdnfonts.com/css/kfgqpc-uthman-taha-naskh');
         
         @font-face {
-          font-family: 'KFGQPC HAFS';
-          src: local('KFGQPC Uthmanic Script HAFS Regular'),
-               url('https://cdn.jsdelivr.net/npm/kfgqpc-uthmanic-script-hafs-regular@1.0.0/arabic.otf') format('opentype');
+          font-family: 'MadinahWeb';
+          src: url('https://cdn.jsdelivr.net/npm/quran-font@1.1.2/dist/fonts/quran.woff2') format('woff2'),
+               url('https://cdn.jsdelivr.net/npm/quran-font@1.1.2/dist/fonts/quran.woff') format('woff');
           font-weight: normal;
           font-style: normal;
           font-display: swap;
@@ -668,7 +672,7 @@ export default function App() {
                   <button onClick={() => setQuranPopup(null)} className="p-2 hover:bg-slate-200 dark:hover:bg-slate-800 rounded-full transition-colors cursor-pointer shrink-0"><X className="w-5 h-5 text-slate-500" /></button>
                 </div>
                 <div className="p-6 sm:p-8 overflow-y-auto flex-grow smart-scrollbar">
-                  <div className="mb-6"><p className="font-arabic text-3xl sm:text-4xl text-right leading-[2.2] text-slate-800 dark:text-slate-100" dir="rtl">{quranPopup.data.ar}</p></div>
+                  <div className="mb-6"><p className="font-arabic text-3xl sm:text-4xl text-right leading-[2.2] text-slate-800 dark:text-slate-100" dir="rtl" lang="ar" style={{ fontVariantLigatures: 'normal', fontFeatureSettings: '"ccmp" 1, "mark" 1, "mkmk" 1' }}>{quranPopup.data.ar}</p></div>
                   <div className="border-t border-slate-100 dark:border-slate-800 pt-6"><p className="text-base sm:text-lg text-slate-600 dark:text-slate-300 leading-relaxed font-serif">{quranPopup.data.en}</p></div>
                 </div>
               </motion.div>
