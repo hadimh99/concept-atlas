@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Search, Moon, Sun, Sparkles, X, ChevronRight, ChevronLeft, Home, Copy, ChevronDown, ChevronUp, List, Layout, Info, BookOpen, History, HelpCircle, Database, Filter, Share2, Book } from 'lucide-react';
 import quranData from './quran.json';
 
-const APP_UPDATES = [{ version: "v2.1.0", date: "March 3, 2026", changes: ["Revamped the Quran UI: Solid, distraction-free Sepia (Light) and Obsidian (Dark) backgrounds.", "Removed UI boxes around verses for a cleaner mus'haf experience.", "Added 'Flow Mode': Toggle between verse-by-verse or continuous paragraph reading."] }, { version: "v2.0.0", date: "March 3, 2026", changes: ["The Quran is fully integrated! Click (2:255) references to view verses.", "Smart Copy: Auto-appends Quran text when copying hadiths.", "Dedicated Quran Reader added."] }];
+const APP_UPDATES = [{ version: "v2.2.0", date: "March 3, 2026", changes: ["Polished the Quran UI: Added high-contrast boxes for verse references.", "Converted all in-text verse numbers to native Arabic numerals.", "Smart Bismillah Detacher: The Bismillah is now properly separated from the first verse of every Surah and centered at the top of the page."] }, { version: "v2.1.0", date: "March 3, 2026", changes: ["Revamped the Quran UI: Solid, distraction-free Sepia (Light) and Obsidian (Dark) backgrounds.", "Added 'Flow Mode': Toggle between verse-by-verse or continuous paragraph reading."] }, { version: "v2.0.0", date: "March 3, 2026", changes: ["The Quran is fully integrated! Click (2:255) references to view verses."] }];
 const CLUSTER_COLORS = ['#10b981', '#8b5cf6', '#f59e0b', '#f43f5e', '#3b82f6'];
 const SOURCES = ["All Twelver Sources", "al-Kafi", "Bihar al-Anwar", "Basa'ir al-Darajat"];
 
@@ -145,12 +145,17 @@ const HadithCard = ({ item, handleCopyHadith, searchMode, onVerseClick }) => {
         ))}
       </div>
       <div className="mt-2 flex justify-end pt-4 border-t border-slate-50 dark:border-slate-700/50">
-        <button onClick={() => handleCopyHadith({ ...item, hadith_number: displayNum, english_text: textToCopy })} className={`flex items-center gap-2 text-xs font-mono transition-colors px-3 py-1.5 rounded-md cursor-pointer ${isKeyword ? 'text-slate-500 hover:text-blue-500' : 'text-slate-400 hover:text-indigo-500'}`}>
+        <button onClick={() => handleCopyHadith({ ...item, hadith_number: displayNum, english_text: textToCopy })} className={`flex items-center gap-2 text-xs font-mono transition-colors px-3 py-1.5 rounded-md cursor-pointer ${isKeyword ? 'text-slate-500 hover:text-blue-500 hover:bg-slate-200/50 dark:hover:bg-slate-700/50' : 'text-slate-400 hover:text-indigo-500 hover:bg-slate-100 dark:hover:bg-slate-700/50'}`}>
           <Copy className="w-4 h-4" /><span>Copy Text</span>
         </button>
       </div>
     </div>
   );
+};
+
+const toArabicNum = (n) => {
+  const digits = ['٠', '١', '٢', '٣', '٤', '٥', '٦', '٧', '٨', '٩'];
+  return n.toString().split('').map(d => digits[d]).join('');
 };
 
 const QuranReader = () => {
@@ -160,8 +165,26 @@ const QuranReader = () => {
 
   const surahs = [];
   for (let i = 1; i <= 114; i++) { if (quranData[`${i}:1`]) surahs.push({ id: i, enName: quranData[`${i}:1`].surahName, arName: quranData[`${i}:1`].surahArName }); }
-  const ayahs = []; let aIdx = 1;
-  while (quranData[`${selectedSurah}:${aIdx}`]) { ayahs.push(quranData[`${selectedSurah}:${aIdx}`]); aIdx++; }
+
+  const ayahsRaw = []; let aIdx = 1;
+  while (quranData[`${selectedSurah}:${aIdx}`]) { ayahsRaw.push(quranData[`${selectedSurah}:${aIdx}`]); aIdx++; }
+
+  // Smart Bismillah Detacher
+  let surahBismillah = null;
+  const ayahs = ayahsRaw.map((ayah, idx) => {
+    let arText = ayah.ar;
+    if (idx === 0 && selectedSurah !== 1 && selectedSurah !== 9) {
+      const bismillahEnd = Math.max(arText.indexOf('ٱلرَّحِيمِ'), arText.indexOf('الرَّحِيمِ'), arText.indexOf('الرحيم'));
+      if (bismillahEnd !== -1) {
+        const splitIndex = arText.indexOf(' ', bismillahEnd);
+        if (splitIndex !== -1) {
+          surahBismillah = arText.substring(0, splitIndex).trim();
+          arText = arText.substring(splitIndex).trim();
+        }
+      }
+    }
+    return { ...ayah, ar: arText };
+  });
 
   return (
     <div className="w-full max-w-4xl px-4 sm:px-6 pt-24 sm:pt-28 pb-12 h-full overflow-y-auto pointer-events-auto hide-scroll flex flex-col items-center">
@@ -171,23 +194,30 @@ const QuranReader = () => {
         </select>
         <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto justify-end">
           <div className="flex items-center bg-white/60 dark:bg-slate-900/60 p-1 rounded-lg border border-slate-300 dark:border-slate-700 shadow-sm">
-            <button onClick={() => setReadingMode('verse')} className={`px-3 py-1.5 rounded-md text-[10px] sm:text-xs font-bold uppercase tracking-wider transition-colors ${readingMode === 'verse' ? 'bg-amber-700 dark:bg-amber-600 text-white shadow-md' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'}`}>Verse</button>
-            <button onClick={() => setReadingMode('flow')} className={`px-3 py-1.5 rounded-md text-[10px] sm:text-xs font-bold uppercase tracking-wider transition-colors ${readingMode === 'flow' ? 'bg-amber-700 dark:bg-amber-600 text-white shadow-md' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'}`}>Flow</button>
+            <button onClick={() => setReadingMode('verse')} className={`px-3 py-1.5 rounded-md text-[10px] sm:text-xs font-bold uppercase tracking-wider transition-colors cursor-pointer ${readingMode === 'verse' ? 'bg-amber-700 dark:bg-amber-600 text-white shadow-md' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'}`}>Verse</button>
+            <button onClick={() => setReadingMode('flow')} className={`px-3 py-1.5 rounded-md text-[10px] sm:text-xs font-bold uppercase tracking-wider transition-colors cursor-pointer ${readingMode === 'flow' ? 'bg-amber-700 dark:bg-amber-600 text-white shadow-md' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'}`}>Flow</button>
           </div>
-          <button onClick={() => setShowTranslation(!showTranslation)} className={`px-4 py-2.5 rounded-lg text-xs font-bold uppercase tracking-wider transition-colors border shadow-sm ${showTranslation ? 'bg-slate-800 dark:bg-slate-200 text-white dark:text-slate-900 border-transparent' : 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 border-slate-300 dark:border-slate-700 hover:bg-slate-50'}`}>
+          <button onClick={() => setShowTranslation(!showTranslation)} className={`cursor-pointer px-4 py-2.5 rounded-lg text-xs font-bold uppercase tracking-wider transition-colors border shadow-sm ${showTranslation ? 'bg-slate-800 dark:bg-slate-200 text-white dark:text-slate-900 border-transparent' : 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 border-slate-300 dark:border-slate-700 hover:bg-slate-50'}`}>
             {showTranslation ? 'Hide English' : 'Show English'}
           </button>
         </div>
       </div>
-      <div className="text-center mb-16">
+
+      <div className="text-center mb-10">
         <h1 className="text-4xl sm:text-6xl font-arabic text-slate-900 dark:text-slate-50 mb-4 drop-shadow-sm">{surahs.find(s => s.id === selectedSurah)?.arName}</h1>
         <p className="text-amber-800 dark:text-amber-500 font-mono text-sm tracking-widest uppercase font-semibold">Surah {surahs.find(s => s.id === selectedSurah)?.enName}</p>
       </div>
 
+      {surahBismillah && (
+        <div className="text-center mb-12">
+          <h2 className="font-arabic text-3xl sm:text-4xl text-slate-800 dark:text-slate-200">{surahBismillah}</h2>
+        </div>
+      )}
+
       {readingMode === 'flow' ? (
         <div className="w-full pb-10 max-w-4xl mx-auto px-2 sm:px-0">
           <div className="font-arabic text-3xl sm:text-4xl lg:text-[42px] text-right leading-[2.4] sm:leading-[2.6] text-slate-900 dark:text-slate-100 mb-12 text-justify" dir="rtl">
-            {ayahs.map((ayah, idx) => (<span key={`ar-${idx}`} className="inline">{ayah.ar} <span className="text-amber-700 dark:text-amber-500 opacity-80 text-xl mx-2">﴾{idx + 1}﴿</span></span>))}
+            {ayahs.map((ayah, idx) => (<span key={`ar-${idx}`} className="inline">{ayah.ar} <span className="text-amber-700 dark:text-amber-500 opacity-80 text-xl mx-2">﴾{toArabicNum(idx + 1)}﴿</span></span>))}
           </div>
           <AnimatePresence>
             {showTranslation && (
@@ -205,9 +235,9 @@ const QuranReader = () => {
         <div className="w-full flex flex-col pb-10">
           {ayahs.map((ayah, idx) => (
             <div key={idx} className="py-10 border-b border-[#d4c5b0] dark:border-[#2a2a2a] first:pt-0 relative group">
-              <span className="absolute top-10 sm:top-12 left-0 text-[10px] sm:text-xs font-mono font-bold text-amber-800/50 dark:text-amber-500/50 hidden sm:block">{selectedSurah}:{idx + 1}</span>
-              <div className="sm:pl-16">
-                <p className="font-arabic text-3xl sm:text-4xl lg:text-[40px] text-right leading-[2.4] sm:leading-[2.5] text-slate-900 dark:text-slate-100 mb-6" dir="rtl">{ayah.ar} <span className="text-amber-700 dark:text-amber-500 opacity-80 ml-2 text-xl">﴾{idx + 1}﴿</span></p>
+              <span className="absolute top-10 sm:top-12 left-0 text-[10px] sm:text-xs font-mono font-bold text-amber-900 dark:text-amber-500 bg-[#eaddc6] dark:bg-[#1a1a1a] border border-[#d4c5b0] dark:border-[#333] px-2 py-1 rounded shadow-sm hidden sm:block">{selectedSurah}:{idx + 1}</span>
+              <div className="sm:pl-20">
+                <p className="font-arabic text-3xl sm:text-4xl lg:text-[40px] text-right leading-[2.4] sm:leading-[2.5] text-slate-900 dark:text-slate-100 mb-6" dir="rtl">{ayah.ar} <span className="text-amber-700 dark:text-amber-500 opacity-80 ml-2 text-xl">﴾{toArabicNum(idx + 1)}﴿</span></p>
                 <AnimatePresence>
                   {showTranslation && (
                     <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="overflow-hidden">
@@ -342,10 +372,10 @@ export default function App() {
         </div>
         <div className="flex items-center gap-2 sm:gap-4 relative z-50 pointer-events-auto">
           <div className={`flex items-center rounded-full p-1 mr-2 ${activeTab === 'quran' ? 'bg-white/40 dark:bg-slate-800/50 backdrop-blur-md shadow-sm border border-slate-300/30 dark:border-slate-700' : 'glass-panel border-white/20'}`}>
-            <button onClick={() => setActiveTab('search')} className={`p-2 rounded-full transition-all duration-300 ${activeTab === 'search' ? 'bg-indigo-500/20 text-indigo-500 dark:text-indigo-400' : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}`} title="Search Engine"><Search className="w-4 h-4" /></button>
-            <button onClick={() => setActiveTab('quran')} className={`p-2 rounded-full transition-all duration-300 ${activeTab === 'quran' ? 'bg-amber-600/20 text-amber-800 dark:text-amber-500' : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}`} title="Quran Reader"><Book className="w-4 h-4" /></button>
+            <button onClick={() => setActiveTab('search')} className={`p-2 rounded-full transition-all duration-300 cursor-pointer ${activeTab === 'search' ? 'bg-indigo-500/20 text-indigo-500 dark:text-indigo-400' : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}`} title="Search Engine"><Search className="w-4 h-4" /></button>
+            <button onClick={() => setActiveTab('quran')} className={`p-2 rounded-full transition-all duration-300 cursor-pointer ${activeTab === 'quran' ? 'bg-amber-600/20 text-amber-800 dark:text-amber-500' : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}`} title="Quran Reader"><Book className="w-4 h-4" /></button>
           </div>
-          {activeTab === 'search' && data && !isKeyword && (<div className="flex items-center glass-panel rounded-full p-1 border-white/20"><button onClick={() => setViewMode('map')} className={`p-2 rounded-full transition-all duration-300 ${viewMode === 'map' ? 'bg-indigo-500/20 text-indigo-400' : 'text-slate-500 hover:text-slate-300'}`}><Layout className="w-4 h-4" /></button><button onClick={() => setViewMode('list')} className={`p-2 rounded-full transition-all duration-300 ${viewMode === 'list' ? 'bg-indigo-500/20 text-indigo-400' : 'text-slate-500 hover:text-slate-300'}`}><List className="w-4 h-4" /></button></div>)}
+          {activeTab === 'search' && data && !isKeyword && (<div className="flex items-center glass-panel rounded-full p-1 border-white/20"><button onClick={() => setViewMode('map')} className={`p-2 rounded-full transition-all duration-300 cursor-pointer ${viewMode === 'map' ? 'bg-indigo-500/20 text-indigo-400' : 'text-slate-500 hover:text-slate-300'}`}><Layout className="w-4 h-4" /></button><button onClick={() => setViewMode('list')} className={`p-2 rounded-full transition-all duration-300 cursor-pointer ${viewMode === 'list' ? 'bg-indigo-500/20 text-indigo-400' : 'text-slate-500 hover:text-slate-300'}`}><List className="w-4 h-4" /></button></div>)}
           <AnimatePresence>{activeTab === 'search' && data && (<motion.button initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} onClick={() => { setData(null); setQuery(''); setActiveCluster(null); setHoveredCluster(null); window.history.pushState({}, '', window.location.pathname); }} className="w-10 h-10 sm:w-11 sm:h-11 rounded-full bg-white/0 flex items-center justify-center group transition-all duration-300 hover:scale-110 cursor-pointer"><Home className="w-5 h-5 text-slate-400 group-hover:text-slate-900 dark:text-slate-500 dark:group-hover:text-white" /></motion.button>)}</AnimatePresence>
           {activeTab === 'search' && (<button onClick={() => { navigator.clipboard.writeText(window.location.href); setCopiedLink(true); setTimeout(() => setCopiedLink(false), 2000); }} className={`w-10 h-10 sm:w-11 sm:h-11 rounded-full flex items-center justify-center group transition-all duration-300 hover:scale-110 cursor-pointer ${copiedLink ? 'text-emerald-500' : `text-slate-400 ${isKeyword ? 'hover:text-blue-500' : 'hover:text-indigo-500'}`}`}><Share2 className="w-5 h-5" /></button>)}
           <button onClick={() => setShowInfo(true)} className="w-10 h-10 sm:w-11 sm:h-11 rounded-full flex items-center justify-center group transition-all duration-300 hover:scale-110 cursor-pointer"><HelpCircle className={`w-5 h-5 text-slate-400 ${activeTab === 'search' && isKeyword ? 'group-hover:text-blue-500' : 'group-hover:text-indigo-500'}`} /></button>
@@ -368,12 +398,12 @@ export default function App() {
                   </div>
                   <div className="relative py-3 px-2 flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
                     <div className={`flex items-center rounded-lg p-1 border ${isKeyword ? 'bg-slate-100 dark:bg-slate-800 border-slate-300 dark:border-slate-700' : 'bg-white/30 dark:bg-slate-800/60 border-white/40 dark:border-slate-700/50'}`}>
-                      <button type="button" onClick={() => { setSearchMode('concept'); setViewMode(window.innerWidth < 768 ? 'list' : 'map'); }} className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[10px] sm:text-xs font-bold uppercase tracking-wider transition-all duration-300 flex-1 sm:flex-none justify-center ${!isKeyword ? 'bg-indigo-500 text-white shadow-md' : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-200'}`}><Sparkles className="w-3.5 h-3.5" /> Concept</button>
-                      <button type="button" onClick={() => { setSearchMode('keyword'); setViewMode('list'); }} className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[10px] sm:text-xs font-bold uppercase tracking-wider transition-all duration-300 flex-1 sm:flex-none justify-center ${isKeyword ? 'bg-blue-500 text-white shadow-md' : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-200'}`}><Database className="w-3.5 h-3.5" /> Keyword</button>
+                      <button type="button" onClick={() => { setSearchMode('concept'); setViewMode(window.innerWidth < 768 ? 'list' : 'map'); }} className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[10px] sm:text-xs font-bold uppercase tracking-wider transition-all duration-300 flex-1 sm:flex-none justify-center cursor-pointer ${!isKeyword ? 'bg-indigo-500 text-white shadow-md' : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-200'}`}><Sparkles className="w-3.5 h-3.5" /> Concept</button>
+                      <button type="button" onClick={() => { setSearchMode('keyword'); setViewMode('list'); }} className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[10px] sm:text-xs font-bold uppercase tracking-wider transition-all duration-300 flex-1 sm:flex-none justify-center cursor-pointer ${isKeyword ? 'bg-blue-500 text-white shadow-md' : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-200'}`}><Database className="w-3.5 h-3.5" /> Keyword</button>
                     </div>
                     <div className="flex items-center w-full sm:w-auto">
                       <div className="flex items-center gap-2 text-slate-500 dark:text-slate-400 mr-3 hidden sm:flex"><BookOpen className="w-4 h-4" /><span className="text-xs uppercase tracking-wider font-semibold">Source:</span></div>
-                      <button type="button" onClick={() => setShowDropdown(!showDropdown)} className={`flex items-center justify-between w-full sm:w-[220px] px-3 py-1.5 sm:py-2 rounded-lg transition-colors text-xs sm:text-sm font-medium border border-transparent ${isKeyword ? 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300' : 'hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300'}`}><span className="truncate">{sourceFilter}</span><ChevronDown className="w-4 h-4 opacity-50 shrink-0 ml-2" /></button>
+                      <button type="button" onClick={() => setShowDropdown(!showDropdown)} className={`flex items-center justify-between w-full sm:w-[220px] px-3 py-1.5 sm:py-2 rounded-lg transition-colors text-xs sm:text-sm font-medium border border-transparent cursor-pointer ${isKeyword ? 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300' : 'hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300'}`}><span className="truncate">{sourceFilter}</span><ChevronDown className="w-4 h-4 opacity-50 shrink-0 ml-2" /></button>
                       <AnimatePresence>
                         {showDropdown && (
                           <motion.div initial={{ opacity: 0, y: -5 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -5 }} className={`absolute top-[100px] sm:top-14 right-2 sm:right-0 w-[calc(100%-16px)] sm:w-[220px] rounded-xl border shadow-xl overflow-hidden z-50 backdrop-blur-xl ${isKeyword ? 'bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-600' : 'glass-panel bg-white/95 dark:bg-slate-900/95 border-slate-200 dark:border-slate-700'}`}>
@@ -472,9 +502,9 @@ export default function App() {
                           {filteredItems.length === 0 ? <div className="flex flex-col items-center justify-center h-full text-slate-400 italic mt-10"><p>No {lengthFilter.toLowerCase()} hadiths found.</p></div> : paginatedItems.map((item, idx) => (<HadithCard key={idx} item={{ ...item, onVerseClick: handleVerseClick }} handleCopyHadith={handleCopyHadith} searchMode={searchMode} />))}
                           {totalPages > 1 && filteredItems.length > 0 && (
                             <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-4 sm:pt-6 border-t border-slate-200 mt-2">
-                              <button onClick={() => { setCurrentPage(prev => Math.max(prev - 1, 1)); modalScrollRef.current.scrollTop = 0; }} disabled={safeCurrentPage === 1} className={`flex items-center justify-center gap-1 w-full sm:w-auto px-4 py-2 rounded-lg font-medium transition-colors ${safeCurrentPage === 1 ? 'opacity-30 cursor-not-allowed text-slate-500' : (isKeyword ? 'text-blue-600' : 'text-indigo-600')}`}><ChevronLeft className="w-5 h-5" /> Previous</button>
+                              <button onClick={() => { setCurrentPage(prev => Math.max(prev - 1, 1)); modalScrollRef.current.scrollTop = 0; }} disabled={safeCurrentPage === 1} className={`flex items-center justify-center gap-1 w-full sm:w-auto px-4 py-2 rounded-lg font-medium transition-colors cursor-pointer ${safeCurrentPage === 1 ? 'opacity-30 cursor-not-allowed text-slate-500' : (isKeyword ? 'text-blue-600' : 'text-indigo-600')}`}><ChevronLeft className="w-5 h-5" /> Previous</button>
                               <span className="font-mono text-xs sm:text-sm text-slate-500">Page {safeCurrentPage} of {totalPages}</span>
-                              <button onClick={() => { setCurrentPage(prev => Math.min(prev + 1, totalPages)); modalScrollRef.current.scrollTop = 0; }} disabled={safeCurrentPage === totalPages} className={`flex items-center justify-center gap-1 w-full sm:w-auto px-4 py-2 rounded-lg font-medium transition-colors ${safeCurrentPage === totalPages ? 'opacity-30 cursor-not-allowed text-slate-500' : (isKeyword ? 'text-blue-600' : 'text-indigo-600')}`}>Next <ChevronRight className="w-5 h-5" /></button>
+                              <button onClick={() => { setCurrentPage(prev => Math.min(prev + 1, totalPages)); modalScrollRef.current.scrollTop = 0; }} disabled={safeCurrentPage === totalPages} className={`flex items-center justify-center gap-1 w-full sm:w-auto px-4 py-2 rounded-lg font-medium transition-colors cursor-pointer ${safeCurrentPage === totalPages ? 'opacity-30 cursor-not-allowed text-slate-500' : (isKeyword ? 'text-blue-600' : 'text-indigo-600')}`}>Next <ChevronRight className="w-5 h-5" /></button>
                             </div>
                           )}
                         </div>
