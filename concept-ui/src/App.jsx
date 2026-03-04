@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Search, Moon, Sun, Sparkles, X, ChevronRight, ChevronLeft, Home, Copy, ChevronDown, ChevronUp, List, Layout, Info, BookOpen, History, HelpCircle, Database, Filter, Share2, Check, Settings2, Menu } from 'lucide-react';
 import quranData from './quran.json';
 
-const APP_UPDATES = [{ version: "v3.1.1", date: "March 3, 2026", changes: ["Brand Refinement: Applied a premium gold finish to the Kisa Kaf monogram.", "UI Polish: The main header logo now remains a consistent gold while its enclosing box smoothly changes color to reflect the active search mode (Indigo, Blue, or Amber).", "Favicon updated with a solid white backing for better browser visibility."] }, { version: "v3.1.0", date: "March 3, 2026", changes: ["Brand Evolution: Replaced generic icons with a custom geometric Kisa emblem.", "Unified the logo across the header, loading screens, and modals."] }, { version: "v3.0.0", date: "March 3, 2026", changes: ["Rebranded the application to 'Kisa', inspired by the profound tradition of Hadith al-Kisa.", "Made the top-left logo and app name fully clickable to instantly return to the home screen."] }];
+const APP_UPDATES = [{ version: "v3.1.2", date: "March 3, 2026", changes: ["Clipboard Formatting: Added a clean spatial break before the '— Via Kisa' branding when copying Hadith text."] }, { version: "v3.1.1", date: "March 3, 2026", changes: ["Brand Refinement: Applied a premium gold finish to the Kisa Kaf monogram.", "UI Polish: The main header logo now remains a consistent gold while its enclosing box smoothly changes color to reflect the active search mode (Indigo, Blue, or Amber).", "Favicon updated with a solid white backing for better browser visibility."] }, { version: "v3.1.0", date: "March 3, 2026", changes: ["Brand Evolution: Replaced generic icons with a custom geometric Kisa emblem.", "Unified the logo across the header, loading screens, and modals."] }];
 const CLUSTER_COLORS = ['#10b981', '#8b5cf6', '#f59e0b', '#f43f5e', '#3b82f6'];
 const SOURCES = ["All Twelver Sources", "al-Kafi", "Bihar al-Anwar", "Basa'ir al-Darajat"];
 
@@ -185,6 +185,7 @@ const QuranReader = ({ activeFontFamily, fontStyle, setFontStyle }) => {
   const [showSurahMenu, setShowSurahMenu] = useState(false);
   const [showSettingsMenu, setShowSettingsMenu] = useState(false);
 
+  // Search State
   const [quranSearchQuery, setQuranSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState([]);
   const [targetVerse, setTargetVerse] = useState(null);
@@ -337,6 +338,7 @@ const QuranReader = ({ activeFontFamily, fontStyle, setFontStyle }) => {
         <div className="fixed inset-0 z-[60] pointer-events-auto" onClick={() => { setShowSurahMenu(false); setShowSettingsMenu(false); setSearchResults([]); }} />
       )}
 
+      {/* SMART QURAN SEARCH BAR */}
       <div className="w-full relative mb-4 sm:mb-6 z-[70]">
         <form onSubmit={handleQuranSearchSubmit} className="flex items-center bg-white/40 dark:bg-black/30 backdrop-blur-sm border border-slate-300/50 dark:border-slate-800 rounded-2xl px-4 py-3 sm:py-3.5 shadow-sm transition-all focus-within:border-amber-500/50 dark:focus-within:border-amber-500/50 focus-within:bg-white/60 dark:focus-within:bg-black/50">
           <Search className="w-4 h-4 sm:w-5 sm:h-5 text-slate-400 mr-3 shrink-0" />
@@ -356,7 +358,7 @@ const QuranReader = ({ activeFontFamily, fontStyle, setFontStyle }) => {
             <motion.div initial={{ opacity: 0, y: -5 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -5 }} className="absolute left-0 top-full mt-2 w-full bg-[#f4ecd8] dark:bg-[#1a1a1a] border border-slate-300 dark:border-slate-700 rounded-xl shadow-xl z-[75] overflow-hidden smart-scrollbar">
               {searchResults.map((res, i) => (
                 <div key={i} onClick={() => handleSelectResult(res)} className="px-4 py-3.5 cursor-pointer border-b last:border-b-0 border-slate-200 dark:border-slate-800 hover:bg-amber-200/40 dark:hover:bg-amber-900/30 transition-colors flex items-center justify-between group">
-                  <span className="text-sm font-bold text-slate-800 dark:text-slate-200 group-hover:text-amber-900 dark:group-hover:text-amber-500 transition-colors">{res.label}</span>
+                  <span className="text-sm font-bold text-slate-800 dark:text-slate-200 group-hover:text-amber-900 dark:group-hover:text-amber-50 transition-colors">{res.label}</span>
                   <span className="text-[10px] uppercase tracking-widest text-amber-600 dark:text-amber-500 font-bold opacity-80">{res.type}</span>
                 </div>
               ))}
@@ -615,7 +617,10 @@ export default function App() {
       formattedText += `\n\n--- Quranic References ---\n`;
       uniqueVerses.forEach(key => { if (quranData && quranData[key]) formattedText += `\n[Surah ${quranData[key].surahName} - ${key}]\n${quranData[key].ar}\n${quranData[key].en}\n`; });
     }
-    formattedText += `\n— Via Kisa\n${window.location.href}`;
+
+    // Clean trailing newlines, inject exactly one blank line, and append tag/URL tightly
+    formattedText = formattedText.trim() + `\n\n— Via Kisa\n${window.location.href}`;
+
     navigator.clipboard.writeText(formattedText).then(() => console.log("Copied!")).catch(err => console.error(err));
   };
 
