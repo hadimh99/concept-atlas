@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Search, Moon, Sun, Sparkles, X, ChevronRight, ChevronLeft, Home, Copy, ChevronDown, ChevronUp, List, Layout, Info, BookOpen, History, HelpCircle, Database, Filter, Share2, Check, Settings2, Menu, Clock, Trash2 } from 'lucide-react';
 import quranData from './quran.json';
 
-const APP_UPDATES = [{ version: "v3.3.2", date: "March 4, 2026", changes: ["UI Polish: Fixed an issue where the source selection dropdown hover states were too bright in Dark Mode and too faint in Light Mode."] }, { version: "v3.3.1", date: "March 4, 2026", changes: ["Critical Bug Fix: Resolved the 'Black Screen of Death' freeze when switching to the Quran Reader by optimizing the background indexing loops.", "Keyboard UX Fix: Restored the ability to press 'Enter' to immediately execute a search in both Keyword and Concept modes.", "History Fix: Clicking a previously recited Surah in the Study Drawer now correctly routes you straight to that exact Surah."] }, { version: "v3.3.0", date: "March 4, 2026", changes: ["Feature: Added a comprehensive 'Study History' system. Kisa now remembers your recent searches and Surah recitations."] }];
+const APP_UPDATES = [{ version: "v3.3.3", date: "March 4, 2026", changes: ["UI Polish: Darkened the hover state on the Source Selection dropdown in Light Mode (to slate-200) to ensure clear visibility against the frosted glass background."] }, { version: "v3.3.2", date: "March 4, 2026", changes: ["UI Polish: Fixed an issue where the source selection dropdown hover states were too bright in Dark Mode and too faint in Light Mode."] }, { version: "v3.3.1", date: "March 4, 2026", changes: ["Critical Bug Fix: Resolved the 'Black Screen of Death' freeze when switching to the Quran Reader by optimizing the background indexing loops.", "Keyboard UX Fix: Restored the ability to press 'Enter' to immediately execute a search in both Keyword and Concept modes."] }];
 const CLUSTER_COLORS = ['#10b981', '#8b5cf6', '#f59e0b', '#f43f5e', '#3b82f6'];
 const SOURCES = ["All Twelver Sources", "al-Kafi", "Bihar al-Anwar", "Basa'ir al-Darajat"];
 
@@ -407,7 +407,7 @@ const QuranReader = ({ activeFontFamily, fontStyle, setFontStyle, handleSurahSel
             {showSurahMenu && (
               <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="absolute top-full left-0 mt-2 w-full sm:w-[340px] max-h-[400px] overflow-y-auto bg-[#f4ecd8] dark:bg-[#1a1a1a] border border-slate-300 dark:border-slate-700 rounded-xl shadow-xl z-[70] smart-scrollbar">
                 {surahs.map(s => (
-                  <div key={s.id} onClick={() => { executeSurahSelection(s.id); setShowSurahMenu(false); }} className={`px-4 py-3.5 cursor-pointer transition-colors flex justify-between items-center border-b last:border-b-0 border-slate-300/40 dark:border-slate-700/50 ${selectedSurah === s.id ? 'bg-amber-200/60 dark:bg-amber-900/40' : 'hover:bg-amber-200/30 dark:hover:bg-amber-600/10'}`}>
+                  <div key={s.id} onClick={() => { executeSurahSelection(s.id); setShowSurahMenu(false); }} className={`px-4 py-3.5 cursor-pointer transition-colors flex justify-between items-center border-b last:border-b-0 border-slate-300/40 dark:border-slate-700/50 ${selectedSurah === s.id ? 'bg-amber-200/60 dark:bg-amber-900/40' : 'hover:bg-amber-200/50 dark:hover:bg-amber-600/10'}`}>
                     <div className="flex flex-col">
                       <span className={`font-bold text-sm sm:text-base ${selectedSurah === s.id ? 'text-amber-900 dark:text-amber-500' : 'text-slate-800 dark:text-slate-200'}`}>{s.id}. {s.enName}</span>
                       <span className="text-[11px] sm:text-xs text-slate-500 dark:text-slate-400 mt-0.5">{s.meaning}</span>
@@ -850,7 +850,7 @@ export default function App() {
                       <div className="flex items-center gap-2 text-slate-500 dark:text-slate-400 mr-3 hidden sm:flex"><BookOpen className="w-4 h-4" /><span className="text-xs uppercase tracking-wider font-semibold">Source:</span></div>
 
                       {/* FIXED THE HOVER STYLING HERE */}
-                      <button type="button" onClick={() => setShowDropdown(!showDropdown)} className={`flex items-center justify-between w-full sm:w-[220px] px-3 py-1.5 sm:py-2 rounded-lg transition-colors text-xs sm:text-sm font-medium border border-transparent cursor-pointer ${isKeyword ? 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300' : 'hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300'}`}><span className="truncate">{sourceFilter}</span><ChevronDown className="w-4 h-4 opacity-50 shrink-0 ml-2" /></button>
+                      <button type="button" onClick={() => setShowDropdown(!showDropdown)} className={`flex items-center justify-between w-full sm:w-[220px] px-3 py-1.5 sm:py-2 rounded-lg transition-colors text-xs sm:text-sm font-medium border border-transparent cursor-pointer ${isKeyword ? 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300' : 'hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300'}`}><span className="truncate">{sourceFilter}</span><ChevronDown className="w-4 h-4 opacity-50 shrink-0 ml-2" /></button>
 
                       <AnimatePresence>
                         {showDropdown && (
@@ -860,7 +860,7 @@ export default function App() {
                                 key={source}
                                 onClick={() => { setSourceFilter(source); setShowDropdown(false); }}
                                 /* FIXED THE HOVER AND ACTIVE TEXT STYLING HERE */
-                                className={`px-4 py-3 text-sm cursor-pointer transition-colors ${sourceFilter === source ? (isKeyword ? 'bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400' : 'bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400') : 'text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700'}`}
+                                className={`px-4 py-3 text-sm cursor-pointer transition-colors ${sourceFilter === source ? (isKeyword ? 'bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400' : 'bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400') : 'text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'}`}
                               >
                                 {source}
                               </div>
@@ -982,7 +982,7 @@ export default function App() {
                         </div>
                         <div className={`px-4 sm:px-6 py-3 border-b shrink-0 flex flex-wrap gap-2 items-center ${isKeyword ? 'bg-slate-100/50 dark:bg-slate-800/30 border-slate-200 dark:border-slate-700' : 'bg-slate-200/30 dark:bg-slate-800/30 border-slate-200 dark:border-slate-800'}`}>
                           <div className="flex items-center gap-1.5 text-slate-500 dark:text-slate-400 mr-1"><Filter className="w-3.5 h-3.5" /><span className="text-[10px] sm:text-xs font-semibold uppercase tracking-wider">Length:</span></div>
-                          {['All', 'Short', 'Medium', 'Long'].map(f => (<button key={f} onClick={() => { setLengthFilter(f); setCurrentPage(1); if (modalScrollRef.current) modalScrollRef.current.scrollTop = 0; }} className={`px-3 py-1 sm:py-1.5 rounded-md text-[10px] sm:text-xs font-medium transition-colors cursor-pointer ${lengthFilter === f ? (isKeyword ? 'bg-blue-500 text-white' : 'bg-indigo-500 text-white') : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700'}`}>{f}</button>))}
+                          {['All', 'Short', 'Medium', 'Long'].map(f => (<button key={f} onClick={() => { setLengthFilter(f); setCurrentPage(1); if (modalScrollRef.current) modalScrollRef.current.scrollTop = 0; }} className={`px-3 py-1 sm:py-1.5 rounded-md text-[10px] sm:text-xs font-medium transition-colors cursor-pointer ${lengthFilter === f ? (isKeyword ? 'bg-blue-500 text-white' : 'bg-indigo-500 text-white') : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700'}`}>{f}</button>))}
                           <span className="ml-auto text-[10px] sm:text-xs font-mono text-slate-400">{filteredItems.length} matches</span>
                         </div>
                         <div ref={modalScrollRef} onScroll={handleModalScroll} className="p-4 sm:p-6 flex flex-col gap-4 sm:gap-6 overflow-y-auto flex-grow smart-scrollbar">
