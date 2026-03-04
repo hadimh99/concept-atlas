@@ -124,83 +124,105 @@ app.post('/api/explore', async (req, res) => {
 
         console.log(`[🔍 CACHE MISS] Processing new ${activeSearchMode} query: "${query}" (Source: ${activeSource})`);
 
+        // =========================================================================
+        // OPTIMIZED SQLITE KEYWORD SEARCH (Streaming / No RAM Crashes / Blazing Fast)
+        // =========================================================================
         if (activeSearchMode === 'keyword') {
-            console.log("Fetching data from SQLite for keyword search...");
-
-            const allRows = await new Promise((resolve, reject) => {
-                db.all("SELECT raw_data FROM hadiths", (err, rows) => {
-                    if (err) reject(err); else resolve(rows);
-                });
-            });
-            const hadithMap = allRows.map(r => JSON.parse(r.raw_data));
+            console.log("Executing high-speed streaming keyword search...");
 
             const lowerQuery = query.toLowerCase().trim();
-            // Split query into words to allow fuzzy matching
             const queryWords = lowerQuery.replace(/[^\w\s]/gi, '').split(/\s+/).filter(w => w.length > 3);
 
             let exactMatches = [];
             let fuzzyMatches = [];
+            let seenIds = new Set();
+            let totalFound = 0;
 
-            for (const hData of hadithMap) {
-                const bookName = hData.book || hData.book_number || "al-Kafi";
-                if (activeSource !== "All Twelver Sources" && bookName !== activeSource) continue;
+            // Stream rows one by one. This keeps RAM essentially at zero, 
+            // but uses Node.js's blazing fast V8 engine to do the text matching.
+            await new Promise((resolve, reject) => {
+                db.each("SELECT raw_data FROM hadiths", [], (err, row) => {
+                    if (err) return;
 
-                const eng = (hData.en || "").toLowerCase();
-                const ar = hData.ar || "";
+                    try {
+                        const hData = JSON.parse(row.raw_data);
+                        const bookName = hData.book || hData.book_number || "al-Kafi";
 
-                let hNum = hData.hadith_number || hData.hadith;
-                if (!hNum || hNum === "unknown" || hNum === "Unknown") {
-                    const textMatch = (hData.en || "").match(/^(\d+)\s*\./);
-                    hNum = textMatch ? textMatch[1] : "Unknown";
-                }
+                        // Filter by source immediately
+                        if (activeSource !== "All Twelver Sources" && bookName !== activeSource) return;
 
-                const hadithObj = {
-                    id: hData.id || Math.random().toString(),
-                    arabic_text: hData.ar || "Arabic text not available",
-                    english_text: hData.en || "English translation not available",
-                    book: bookName,
-                    volume: hData.volume_number || hData.volume || "Unknown",
-                    sub_book: hData.category || hData.sub_book || "Unknown",
-                    chapter: hData.chapter_number || hData.chapter || "Unknown",
-                    hadith_number: hNum,
-                    similarity_score: 1.0,
-                    vector: []
-                };
+                        const eng = (hData.en || "").toLowerCase();
+                        const ar = hData.ar || "";
 
-                // 1. Check for absolute exact string match first
-                if (eng.includes(lowerQuery) || ar.includes(query)) {
-                    exactMatches.push(hadithObj);
-                }
-                // 2. If no exact match, check for high word overlap (fuzzy match)
-                else if (queryWords.length > 1) {
-                    let matchCount = 0;
-                    queryWords.forEach(word => {
-                        if (eng.includes(word)) matchCount++;
-                    });
+                        // 1. Check Exact Match
+                        let isExact = eng.includes(lowerQuery) || ar.includes(query);
 
-                    // If 75% of the words are in the hadith, it's a hit!
-                    if (matchCount / queryWords.length >= 0.75) {
-                        fuzzyMatches.push(hadithObj);
+                        // 2. Check Fuzzy Match
+                        let isFuzzy = false;
+                        if (!isExact && queryWords.length > 1) {
+                            let matchCount = 0;
+                            queryWords.forEach(word => {
+                                if (eng.includes(word) || ar.includes(word)) matchCount++;
+                            });
+                            if (matchCount / queryWords.length >= 0.75) {
+                                isFuzzy = true;
+                            }
+                        }
+
+                        if (isExact || isFuzzy) {
+                            const id = hData.id || hData.hadith_number || Math.random().toString();
+                            if (seenIds.has(id)) return;
+                            seenIds.add(id);
+
+                            let hNum = hData.hadith_number || hData.hadith;
+                            if (!hNum || hNum === "unknown" || hNum === "Unknown") {
+                                const textMatch = (hData.en || "").match(/^(\d+)\s*\./);
+                                hNum = textMatch ? textMatch[1] : "Unknown";
+                            }
+
+                            const hadithObj = {
+                                id: id,
+                                arabic_text: hData.ar || "Arabic text not available",
+                                english_text: hData.en || "English translation not available",
+                                book: bookName,
+                                volume: hData.volume_number || hData.volume || "Unknown",
+                                sub_book: hData.category || hData.sub_book || "Unknown",
+                                chapter: hData.chapter_number || hData.chapter || "Unknown",
+                                hadith_number: hNum,
+                                similarity_score: 1.0,
+                                vector: []
+                            };
+
+                            if (isExact) {
+                                if (exactMatches.length < 100) exactMatches.push(hadithObj);
+                            } else {
+                                if (fuzzyMatches.length < 50) fuzzyMatches.push(hadithObj);
+                            }
+                            totalFound++;
+                        }
+                    } catch (e) {
+                        // Silently skip malformed rows
                     }
-                }
-            }
+                }, (err, count) => {
+                    // This block runs when all rows are finished streaming
+                    if (err) reject(err);
+                    else resolve();
+                });
+            });
 
             const clusters = [];
-            let totalFound = 0;
 
             if (exactMatches.length > 0) {
                 clusters.push({
                     theme_label: `Exact Matches: "${query}"`,
                     items: exactMatches
                 });
-                totalFound += exactMatches.length;
             }
             if (fuzzyMatches.length > 0 && exactMatches.length < 20) {
                 clusters.push({
                     theme_label: `Partial Text Matches (Translation Variations)`,
-                    items: fuzzyMatches.slice(0, 50) // Limit to top 50 to prevent freezing
+                    items: fuzzyMatches
                 });
-                totalFound += fuzzyMatches.length;
             }
 
             const resultPayload = {
@@ -216,6 +238,9 @@ app.post('/api/explore', async (req, res) => {
             return res.json(resultPayload);
         }
 
+        // =========================================================================
+        // CONCEPT MODE (No changes below)
+        // =========================================================================
         console.log("Embedding query via Hugging Face Cloud API...");
         const hfToken = process.env.HF_TOKEN;
         if (!hfToken) {
@@ -355,11 +380,8 @@ app.post('/api/explore', async (req, res) => {
             return res.json({ total_results: 0, clusters: [] });
         }
 
-        // IMPORTANT: Sort by absolute relevance first
         fetchedHadiths.sort((a, b) => b.similarity_score - a.similarity_score);
 
-        // --- THE "TOP HITS" OVERRIDE FIX ---
-        // Slice the absolute top 5 matches to bypass clustering so the direct answer is always at the top
         let topHitsCluster = null;
         let clusterableHadiths = fetchedHadiths;
 
@@ -375,7 +397,7 @@ app.post('/api/explore', async (req, res) => {
 
         console.log("Running K-Means Semantic Clustering on remaining results...");
         const vectors = clusterableHadiths.map(h => h.vector);
-        const numberOfClusters = Math.min(4, clusterableHadiths.length); // Reduced to 4 so total is 5
+        const numberOfClusters = Math.min(4, clusterableHadiths.length);
         const kmeansResult = kmeans(vectors, numberOfClusters, { initialization: 'kmeans++' });
 
         const clustersArray = [];
@@ -398,7 +420,6 @@ app.post('/api/explore', async (req, res) => {
             cluster.theme_label = generatedLabels[index];
         });
 
-        // Add the top hits cluster to the very front of the array!
         if (topHitsCluster) {
             clustersArray.unshift(topHitsCluster);
         }
