@@ -2,9 +2,9 @@ import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Search, Moon, Sun, Sparkles, X, ChevronRight, ChevronLeft, Home, Copy, ChevronDown, ChevronUp, List, Layout, Info, BookOpen, History, HelpCircle, Database, Filter, Share2, Check, Settings2, Menu, Clock, Trash2, LibraryBig } from 'lucide-react';
 import quranData from './quran.json';
-import verseMap from './verse_map.json'; // <-- The new instant map!
+import verseMap from './verse_map.json';
 
-const APP_UPDATES = [{ version: "v3.4.1", date: "March 4, 2026", changes: ["Feature Polish: 'Related Hadiths' button is now context-aware! It uses a pre-computed static map to instantly display the exact number of matching narrations, and only appears if hadiths actually exist for that verse, saving you time."] }];
+const APP_UPDATES = [{ version: "v3.4.2", date: "March 4, 2026", changes: ["Documentation: Updated the 'How to Use' guide to better explain the Translation Trap in Keyword Mode, advising users on how to effectively search for hadiths when English translations vary."] }, { version: "v3.4.1", date: "March 4, 2026", changes: ["Feature Polish: 'Related Hadiths' button is now context-aware! It uses a pre-computed static map to instantly display the exact number of matching narrations, and only appears if hadiths actually exist for that verse, saving you time."] }, { version: "v3.4.0", date: "March 4, 2026", changes: ["Feature: Added 'Reverse Quran Lookup' – click 'Related Hadiths' under any verse in the Quran Reader to instantly find narrations referencing that Ayah.", "Feature: Native Arabic Text Support – Concept Search now translates Arabic queries via AI before vectorizing, and Keyword Search strips harakat (tashkeel) for perfect exact matches."] }];
 const CLUSTER_COLORS = ['#10b981', '#8b5cf6', '#f59e0b', '#f43f5e', '#3b82f6'];
 const SOURCES = ["All Twelver Sources", "al-Kafi", "Bihar al-Anwar", "Basa'ir al-Darajat"];
 
@@ -1210,8 +1210,8 @@ export default function App() {
                     <h3 className="font-bold text-base sm:text-lg flex items-center gap-2 mb-2 sm:mb-3 text-slate-900 dark:text-white"><Database className="w-4 h-4 text-blue-500" /> Keyword Mode (Exact Match)</h3>
                     <p className="leading-relaxed text-xs sm:text-sm mb-3">This mode strictly searches the exact English or Arabic text you type, functioning like a traditional database index.</p>
                     <div className="bg-blue-50 dark:bg-blue-500/10 border-l-4 border-blue-500 p-3 sm:p-4 rounded-r-lg">
-                      <p className="text-xs sm:text-sm font-semibold text-blue-800 dark:text-blue-300 mb-1">⚠️ The Translator's Trap</p>
-                      <p className="text-xs sm:text-sm text-blue-700 dark:text-blue-200/80">If you search an English idiom like <i>"peak of affairs"</i>, you might miss a Hadith because the translator wrote <i>"summit of the matter"</i> instead. To bypass this, search using core "Anchor Words" like <i>"obeying the Imam"</i> to catch exactly what you are looking for.</p>
+                      <p className="text-xs sm:text-sm font-semibold text-blue-800 dark:text-blue-300 mb-1">⚠️ The Translation Trap</p>
+                      <p className="text-xs sm:text-sm text-blue-700 dark:text-blue-200/80">English translations vary wildly. If you remember a Hadith mentioning the <i>"peak of affairs"</i> or <i>"knowing your Imam"</i>, the database might actually be translated as <i>"top most matter"</i> or <i>"finding out who the Imam is"</i>. To avoid this, do not search long phrases in this mode. Either search using a single undeniable word (like <i>"obedience"</i>), search in Arabic directly, or switch to <b>Concept Mode</b> to let the AI find the meaning regardless of vocabulary.</p>
                     </div>
                   </div>
                   <hr className="border-slate-200 dark:border-slate-700" />
@@ -1219,7 +1219,7 @@ export default function App() {
                   {/* Quran Reader */}
                   <div>
                     <h3 className="font-bold text-base sm:text-lg flex items-center gap-2 mb-2 sm:mb-3 text-slate-900 dark:text-white"><BookOpen className="w-4 h-4 text-amber-500" /> The Quran Reader & Reverse Lookup</h3>
-                    <p className="leading-relaxed text-xs sm:text-sm mb-3">Read through all 114 Surahs. Whenever you are reading an Ayah, you can click <b>"Related Hadiths"</b> beneath it to instantly query the database and find out if any Imam referenced that exact verse.</p>
+                    <p className="leading-relaxed text-xs sm:text-sm mb-3">Read through all 114 Surahs in your preferred font. Beneath certain verses, you will see a <b>"Related Hadiths"</b> button with a number. This means Kisa has already pre-calculated that narrations exist referencing that exact Ayah. Click it to instantly open a popup and read the context without losing your place.</p>
                   </div>
                   <hr className="border-slate-200 dark:border-slate-700" />
 
