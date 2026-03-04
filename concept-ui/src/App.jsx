@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Search, Moon, Sun, Sparkles, X, ChevronRight, ChevronLeft, Home, Copy, ChevronDown, ChevronUp, List, Layout, Info, BookOpen, History, HelpCircle, Database, Filter, Share2, Check, Settings2, Menu } from 'lucide-react';
 import quranData from './quran.json';
 
-const APP_UPDATES = [{ version: "v3.1.2", date: "March 3, 2026", changes: ["Clipboard Formatting: Added a clean spatial break before the '— Via Kisa' branding when copying Hadith text."] }, { version: "v3.1.1", date: "March 3, 2026", changes: ["Brand Refinement: Applied a premium gold finish to the Kisa Kaf monogram.", "UI Polish: The main header logo now remains a consistent gold while its enclosing box smoothly changes color to reflect the active search mode (Indigo, Blue, or Amber).", "Favicon updated with a solid white backing for better browser visibility."] }, { version: "v3.1.0", date: "March 3, 2026", changes: ["Brand Evolution: Replaced generic icons with a custom geometric Kisa emblem.", "Unified the logo across the header, loading screens, and modals."] }];
+const APP_UPDATES = [{ version: "v3.2.0", date: "March 4, 2026", changes: ["UI Polish: Completely redesigned the Surah selection dropdown to match premium printed Qurans. It now features a rich dual-language layout detailing English meanings and total Ayah counts for all 114 Surahs."] }, { version: "v3.1.2", date: "March 3, 2026", changes: ["Clipboard Formatting: Added a clean spatial break before the '— Via Kisa' branding when copying Hadith text."] }, { version: "v3.1.1", date: "March 3, 2026", changes: ["Brand Refinement: Applied a premium gold finish to the Kisa Kaf monogram.", "UI Polish: The main header logo now remains a consistent gold while its enclosing box smoothly changes color to reflect the active search mode (Indigo, Blue, or Amber)."] }];
 const CLUSTER_COLORS = ['#10b981', '#8b5cf6', '#f59e0b', '#f43f5e', '#3b82f6'];
 const SOURCES = ["All Twelver Sources", "al-Kafi", "Bihar al-Anwar", "Basa'ir al-Darajat"];
 
@@ -192,11 +192,49 @@ const QuranReader = ({ activeFontFamily, fontStyle, setFontStyle }) => {
 
   const quranSearchInputRef = useRef(null);
 
+  // Hardcoded English meanings for all 114 Surahs
+  const surahMeanings = {
+    1: "The Opening", 2: "The Cow", 3: "The Family of Imraan", 4: "The Women", 5: "The Table Spread",
+    6: "The Cattle", 7: "The Heights", 8: "The Spoils of War", 9: "The Repentance", 10: "Jonah",
+    11: "Hud", 12: "Joseph", 13: "The Thunder", 14: "Abraham", 15: "The Rocky Tract",
+    16: "The Bee", 17: "The Night Journey", 18: "The Cave", 19: "Mary", 20: "Ta-Ha",
+    21: "The Prophets", 22: "The Pilgrimage", 23: "The Believers", 24: "The Light", 25: "The Criterion",
+    26: "The Poets", 27: "The Ant", 28: "The Stories", 29: "The Spider", 30: "The Romans",
+    31: "Luqman", 32: "The Prostration", 33: "The Combined Forces", 34: "Sheba", 35: "The Originator",
+    36: "Ya Sin", 37: "Those who set the Ranks", 38: "The Letter \"Saad\"", 39: "The Troops", 40: "The Forgiver",
+    41: "Explained in Detail", 42: "The Consultation", 43: "The Ornaments of Gold", 44: "The Smoke", 45: "The Crouching",
+    46: "The Wind-Curved Sandhills", 47: "Muhammad", 48: "The Victory", 49: "The Rooms", 50: "The Letter \"Qaf\"",
+    51: "The Winnowing Winds", 52: "The Mount", 53: "The Star", 54: "The Moon", 55: "The Beneficent",
+    56: "The Inevitable", 57: "The Iron", 58: "The Pleading Woman", 59: "The Exile", 60: "She that is to be examined",
+    61: "The Ranks", 62: "The Congregation", 63: "The Hypocrites", 64: "The Mutual Disillusion", 65: "The Divorce",
+    66: "The Prohibition", 67: "The Sovereignty", 68: "The Pen", 69: "The Reality", 70: "The Ascending Stairways",
+    71: "Noah", 72: "The Jinn", 73: "The Enshrouded One", 74: "The Cloaked One", 75: "The Resurrection",
+    76: "The Man", 77: "The Emissaries", 78: "The Tidings", 79: "Those who drag forth", 80: "He Frowned",
+    81: "The Overthrowing", 82: "The Cleaving", 83: "The Defrauding", 84: "The Sundering", 85: "The Mansions of the Stars",
+    86: "The Nightcommer", 87: "The Most High", 88: "The Overwhelming", 89: "The Dawn", 90: "The City",
+    91: "The Sun", 92: "The Night", 93: "The Morning Hours", 94: "The Relief", 95: "The Fig",
+    96: "The Clot", 97: "The Power", 98: "The Clear Proof", 99: "The Earthquake", 100: "The Courser",
+    101: "The Calamity", 102: "The Rivalry in world increase", 103: "The Declining Day", 104: "The Traducer", 105: "The Elephant",
+    106: "Quraish", 107: "The Small Kindnesses", 108: "The Abundance", 109: "The Disbelievers", 110: "The Divine Support",
+    111: "The Palm Fiber", 112: "The Sincerity", 113: "The Daybreak", 114: "Mankind"
+  };
+
+  // Initialize Rich Surah List
   const surahs = useMemo(() => {
     const list = [];
     for (let i = 1; i <= 114; i++) {
       if (quranData[`${i}:1`]) {
-        list.push({ id: i, enName: quranData[`${i}:1`].surahName, arName: quranData[`${i}:1`].surahArName });
+        // Calculate max verses efficiently for the label
+        let aIdx = 1;
+        while (quranData[`${i}:${aIdx}`]) aIdx++;
+
+        list.push({
+          id: i,
+          enName: quranData[`${i}:1`].surahName,
+          arName: quranData[`${i}:1`].surahArName,
+          meaning: surahMeanings[i] || "",
+          ayahCount: aIdx - 1
+        });
       }
     }
     return list;
@@ -236,12 +274,6 @@ const QuranReader = ({ activeFontFamily, fontStyle, setFontStyle }) => {
     });
   }, [surahs]);
 
-  const getMaxVerses = (surahId) => {
-    let aIdx = 1;
-    while (quranData[`${surahId}:${aIdx}`]) aIdx++;
-    return aIdx - 1;
-  };
-
   const handleSearchChange = (val) => {
     setQuranSearchQuery(val);
     if (!val.trim()) {
@@ -257,9 +289,9 @@ const QuranReader = ({ activeFontFamily, fontStyle, setFontStyle }) => {
       const sId = parseInt(numMatch[1]);
       const vId = parseInt(numMatch[2]);
       if (sId >= 1 && sId <= 114) {
-        const maxV = getMaxVerses(sId);
-        if (vId >= 1 && vId <= maxV) {
-          results.push({ type: 'verse', surahId: sId, verseId: vId, label: `Surah ${surahs.find(s => s.id === sId)?.enName}, Verse ${vId}` });
+        const targetSurah = surahs.find(s => s.id === sId);
+        if (targetSurah && vId >= 1 && vId <= targetSurah.ayahCount) {
+          results.push({ type: 'verse', surahId: sId, verseId: vId, label: `Surah ${targetSurah.enName}, Verse ${vId}` });
         }
       }
     } else {
@@ -338,7 +370,6 @@ const QuranReader = ({ activeFontFamily, fontStyle, setFontStyle }) => {
         <div className="fixed inset-0 z-[60] pointer-events-auto" onClick={() => { setShowSurahMenu(false); setShowSettingsMenu(false); setSearchResults([]); }} />
       )}
 
-      {/* SMART QURAN SEARCH BAR */}
       <div className="w-full relative mb-4 sm:mb-6 z-[70]">
         <form onSubmit={handleQuranSearchSubmit} className="flex items-center bg-white/40 dark:bg-black/30 backdrop-blur-sm border border-slate-300/50 dark:border-slate-800 rounded-2xl px-4 py-3 sm:py-3.5 shadow-sm transition-all focus-within:border-amber-500/50 dark:focus-within:border-amber-500/50 focus-within:bg-white/60 dark:focus-within:bg-black/50">
           <Search className="w-4 h-4 sm:w-5 sm:h-5 text-slate-400 mr-3 shrink-0" />
@@ -358,7 +389,7 @@ const QuranReader = ({ activeFontFamily, fontStyle, setFontStyle }) => {
             <motion.div initial={{ opacity: 0, y: -5 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -5 }} className="absolute left-0 top-full mt-2 w-full bg-[#f4ecd8] dark:bg-[#1a1a1a] border border-slate-300 dark:border-slate-700 rounded-xl shadow-xl z-[75] overflow-hidden smart-scrollbar">
               {searchResults.map((res, i) => (
                 <div key={i} onClick={() => handleSelectResult(res)} className="px-4 py-3.5 cursor-pointer border-b last:border-b-0 border-slate-200 dark:border-slate-800 hover:bg-amber-200/40 dark:hover:bg-amber-900/30 transition-colors flex items-center justify-between group">
-                  <span className="text-sm font-bold text-slate-800 dark:text-slate-200 group-hover:text-amber-900 dark:group-hover:text-amber-50 transition-colors">{res.label}</span>
+                  <span className="text-sm font-bold text-slate-800 dark:text-slate-200 group-hover:text-amber-900 dark:group-hover:text-amber-500 transition-colors">{res.label}</span>
                   <span className="text-[10px] uppercase tracking-widest text-amber-600 dark:text-amber-500 font-bold opacity-80">{res.type}</span>
                 </div>
               ))}
@@ -375,20 +406,34 @@ const QuranReader = ({ activeFontFamily, fontStyle, setFontStyle }) => {
             className="w-full bg-white dark:bg-[#1a1a1a] border border-slate-300 dark:border-slate-700 text-slate-800 dark:text-slate-200 text-sm rounded-lg px-4 py-2.5 flex justify-between items-center transition-colors font-medium shadow-sm hover:border-amber-500 dark:hover:border-amber-500 cursor-pointer"
           >
             <span className="truncate">{selectedSurah}. Surah {surahs.find(s => s.id === selectedSurah)?.enName}</span>
-            <ChevronDown className="w-4 h-4 opacity-50" />
+            <ChevronDown className="w-4 h-4 opacity-50 shrink-0 ml-2" />
           </button>
 
           <AnimatePresence>
             {showSurahMenu && (
-              <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="absolute top-full left-0 mt-2 w-full max-h-[300px] overflow-y-auto bg-[#f4ecd8] dark:bg-[#1a1a1a] border border-slate-300 dark:border-slate-700 rounded-xl shadow-xl z-[70] smart-scrollbar">
+              <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="absolute top-full left-0 mt-2 w-[calc(100vw-32px)] sm:w-[340px] max-h-[400px] overflow-y-auto bg-[#f4ecd8] dark:bg-[#1a1a1a] border border-slate-300 dark:border-slate-700 rounded-xl shadow-xl z-[70] smart-scrollbar">
                 {surahs.map(s => (
                   <div
                     key={s.id}
                     onClick={() => { setSelectedSurah(s.id); setShowSurahMenu(false); }}
-                    className={`px-4 py-2.5 text-sm cursor-pointer transition-colors flex justify-between items-center ${selectedSurah === s.id ? 'bg-amber-200/60 dark:bg-amber-900/40 text-amber-900 dark:text-amber-500 font-bold' : 'text-slate-800 dark:text-slate-200 hover:bg-amber-200/40 dark:hover:bg-amber-600/20 hover:text-amber-900 dark:hover:text-amber-400'}`}
+                    className={`px-4 py-3.5 cursor-pointer transition-colors flex justify-between items-center border-b last:border-b-0 border-slate-300/40 dark:border-slate-700/50 ${selectedSurah === s.id ? 'bg-amber-200/60 dark:bg-amber-900/40' : 'hover:bg-amber-200/30 dark:hover:bg-amber-600/10'}`}
                   >
-                    <span>{s.id}. Surah {s.enName}</span>
-                    <span className="font-arabic text-base opacity-70" dir="rtl" lang="ar">{s.arName}</span>
+                    <div className="flex flex-col">
+                      <span className={`font-bold text-sm sm:text-base ${selectedSurah === s.id ? 'text-amber-900 dark:text-amber-500' : 'text-slate-800 dark:text-slate-200'}`}>
+                        {s.id}. {s.enName}
+                      </span>
+                      <span className="text-[11px] sm:text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                        {s.meaning}
+                      </span>
+                    </div>
+                    <div className="flex flex-col items-end">
+                      <span className={`font-arabic text-lg sm:text-xl ${selectedSurah === s.id ? 'text-amber-900 dark:text-amber-500' : 'text-slate-800 dark:text-slate-200'}`} dir="rtl" lang="ar">
+                        {s.arName}
+                      </span>
+                      <span className="text-[10px] sm:text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                        {s.ayahCount} ayahs
+                      </span>
+                    </div>
                   </div>
                 ))}
               </motion.div>
@@ -617,10 +662,7 @@ export default function App() {
       formattedText += `\n\n--- Quranic References ---\n`;
       uniqueVerses.forEach(key => { if (quranData && quranData[key]) formattedText += `\n[Surah ${quranData[key].surahName} - ${key}]\n${quranData[key].ar}\n${quranData[key].en}\n`; });
     }
-
-    // Clean trailing newlines, inject exactly one blank line, and append tag/URL tightly
     formattedText = formattedText.trim() + `\n\n— Via Kisa\n${window.location.href}`;
-
     navigator.clipboard.writeText(formattedText).then(() => console.log("Copied!")).catch(err => console.error(err));
   };
 
@@ -895,7 +937,7 @@ export default function App() {
                   <button onClick={() => setQuranPopup(null)} className="p-2 hover:bg-slate-200 dark:hover:bg-slate-800 rounded-full transition-colors cursor-pointer shrink-0"><X className="w-5 h-5 text-slate-500" /></button>
                 </div>
                 <div className="p-6 sm:p-8 overflow-y-auto flex-grow smart-scrollbar">
-                  <div className="mb-6"><p className="font-arabic text-3xl sm:text-4xl text-right leading-[2.2] text-slate-800 dark:text-slate-100" dir="rtl" lang="ar" style={{ fontFamily: activeFontFamily }}>{quranPopup.data.ar}</p></div>
+                  <div className="mb-6"><p className="font-arabic text-3xl sm:text-4xl text-right leading-[2.2] text-slate-800 dark:text-slate-100" dir="rtl" lang="ar" style={{ fontFamily: activeFontFamily, fontVariantLigatures: 'normal', fontFeatureSettings: '"ccmp" 1, "mark" 1, "mkmk" 1' }}>{quranPopup.data.ar}</p></div>
                   <div className="border-t border-slate-100 dark:border-slate-800 pt-6"><p className="text-base sm:text-lg text-slate-600 dark:text-slate-300 leading-relaxed font-serif">{quranPopup.data.en}</p></div>
                 </div>
               </motion.div>
