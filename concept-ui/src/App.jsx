@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Search, Moon, Sun, Sparkles, X, ChevronRight, ChevronLeft, Home, Copy, ChevronDown, ChevronUp, List, Layout, Info, BookOpen, History, HelpCircle, Database, Filter, Share2, Check, Settings2, Menu } from 'lucide-react';
 import quranData from './quran.json';
 
-const APP_UPDATES = [{ version: "v3.2.0", date: "March 4, 2026", changes: ["UI Polish: Completely redesigned the Surah selection dropdown to match premium printed Qurans. It now features a rich dual-language layout detailing English meanings and total Ayah counts for all 114 Surahs."] }, { version: "v3.1.2", date: "March 3, 2026", changes: ["Clipboard Formatting: Added a clean spatial break before the '— Via Kisa' branding when copying Hadith text."] }, { version: "v3.1.1", date: "March 3, 2026", changes: ["Brand Refinement: Applied a premium gold finish to the Kisa Kaf monogram.", "UI Polish: The main header logo now remains a consistent gold while its enclosing box smoothly changes color to reflect the active search mode (Indigo, Blue, or Amber)."] }];
+const APP_UPDATES = [{ version: "v3.2.1", date: "March 4, 2026", changes: ["UI Polish: Perfectly centered the Surah dropdown menu on mobile devices.", "Added an interactive up/down arrow indicator to the Surah selector button."] }, { version: "v3.2.0", date: "March 4, 2026", changes: ["UI Polish: Completely redesigned the Surah selection dropdown to match premium printed Qurans. It now features a rich dual-language layout detailing English meanings and total Ayah counts for all 114 Surahs."] }, { version: "v3.1.2", date: "March 3, 2026", changes: ["Clipboard Formatting: Added a clean spatial break before the '— Via Kisa' branding when copying Hadith text."] }];
 const CLUSTER_COLORS = ['#10b981', '#8b5cf6', '#f59e0b', '#f43f5e', '#3b82f6'];
 const SOURCES = ["All Twelver Sources", "al-Kafi", "Bihar al-Anwar", "Basa'ir al-Darajat"];
 
@@ -224,7 +224,6 @@ const QuranReader = ({ activeFontFamily, fontStyle, setFontStyle }) => {
     const list = [];
     for (let i = 1; i <= 114; i++) {
       if (quranData[`${i}:1`]) {
-        // Calculate max verses efficiently for the label
         let aIdx = 1;
         while (quranData[`${i}:${aIdx}`]) aIdx++;
 
@@ -406,12 +405,12 @@ const QuranReader = ({ activeFontFamily, fontStyle, setFontStyle }) => {
             className="w-full bg-white dark:bg-[#1a1a1a] border border-slate-300 dark:border-slate-700 text-slate-800 dark:text-slate-200 text-sm rounded-lg px-4 py-2.5 flex justify-between items-center transition-colors font-medium shadow-sm hover:border-amber-500 dark:hover:border-amber-500 cursor-pointer"
           >
             <span className="truncate">{selectedSurah}. Surah {surahs.find(s => s.id === selectedSurah)?.enName}</span>
-            <ChevronDown className="w-4 h-4 opacity-50 shrink-0 ml-2" />
+            {showSurahMenu ? <ChevronUp className="w-4 h-4 opacity-50 shrink-0 ml-2" /> : <ChevronDown className="w-4 h-4 opacity-50 shrink-0 ml-2" />}
           </button>
 
           <AnimatePresence>
             {showSurahMenu && (
-              <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="absolute top-full left-0 mt-2 w-[calc(100vw-32px)] sm:w-[340px] max-h-[400px] overflow-y-auto bg-[#f4ecd8] dark:bg-[#1a1a1a] border border-slate-300 dark:border-slate-700 rounded-xl shadow-xl z-[70] smart-scrollbar">
+              <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="absolute top-full left-0 mt-2 w-full sm:w-[340px] max-h-[400px] overflow-y-auto bg-[#f4ecd8] dark:bg-[#1a1a1a] border border-slate-300 dark:border-slate-700 rounded-xl shadow-xl z-[70] smart-scrollbar">
                 {surahs.map(s => (
                   <div
                     key={s.id}
