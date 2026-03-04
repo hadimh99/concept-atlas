@@ -3,17 +3,53 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Search, Moon, Sun, Sparkles, X, ChevronRight, ChevronLeft, Home, Copy, ChevronDown, ChevronUp, List, Layout, Info, BookOpen, History, HelpCircle, Database, Filter, Share2, Check, Settings2, Menu, Clock, Trash2 } from 'lucide-react';
 import quranData from './quran.json';
 
-const APP_UPDATES = [{ version: "v3.3.0", date: "March 4, 2026", changes: ["Feature: Added a comprehensive 'Study History' system. Kisa now remembers your recent searches and Surah recitations.", "UX Polish: Clicking the empty search bar now reveals a Google-style dropdown to instantly resume your last 5 activities.", "UI Polish: Added a dedicated Study Drawer (Clock Icon) to view and clear your full exploration history."] }, { version: "v3.2.1", date: "March 4, 2026", changes: ["UI Polish: Perfectly centered the Surah dropdown menu on mobile devices.", "Added an interactive up/down arrow indicator to the Surah selector button."] }, { version: "v3.2.0", date: "March 4, 2026", changes: ["UI Polish: Completely redesigned the Surah selection dropdown to match premium printed Qurans."] }];
+const APP_UPDATES = [{ version: "v3.3.1", date: "March 4, 2026", changes: ["Critical Bug Fix: Resolved the 'Black Screen of Death' freeze when switching to the Quran Reader by optimizing the background indexing loops.", "Keyboard UX Fix: Restored the ability to press 'Enter' to immediately execute a search in both Keyword and Concept modes.", "History Fix: Clicking a previously recited Surah in the Study Drawer now correctly routes you straight to that exact Surah."] }, { version: "v3.3.0", date: "March 4, 2026", changes: ["Feature: Added a comprehensive 'Study History' system. Kisa now remembers your recent searches and Surah recitations.", "UX Polish: Clicking the empty search bar now reveals a Google-style dropdown to instantly resume your last 5 activities.", "UI Polish: Added a dedicated Study Drawer (Clock Icon) to view and clear your full exploration history."] }];
 const CLUSTER_COLORS = ['#10b981', '#8b5cf6', '#f59e0b', '#f43f5e', '#3b82f6'];
 const SOURCES = ["All Twelver Sources", "al-Kafi", "Bihar al-Anwar", "Basa'ir al-Darajat"];
 
-// --- PREMIUM GEOMETRIC KAF MONOGRAM ---
-const KisaLogo = ({ className }) => (
-  <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className={className}>
-    <path d="M18 4V18.5C18 19.3284 17.3284 20 16.5 20H6.5C5.67157 20 5 19.3284 5 18.5V14" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
-    <path d="M13.5 8.5L9.5 11L12.5 13.5L8.5 16" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
-  </svg>
-);
+// --- STATIC DICTIONARIES (Moved outside to prevent memory leaks) ---
+const SURAH_MEANINGS = {
+  1: "The Opening", 2: "The Cow", 3: "The Family of Imraan", 4: "The Women", 5: "The Table Spread",
+  6: "The Cattle", 7: "The Heights", 8: "The Spoils of War", 9: "The Repentance", 10: "Jonah",
+  11: "Hud", 12: "Joseph", 13: "The Thunder", 14: "Abraham", 15: "The Rocky Tract",
+  16: "The Bee", 17: "The Night Journey", 18: "The Cave", 19: "Mary", 20: "Ta-Ha",
+  21: "The Prophets", 22: "The Pilgrimage", 23: "The Believers", 24: "The Light", 25: "The Criterion",
+  26: "The Poets", 27: "The Ant", 28: "The Stories", 29: "The Spider", 30: "The Romans",
+  31: "Luqman", 32: "The Prostration", 33: "The Combined Forces", 34: "Sheba", 35: "The Originator",
+  36: "Ya Sin", 37: "Those who set the Ranks", 38: "The Letter \"Saad\"", 39: "The Troops", 40: "The Forgiver",
+  41: "Explained in Detail", 42: "The Consultation", 43: "The Ornaments of Gold", 44: "The Smoke", 45: "The Crouching",
+  46: "The Wind-Curved Sandhills", 47: "Muhammad", 48: "The Victory", 49: "The Rooms", 50: "The Letter \"Qaf\"",
+  51: "The Winnowing Winds", 52: "The Mount", 53: "The Star", 54: "The Moon", 55: "The Beneficent",
+  56: "The Inevitable", 57: "The Iron", 58: "The Pleading Woman", 59: "The Exile", 60: "She that is to be examined",
+  61: "The Ranks", 62: "The Congregation", 63: "The Hypocrites", 64: "The Mutual Disillusion", 65: "The Divorce",
+  66: "The Prohibition", 67: "The Sovereignty", 68: "The Pen", 69: "The Reality", 70: "The Ascending Stairways",
+  71: "Noah", 72: "The Jinn", 73: "The Enshrouded One", 74: "The Cloaked One", 75: "The Resurrection",
+  76: "The Man", 77: "The Emissaries", 78: "The Tidings", 79: "Those who drag forth", 80: "He Frowned",
+  81: "The Overthrowing", 82: "The Cleaving", 83: "The Defrauding", 84: "The Sundering", 85: "The Mansions of the Stars",
+  86: "The Nightcommer", 87: "The Most High", 88: "The Overwhelming", 89: "The Dawn", 90: "The City",
+  91: "The Sun", 92: "The Night", 93: "The Morning Hours", 94: "The Relief", 95: "The Fig",
+  96: "The Clot", 97: "The Power", 98: "The Clear Proof", 99: "The Earthquake", 100: "The Courser",
+  101: "The Calamity", 102: "The Rivalry in world increase", 103: "The Declining Day", 104: "The Traducer", 105: "The Elephant",
+  106: "Quraish", 107: "The Small Kindnesses", 108: "The Abundance", 109: "The Disbelievers", 110: "The Divine Support",
+  111: "The Palm Fiber", 112: "The Sincerity", 113: "The Daybreak", 114: "Mankind"
+};
+
+const SURAH_ALIASES = {
+  1: ["fatiha", "fatihah", "hamd"], 9: ["tawbah", "baraah", "bara'ah", "tawba"],
+  17: ["isra", "bani israel", "bani israeel"], 40: ["ghafir", "mumin", "mu'min"],
+  41: ["fussilat", "ha mim sajdah"], 47: ["muhammad", "qital"],
+  76: ["insan", "dahr"], 94: ["sharh", "inshirah"], 111: ["masad", "lahab"]
+};
+
+const normalizeStr = (str) => {
+  if (!str) return '';
+  return str.toLowerCase().replace(/^(surah|sura)\s+/i, '').replace(/^al-/i, '').replace(/[^a-z0-9]/g, '').replace(/ee/g, 'i').replace(/oo/g, 'u').replace(/aa/g, 'a').replace(/ah$/g, 'a');
+};
+
+const toArabicNum = (n) => {
+  const digits = ['٠', '١', '٢', '٣', '٤', '٥', '٦', '٧', '٨', '٩'];
+  return n.toString().split('').map(d => digits[d]).join('');
+};
 
 const timeAgo = (ts) => {
   const diff = Math.floor((Date.now() - ts) / 60000);
@@ -22,6 +58,14 @@ const timeAgo = (ts) => {
   if (diff < 1440) return `${Math.floor(diff / 60)}h ago`;
   return `${Math.floor(diff / 1440)}d ago`;
 };
+
+// --- PREMIUM GEOMETRIC KAF MONOGRAM ---
+const KisaLogo = ({ className }) => (
+  <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className={className}>
+    <path d="M18 4V18.5C18 19.3284 17.3284 20 16.5 20H6.5C5.67157 20 5 19.3284 5 18.5V14" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+    <path d="M13.5 8.5L9.5 11L12.5 13.5L8.5 16" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+  </svg>
+);
 
 const HadithCard = ({ item, handleCopyHadith, searchMode, onVerseClick }) => {
   const [showArabic, setShowArabic] = useState(false);
@@ -180,7 +224,7 @@ const HadithCard = ({ item, handleCopyHadith, searchMode, onVerseClick }) => {
   );
 };
 
-const QuranReader = ({ activeFontFamily, fontStyle, setFontStyle, handleSurahSelectHook }) => {
+const QuranReader = ({ activeFontFamily, fontStyle, setFontStyle, handleSurahSelectHook, externalSurahTarget }) => {
   const [selectedSurah, setSelectedSurah] = useState(1);
   const [showTranslation, setShowTranslation] = useState(true);
   const [readingMode, setReadingMode] = useState('verse');
@@ -188,51 +232,35 @@ const QuranReader = ({ activeFontFamily, fontStyle, setFontStyle, handleSurahSel
   const [showSurahMenu, setShowSurahMenu] = useState(false);
   const [showSettingsMenu, setShowSettingsMenu] = useState(false);
 
-  // Search State
   const [quranSearchQuery, setQuranSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState([]);
   const [targetVerse, setTargetVerse] = useState(null);
 
   const quranSearchInputRef = useRef(null);
 
-  // Hardcoded English meanings for all 114 Surahs
-  const surahMeanings = {
-    1: "The Opening", 2: "The Cow", 3: "The Family of Imraan", 4: "The Women", 5: "The Table Spread",
-    6: "The Cattle", 7: "The Heights", 8: "The Spoils of War", 9: "The Repentance", 10: "Jonah",
-    11: "Hud", 12: "Joseph", 13: "The Thunder", 14: "Abraham", 15: "The Rocky Tract",
-    16: "The Bee", 17: "The Night Journey", 18: "The Cave", 19: "Mary", 20: "Ta-Ha",
-    21: "The Prophets", 22: "The Pilgrimage", 23: "The Believers", 24: "The Light", 25: "The Criterion",
-    26: "The Poets", 27: "The Ant", 28: "The Stories", 29: "The Spider", 30: "The Romans",
-    31: "Luqman", 32: "The Prostration", 33: "The Combined Forces", 34: "Sheba", 35: "The Originator",
-    36: "Ya Sin", 37: "Those who set the Ranks", 38: "The Letter \"Saad\"", 39: "The Troops", 40: "The Forgiver",
-    41: "Explained in Detail", 42: "The Consultation", 43: "The Ornaments of Gold", 44: "The Smoke", 45: "The Crouching",
-    46: "The Wind-Curved Sandhills", 47: "Muhammad", 48: "The Victory", 49: "The Rooms", 50: "The Letter \"Qaf\"",
-    51: "The Winnowing Winds", 52: "The Mount", 53: "The Star", 54: "The Moon", 55: "The Beneficent",
-    56: "The Inevitable", 57: "The Iron", 58: "The Pleading Woman", 59: "The Exile", 60: "She that is to be examined",
-    61: "The Ranks", 62: "The Congregation", 63: "The Hypocrites", 64: "The Mutual Disillusion", 65: "The Divorce",
-    66: "The Prohibition", 67: "The Sovereignty", 68: "The Pen", 69: "The Reality", 70: "The Ascending Stairways",
-    71: "Noah", 72: "The Jinn", 73: "The Enshrouded One", 74: "The Cloaked One", 75: "The Resurrection",
-    76: "The Man", 77: "The Emissaries", 78: "The Tidings", 79: "Those who drag forth", 80: "He Frowned",
-    81: "The Overthrowing", 82: "The Cleaving", 83: "The Defrauding", 84: "The Sundering", 85: "The Mansions of the Stars",
-    86: "The Nightcommer", 87: "The Most High", 88: "The Overwhelming", 89: "The Dawn", 90: "The City",
-    91: "The Sun", 92: "The Night", 93: "The Morning Hours", 94: "The Relief", 95: "The Fig",
-    96: "The Clot", 97: "The Power", 98: "The Clear Proof", 99: "The Earthquake", 100: "The Courser",
-    101: "The Calamity", 102: "The Rivalry in world increase", 103: "The Declining Day", 104: "The Traducer", 105: "The Elephant",
-    106: "Quraish", 107: "The Small Kindnesses", 108: "The Abundance", 109: "The Disbelievers", 110: "The Divine Support",
-    111: "The Palm Fiber", 112: "The Sincerity", 113: "The Daybreak", 114: "Mankind"
-  };
+  // Automatically switch to Surah when triggered from History Drawer
+  useEffect(() => {
+    if (externalSurahTarget) {
+      setSelectedSurah(externalSurahTarget);
+    }
+  }, [externalSurahTarget]);
 
+  // Robust parsing to completely avoid Black Screen freeze bugs
   const surahs = useMemo(() => {
     const list = [];
     for (let i = 1; i <= 114; i++) {
-      if (quranData[`${i}:1`]) {
+      const firstAyah = quranData[`${i}:1`];
+      if (firstAyah) {
         let aIdx = 1;
-        while (quranData[`${i}:${aIdx}`]) aIdx++;
+        while (quranData[`${i}:${aIdx}`]) {
+          aIdx++;
+          if (aIdx > 350) break; // Strict safety break
+        }
         list.push({
           id: i,
-          enName: quranData[`${i}:1`].surahName,
-          arName: quranData[`${i}:1`].surahArName,
-          meaning: surahMeanings[i] || "",
+          enName: firstAyah.surahName,
+          arName: firstAyah.surahArName,
+          meaning: SURAH_MEANINGS[i] || "",
           ayahCount: aIdx - 1
         });
       }
@@ -240,35 +268,11 @@ const QuranReader = ({ activeFontFamily, fontStyle, setFontStyle, handleSurahSel
     return list;
   }, []);
 
-  const surahAliases = {
-    1: ["fatiha", "fatihah", "hamd"],
-    9: ["tawbah", "baraah", "bara'ah", "tawba"],
-    17: ["isra", "bani israel", "bani israeel"],
-    40: ["ghafir", "mumin", "mu'min"],
-    41: ["fussilat", "ha mim sajdah"],
-    47: ["muhammad", "qital"],
-    76: ["insan", "dahr"],
-    94: ["sharh", "inshirah"],
-    111: ["masad", "lahab"]
-  };
-
-  const normalize = (str) => {
-    if (!str) return '';
-    return str.toLowerCase()
-      .replace(/^(surah|sura)\s+/i, '')
-      .replace(/^al-/i, '')
-      .replace(/[^a-z0-9]/g, '')
-      .replace(/ee/g, 'i')
-      .replace(/oo/g, 'u')
-      .replace(/aa/g, 'a')
-      .replace(/ah$/g, 'a');
-  };
-
   const searchableSurahs = useMemo(() => {
     return surahs.map(s => {
-      let terms = [normalize(s.enName)];
-      if (surahAliases[s.id]) {
-        terms = [...terms, ...surahAliases[s.id].map(normalize)];
+      let terms = [normalizeStr(s.enName)];
+      if (SURAH_ALIASES[s.id]) {
+        terms = [...terms, ...SURAH_ALIASES[s.id].map(normalizeStr)];
       }
       return { ...s, terms };
     });
@@ -291,7 +295,7 @@ const QuranReader = ({ activeFontFamily, fontStyle, setFontStyle, handleSurahSel
         }
       }
     } else {
-      const normQuery = normalize(query);
+      const normQuery = normalizeStr(query);
       searchableSurahs.forEach(s => {
         if (s.terms.some(t => t.includes(normQuery))) {
           results.push({ type: 'surah', surahId: s.id, label: `${s.id}. Surah ${s.enName}` });
@@ -331,7 +335,11 @@ const QuranReader = ({ activeFontFamily, fontStyle, setFontStyle, handleSurahSel
   };
 
   const ayahsRaw = []; let aIdx = 1;
-  while (quranData[`${selectedSurah}:${aIdx}`]) { ayahsRaw.push(quranData[`${selectedSurah}:${aIdx}`]); aIdx++; }
+  while (quranData[`${selectedSurah}:${aIdx}`]) {
+    ayahsRaw.push(quranData[`${selectedSurah}:${aIdx}`]);
+    aIdx++;
+    if (aIdx > 350) break; // Strict safety break
+  }
 
   let surahBismillah = null;
   const ayahs = ayahsRaw.map((ayah, idx) => {
@@ -399,7 +407,7 @@ const QuranReader = ({ activeFontFamily, fontStyle, setFontStyle, handleSurahSel
 
           <AnimatePresence>
             {showSurahMenu && (
-              <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="absolute top-full left-0 mt-2 w-full sm:w-[340px] max-h-[400px] overflow-y-auto bg-[#f4ecd8] dark:bg-[#1a1a1a] border border-slate-300 dark:border-slate-700 rounded-xl shadow-xl z-[70] smart-scrollbar">
+              <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="absolute top-full left-0 mt-2 w-[calc(100vw-32px)] sm:w-[340px] max-h-[400px] overflow-y-auto bg-[#f4ecd8] dark:bg-[#1a1a1a] border border-slate-300 dark:border-slate-700 rounded-xl shadow-xl z-[70] smart-scrollbar">
                 {surahs.map(s => (
                   <div key={s.id} onClick={() => { executeSurahSelection(s.id); setShowSurahMenu(false); }} className={`px-4 py-3.5 cursor-pointer transition-colors flex justify-between items-center border-b last:border-b-0 border-slate-300/40 dark:border-slate-700/50 ${selectedSurah === s.id ? 'bg-amber-200/60 dark:bg-amber-900/40' : 'hover:bg-amber-200/30 dark:hover:bg-amber-600/10'}`}>
                     <div className="flex flex-col">
@@ -538,6 +546,7 @@ export default function App() {
   const [showHistoryDrawer, setShowHistoryDrawer] = useState(false);
   const [showSearchDropdown, setShowSearchDropdown] = useState(false);
   const [appHistory, setAppHistory] = useState([]);
+  const [quranTarget, setQuranTarget] = useState(null);
 
   const [fontStyle, setFontStyle] = useState('scheherazade');
 
@@ -643,7 +652,7 @@ export default function App() {
   };
 
   const handleSearchSubmit = (e) => {
-    e.preventDefault();
+    if (e) e.preventDefault();
     if (document.activeElement instanceof HTMLElement) {
       document.activeElement.blur();
     }
@@ -670,10 +679,7 @@ export default function App() {
       executeSearch(item.query, item.mode, item.source);
     } else if (item.type === 'quran') {
       setActiveTab('quran');
-      setTimeout(() => {
-        const btn = document.getElementById(`surah-trigger-${item.surahId}`);
-        if (btn) btn.click();
-      }, 100);
+      setQuranTarget(item.surahId); // Pass direct instruction to QuranReader
     }
   };
 
@@ -755,7 +761,6 @@ export default function App() {
             <button onClick={() => setActiveTab('quran')} className={`p-2 rounded-full transition-all duration-300 cursor-pointer ${activeTab === 'quran' ? 'bg-amber-600/20 text-amber-800 dark:text-amber-500' : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}`} title="Quran Reader"><BookOpen className="w-4 h-4" /></button>
           </div>
 
-          {/* DESKTOP NAV */}
           <div className="hidden md:flex items-center gap-2 sm:gap-4">
             {activeTab === 'search' && data && !isKeyword && (<div className="flex items-center glass-panel rounded-full p-1 border-white/20"><button onClick={() => setViewMode('map')} className={`p-2 rounded-full transition-all duration-300 cursor-pointer ${viewMode === 'map' ? 'bg-indigo-500/20 text-indigo-400' : 'text-slate-500 hover:text-slate-300'}`}><Layout className="w-4 h-4" /></button><button onClick={() => setViewMode('list')} className={`p-2 rounded-full transition-all duration-300 cursor-pointer ${viewMode === 'list' ? 'bg-indigo-500/20 text-indigo-400' : 'text-slate-500 hover:text-slate-300'}`}><List className="w-4 h-4" /></button></div>)}
             <AnimatePresence>{activeTab === 'search' && data && (<motion.button initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} onClick={handleHomeClick} className="w-10 h-10 sm:w-11 sm:h-11 rounded-full bg-white/0 flex items-center justify-center group transition-all duration-300 hover:scale-110 cursor-pointer"><Home className="w-5 h-5 text-slate-400 group-hover:text-slate-900 dark:text-slate-500 dark:group-hover:text-white" /></motion.button>)}</AnimatePresence>
@@ -765,7 +770,6 @@ export default function App() {
             <button onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')} className="w-10 h-10 sm:w-11 sm:h-11 rounded-full flex items-center justify-center group transition-all duration-300 hover:scale-110 cursor-pointer">{theme === 'dark' ? <Sun className="w-5 h-5 text-slate-500 group-hover:text-yellow-400" /> : <Moon className="w-5 h-5 text-slate-400 group-hover:text-slate-900" />}</button>
           </div>
 
-          {/* MOBILE NAV (Option 1: Clock is Top-Tier next to Menu) */}
           <div className="md:hidden flex items-center gap-1 sm:gap-2 relative">
             <button onClick={() => setShowHistoryDrawer(true)} className={`w-10 h-10 rounded-full flex items-center justify-center transition-all duration-300 cursor-pointer ${activeTab === 'quran' ? 'bg-white/40 dark:bg-slate-800/50 backdrop-blur-md shadow-sm border border-slate-300/30 dark:border-slate-700 text-slate-600 dark:text-slate-300' : 'glass-panel border-white/20 text-slate-500 dark:text-slate-400'}`}>
               <Clock className="w-5 h-5" />
@@ -793,8 +797,7 @@ export default function App() {
 
       <main ref={containerRef} className={`relative w-full flex-grow flex flex-col ${lockMainScreen ? 'items-center justify-center h-screen overflow-hidden' : 'min-h-screen'}`}>
 
-        {/* We inject the save hook into QuranReader so it saves when you select a surah */}
-        {activeTab === 'quran' && <QuranReader activeFontFamily={activeFontFamily} fontStyle={fontStyle} setFontStyle={setFontStyle} handleSurahSelectHook={(id, name) => saveToHistory({ type: 'quran', surahId: id, surahName: name, timestamp: Date.now() })} />}
+        {activeTab === 'quran' && <QuranReader activeFontFamily={activeFontFamily} fontStyle={fontStyle} setFontStyle={setFontStyle} handleSurahSelectHook={(id, name) => saveToHistory({ type: 'quran', surahId: id, surahName: name, timestamp: Date.now() })} externalSurahTarget={quranTarget} />}
 
         <AnimatePresence>
           {activeTab === 'search' && !data && !loading && (
@@ -803,6 +806,7 @@ export default function App() {
               <div className="w-full relative group pointer-events-auto" ref={searchInputContainerRef}>
                 <div className={`absolute inset-0 w-full h-full rounded-2xl border shadow-xl pointer-events-none z-0 transition-colors duration-700 ${isKeyword ? 'border-slate-300 dark:border-slate-700' : 'border-white/60 dark:border-white/10'}`} style={{ backgroundColor: isKeyword ? (theme === 'dark' ? 'rgba(30, 41, 59, 0.7)' : 'rgba(255, 255, 255, 0.9)') : (theme === 'dark' ? 'rgba(0, 0, 0, 0.4)' : 'rgba(255, 255, 255, 0.3)'), backdropFilter: 'blur(24px)' }}></div>
 
+                {/* FORM ONSUBMIT NATURALLY HANDLES 'ENTER' NOW */}
                 <form onSubmit={handleSearchSubmit} className="relative z-10 flex flex-col p-2">
                   <div className={`flex items-center border-b relative ${isKeyword ? 'border-slate-300 dark:border-slate-700' : 'border-slate-200/50 dark:border-slate-700/50'}`}>
                     <input
@@ -810,7 +814,6 @@ export default function App() {
                       value={query}
                       onFocus={() => setShowSearchDropdown(true)}
                       onChange={(e) => setQuery(e.target.value)}
-                      onKeyDown={(e) => { if (e.key === 'Enter') handleSearchSubmit(e); }}
                       placeholder={isKeyword ? "Enter an exact word or phrase..." : "Enter a phrase or concept (e.g. intellect)..."}
                       className="w-full bg-transparent appearance-none outline-none py-3 sm:py-4 pl-3 sm:pl-4 pr-14 sm:pr-16 text-base font-sans placeholder:text-slate-500 cursor-text"
                       style={{ color: theme === 'dark' ? '#ffffff' : '#000000' }}
@@ -818,7 +821,6 @@ export default function App() {
                     <button type="submit" className={`absolute right-2 p-2 sm:p-2.5 rounded-xl transition-colors shadow-sm cursor-pointer ${isKeyword ? 'bg-blue-500/10 hover:bg-blue-500 text-blue-500 hover:text-white' : 'bg-indigo-500/10 hover:bg-indigo-500 text-indigo-500 hover:text-white'}`}><Search className="w-4 h-4 sm:w-5 sm:h-5" /></button>
                   </div>
 
-                  {/* Google-Style Dropdown for Quick Resume */}
                   <AnimatePresence>
                     {showSearchDropdown && appHistory.length > 0 && query.trim() === '' && (
                       <motion.div initial={{ opacity: 0, y: -5 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -5 }} className={`absolute left-0 right-0 top-full mt-2 rounded-xl shadow-2xl overflow-hidden z-50 border ${isKeyword ? 'bg-white/95 dark:bg-slate-900/95 border-slate-200 dark:border-slate-700' : 'glass-panel bg-white/95 dark:bg-slate-900/90 border-slate-200 dark:border-slate-700'}`}>
