@@ -1,13 +1,12 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Search, Moon, Sun, Sparkles, X, ChevronRight, ChevronLeft, Home, Copy, ChevronDown, ChevronUp, List, Layout, Info, BookOpen, History, HelpCircle, Database, Filter, Share2, Check, Settings2, Menu, Clock, Trash2 } from 'lucide-react';
+import { Search, Moon, Sun, Sparkles, X, ChevronRight, ChevronLeft, Home, Copy, ChevronDown, ChevronUp, List, Layout, Info, BookOpen, History, HelpCircle, Database, Filter, Share2, Check, Settings2, Menu, Clock, Trash2, LibraryBig } from 'lucide-react';
 import quranData from './quran.json';
 
-const APP_UPDATES = [{ version: "v3.3.5", date: "March 4, 2026", changes: ["Bug Fix: Fixed an issue where cloud timeouts could permanently trap users on the loading screen. Reloading the page or clicking the Kisa logo now acts as an instant 'Escape Hatch' to return home."] }, { version: "v3.3.4", date: "March 4, 2026", changes: ["Documentation: Completely overhauled the 'How to Use Kisa' guide to include instructions for the Quran Reader, Study History, and Advanced Tools."] }, { version: "v3.3.3", date: "March 4, 2026", changes: ["UI Polish: Darkened the hover state on the Source Selection dropdown in Light Mode (to slate-200) to ensure clear visibility against the frosted glass background."] }, { version: "v3.3.2", date: "March 4, 2026", changes: ["UI Polish: Fixed an issue where the source selection dropdown hover states were too bright in Dark Mode and too faint in Light Mode."] }];
+const APP_UPDATES = [{ version: "v3.4.0", date: "March 4, 2026", changes: ["Feature: Added 'Reverse Quran Lookup' – click 'Related Hadiths' under any verse in the Quran Reader to instantly find narrations referencing that Ayah.", "Feature: Native Arabic Text Support – Concept Search now translates Arabic queries via AI before vectorizing, and Keyword Search strips harakat (tashkeel) for perfect exact matches."] }];
 const CLUSTER_COLORS = ['#10b981', '#8b5cf6', '#f59e0b', '#f43f5e', '#3b82f6'];
 const SOURCES = ["All Twelver Sources", "al-Kafi", "Bihar al-Anwar", "Basa'ir al-Darajat"];
 
-// --- STATIC DICTIONARIES (Moved outside to prevent memory leaks) ---
 const SURAH_MEANINGS = {
   1: "The Opening", 2: "The Cow", 3: "The Family of Imraan", 4: "The Women", 5: "The Table Spread",
   6: "The Cattle", 7: "The Heights", 8: "The Spoils of War", 9: "The Repentance", 10: "Jonah",
@@ -59,7 +58,6 @@ const timeAgo = (ts) => {
   return `${Math.floor(diff / 1440)}d ago`;
 };
 
-// --- PREMIUM GEOMETRIC KAF MONOGRAM ---
 const KisaLogo = ({ className }) => (
   <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className={className}>
     <path d="M18 4V18.5C18 19.3284 17.3284 20 16.5 20H6.5C5.67157 20 5 19.3284 5 18.5V14" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
@@ -224,7 +222,7 @@ const HadithCard = ({ item, handleCopyHadith, searchMode, onVerseClick }) => {
   );
 };
 
-const QuranReader = ({ activeFontFamily, fontStyle, setFontStyle, handleSurahSelectHook, externalSurahTarget }) => {
+const QuranReader = ({ activeFontFamily, fontStyle, setFontStyle, handleSurahSelectHook, externalSurahTarget, onTafsirClick }) => {
   const [selectedSurah, setSelectedSurah] = useState(1);
   const [showTranslation, setShowTranslation] = useState(true);
   const [readingMode, setReadingMode] = useState('verse');
@@ -478,7 +476,7 @@ const QuranReader = ({ activeFontFamily, fontStyle, setFontStyle, handleSurahSel
           <div className="font-arabic text-3xl sm:text-4xl lg:text-[42px] text-right leading-[2.4] sm:leading-[2.6] text-slate-900 dark:text-slate-100 mb-12 text-justify" dir="rtl" lang="ar" style={{ fontFamily: activeFontFamily }}>
             {ayahs.map((ayah, idx) => (
               <span id={`verse-${selectedSurah}-${idx + 1}`} key={`ar-${idx}`} className="inline rounded-lg transition-colors duration-1000">
-                {ayah.ar} <span className="text-amber-700 dark:text-amber-500 opacity-80 text-xl mx-2 font-sans">﴾{toArabicNum(idx + 1)}﴿</span>
+                {ayah.ar} <span className="text-amber-700 dark:text-amber-500 opacity-80 text-xl mx-2 font-sans cursor-pointer hover:text-amber-900 dark:hover:text-amber-300 transition-colors" title="Find Related Hadiths" onClick={() => onTafsirClick(selectedSurah, idx + 1)}>﴾{toArabicNum(idx + 1)}﴿</span>
               </span>
             ))}
           </div>
@@ -487,7 +485,7 @@ const QuranReader = ({ activeFontFamily, fontStyle, setFontStyle, handleSurahSel
               <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
                 <div className="border-t-2 border-[#d4c5b0] dark:border-[#2a2a2a] pt-8 mt-8">
                   <div className="text-lg sm:text-xl text-slate-800 dark:text-slate-300 leading-[2] sm:leading-[2.2] font-serif text-justify">
-                    {ayahs.map((ayah, idx) => (<span key={`en-${idx}`} className="inline mr-3"><sup className="text-xs text-amber-700 dark:text-amber-500 font-bold mr-1 opacity-80">{idx + 1}</sup>{ayah.en}</span>))}
+                    {ayahs.map((ayah, idx) => (<span key={`en-${idx}`} className="inline mr-3"><sup className="text-xs text-amber-700 dark:text-amber-500 font-bold mr-1 opacity-80 cursor-pointer hover:underline" onClick={() => onTafsirClick(selectedSurah, idx + 1)} title="Find Related Hadiths">{idx + 1}</sup>{ayah.en}</span>))}
                   </div>
                 </div>
               </motion.div>
@@ -512,6 +510,11 @@ const QuranReader = ({ activeFontFamily, fontStyle, setFontStyle, handleSurahSel
                     </motion.div>
                   )}
                 </AnimatePresence>
+                <div className="mt-4 flex justify-end">
+                  <button onClick={() => onTafsirClick(selectedSurah, idx + 1)} className="flex items-center gap-1.5 text-[10px] sm:text-xs uppercase tracking-wider font-bold text-amber-700 hover:text-amber-900 dark:text-amber-500 dark:hover:text-amber-400 transition-colors bg-amber-100/50 dark:bg-amber-900/20 px-3 py-1.5 rounded-md cursor-pointer">
+                    <LibraryBig className="w-3.5 h-3.5" /> Related Hadiths
+                  </button>
+                </div>
               </div>
             </div>
           ))}
@@ -522,7 +525,6 @@ const QuranReader = ({ activeFontFamily, fontStyle, setFontStyle, handleSurahSel
 };
 
 export default function App() {
-  // Removed old URL state parsing to prevent infinite refresh loops
   const [query, setQuery] = useState('');
   const [searchMode, setSearchMode] = useState('concept');
   const [sourceFilter, setSourceFilter] = useState(SOURCES[0]);
@@ -541,6 +543,11 @@ export default function App() {
   const [activeTab, setActiveTab] = useState('search');
   const [quranPopup, setQuranPopup] = useState(null);
 
+  // Reverse Tafsir Search State
+  const [tafsirData, setTafsirData] = useState(null);
+  const [tafsirLoading, setTafsirLoading] = useState(false);
+  const [tafsirTarget, setTafsirTarget] = useState(null); // {surah, ayah}
+
   const [showMobileMenu, setShowMobileMenu] = useState(false);
   const [showHistoryDrawer, setShowHistoryDrawer] = useState(false);
   const [showSearchDropdown, setShowSearchDropdown] = useState(false);
@@ -549,7 +556,6 @@ export default function App() {
 
   const [fontStyle, setFontStyle] = useState('scheherazade');
 
-  // Security reference to prevent hanging fetches from overwriting a cancelled search
   const searchIdRef = useRef(0);
 
   const activeFontFamily =
@@ -559,6 +565,7 @@ export default function App() {
 
   const containerRef = useRef(null);
   const modalScrollRef = useRef(null);
+  const tafsirScrollRef = useRef(null);
   const searchInputContainerRef = useRef(null);
 
   const [centerPos, setCenterPos] = useState({ x: 0, y: 0 });
@@ -567,7 +574,6 @@ export default function App() {
   const [showUpdates, setShowUpdates] = useState(false);
   const [showInfo, setShowInfo] = useState(false);
 
-  // Guarantee a clean URL on first load to prevent reload traps
   useEffect(() => {
     if (typeof window !== 'undefined') {
       window.history.replaceState({}, '', window.location.pathname);
@@ -619,7 +625,7 @@ export default function App() {
     if (!loading) return; let timeouts = [];
     if (searchMode === 'concept') {
       setLoadingMessage('Embedding query...');
-      timeouts.push(setTimeout(() => setLoadingMessage('Waking up Cloud AI & Embedding query... ⏳'), 3000));
+      timeouts.push(setTimeout(() => setLoadingMessage('Waking up Cloud AI & Translating (if Arabic)... ⏳'), 3000));
       timeouts.push(setTimeout(() => setLoadingMessage('Retrieving narrations...'), 16000));
       timeouts.push(setTimeout(() => setLoadingMessage('Generating conceptual themes...'), 23000));
       timeouts.push(setTimeout(() => setLoadingMessage('Finalizing UI...'), 29000));
@@ -644,54 +650,57 @@ export default function App() {
 
   const executeSearch = async (searchQuery, currentMode, currentSource) => {
     if (!searchQuery.trim()) return;
-
-    // Tag this search to prevent overlapping fetch resolutions
     const currentSearchId = ++searchIdRef.current;
 
     saveToHistory({ type: 'search', query: searchQuery, mode: currentMode, source: currentSource, timestamp: Date.now() });
     setShowSearchDropdown(false);
-
-    // Visually clean the URL (no push state)
     window.history.replaceState({}, '', window.location.pathname);
 
     setLoading(true);
     try {
       const response = await fetch('https://concept-atlas-backend.onrender.com/api/explore', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' }, body: JSON.stringify({ query: searchQuery, source: currentSource, searchMode: currentMode }) });
       const result = await response.json();
-
-      // If the user cancelled via the logo before this finished, abort silently
       if (searchIdRef.current !== currentSearchId) return;
-
       if (result.clusters && result.clusters.length > 0) { setData(result); if (currentMode === 'keyword') setViewMode('list'); }
       else setData(null);
-    } catch (err) {
-      console.error(err);
-    } finally {
-      // Only turn off loading if this is still the active search
-      if (searchIdRef.current === currentSearchId) {
-        setLoading(false);
-      }
-    }
+    } catch (err) { console.error(err); }
+    finally { if (searchIdRef.current === currentSearchId) { setLoading(false); } }
+  };
+
+  const handleTafsirClick = async (surah, ayah) => {
+    setTafsirTarget({ surah, ayah });
+    setTafsirLoading(true);
+    setTafsirData(null);
+    try {
+      // Standardize the search to exactly what is inside the Hadith text (Surah:Ayah)
+      const queryStr = `(${surah}:${ayah})`;
+      const response = await fetch('https://concept-atlas-backend.onrender.com/api/explore', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+        body: JSON.stringify({ query: queryStr, source: "All Twelver Sources", searchMode: "keyword" })
+      });
+      const result = await response.json();
+      if (result.clusters && result.clusters.length > 0) { setTafsirData(result); }
+      else { setTafsirData({ empty: true }); }
+    } catch (err) { console.error(err); setTafsirData({ empty: true }); }
+    finally { setTafsirLoading(false); }
   };
 
   const handleSearchSubmit = (e) => {
     if (e) e.preventDefault();
-    if (document.activeElement instanceof HTMLElement) {
-      document.activeElement.blur();
-    }
+    if (document.activeElement instanceof HTMLElement) { document.activeElement.blur(); }
     executeSearch(query, searchMode, sourceFilter);
   };
 
-  // THE ULTIMATE ESCAPE HATCH
   const handleHomeClick = () => {
-    searchIdRef.current++; // Instantly invalidates any background searches
+    searchIdRef.current++;
     setData(null);
     setQuery('');
     setActiveCluster(null);
     setHoveredCluster(null);
     setActiveTab('search');
-    setLoading(false); // Force the loading screen to die
-    window.history.replaceState({}, '', window.location.pathname); // Scrub the URL
+    setLoading(false);
+    window.history.replaceState({}, '', window.location.pathname);
   };
 
   const handleHistoryClick = (item) => {
@@ -764,7 +773,6 @@ export default function App() {
 
       <header className="fixed top-0 w-full z-[75] p-4 sm:p-6 flex justify-between items-center pointer-events-none">
 
-        {/* CLICKING THIS LOGO NOW ACTS AS AN INSTANT ESCAPE HATCH */}
         <div onClick={handleHomeClick} className="flex items-center gap-3 pointer-events-auto cursor-pointer group">
           <div className={`w-10 h-10 rounded-full flex items-center justify-center transition-all duration-500 group-hover:scale-105 ${activeTab === 'quran' ? 'bg-amber-500/10 border border-amber-500/20' : isKeyword ? 'bg-blue-500/10 border border-blue-500/20 shadow-sm' : 'bg-indigo-500/10 border border-indigo-500/20'}`}>
             <KisaLogo className="w-5 h-5 text-amber-600 dark:text-amber-500" />
@@ -824,7 +832,7 @@ export default function App() {
 
       <main ref={containerRef} className={`relative w-full flex-grow flex flex-col ${lockMainScreen ? 'items-center justify-center h-screen overflow-hidden' : 'min-h-screen'}`}>
 
-        {activeTab === 'quran' && <QuranReader activeFontFamily={activeFontFamily} fontStyle={fontStyle} setFontStyle={setFontStyle} handleSurahSelectHook={(id, name) => saveToHistory({ type: 'quran', surahId: id, surahName: name, timestamp: Date.now() })} externalSurahTarget={quranTarget} />}
+        {activeTab === 'quran' && <QuranReader activeFontFamily={activeFontFamily} fontStyle={fontStyle} setFontStyle={setFontStyle} handleSurahSelectHook={(id, name) => saveToHistory({ type: 'quran', surahId: id, surahName: name, timestamp: Date.now() })} externalSurahTarget={quranTarget} onTafsirClick={handleTafsirClick} />}
 
         <AnimatePresence>
           {activeTab === 'search' && !data && !loading && (
@@ -1029,6 +1037,44 @@ export default function App() {
           )}
         </AnimatePresence>
 
+        {/* --- THE NEW REVERSE QURAN TAFSIR POPUP --- */}
+        <AnimatePresence>
+          {(tafsirLoading || tafsirData) && tafsirTarget && (
+            <div className="fixed inset-0 z-[4000] flex items-center justify-center pointer-events-auto p-4 sm:p-0">
+              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => { setTafsirData(null); setTafsirLoading(false); setTafsirTarget(null); }} className="absolute inset-0 bg-slate-900/80 backdrop-blur-md cursor-pointer" />
+              <motion.div initial={{ opacity: 0, scale: 0.95, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 20 }} className="relative bg-[#fbf8f1] dark:bg-slate-900 border border-slate-300 dark:border-slate-700 w-full sm:w-[90vw] max-w-[700px] h-[80vh] flex flex-col shadow-2xl rounded-2xl z-[4001] overflow-hidden">
+                <div className="flex justify-between items-center bg-white/90 dark:bg-slate-900/90 backdrop-blur-md pt-5 pb-4 px-6 z-10 border-b border-slate-200 dark:border-slate-800 shrink-0">
+                  <div>
+                    <h3 className="font-mono text-sm tracking-widest uppercase text-amber-600 dark:text-amber-500 font-bold mb-0.5 flex items-center gap-2"><LibraryBig className="w-4 h-4" /> Related Narrations</h3>
+                    <p className="text-xs text-slate-500 font-mono m-0">Surah {tafsirTarget.surah}, Verse {tafsirTarget.ayah}</p>
+                  </div>
+                  <button onClick={() => { setTafsirData(null); setTafsirLoading(false); setTafsirTarget(null); }} className="p-2 hover:bg-slate-200 dark:hover:bg-slate-800 rounded-full transition-colors cursor-pointer shrink-0"><X className="w-5 h-5 text-slate-500" /></button>
+                </div>
+
+                <div ref={tafsirScrollRef} className="p-4 sm:p-6 overflow-y-auto flex-grow smart-scrollbar bg-slate-50 dark:bg-slate-900/50">
+                  {tafsirLoading ? (
+                    <div className="flex flex-col items-center justify-center h-full text-slate-400">
+                      <KisaLogo className="w-10 h-10 animate-pulse text-amber-500 mb-4" />
+                      <p className="text-sm font-mono uppercase tracking-widest">Scanning Database...</p>
+                    </div>
+                  ) : tafsirData?.empty || !tafsirData?.clusters || tafsirData.clusters.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center h-full text-slate-500 italic">
+                      <LibraryBig className="w-12 h-12 mb-4 opacity-20" />
+                      <p>No hadiths found in the database referencing this specific verse.</p>
+                    </div>
+                  ) : (
+                    <div className="flex flex-col gap-4">
+                      {tafsirData.clusters.flatMap(c => c.items).map((item, idx) => (
+                        <HadithCard key={idx} item={item} searchMode="keyword" handleCopyHadith={handleCopyHadith} />
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </motion.div>
+            </div>
+          )}
+        </AnimatePresence>
+
         <AnimatePresence>
           {quranPopup && (
             <div className="fixed inset-0 z-[3000] flex items-center justify-center pointer-events-auto p-4 sm:p-0">
@@ -1148,8 +1194,8 @@ export default function App() {
 
                   {/* Quran Reader */}
                   <div>
-                    <h3 className="font-bold text-base sm:text-lg flex items-center gap-2 mb-2 sm:mb-3 text-slate-900 dark:text-white"><BookOpen className="w-4 h-4 text-amber-500" /> The Quran Reader</h3>
-                    <p className="leading-relaxed text-xs sm:text-sm mb-3">Toggle to the Quran section via the top-right book icon. You can search for specific Surahs or Verses (e.g., "2:255"), read in isolated <b>Verse</b> mode or traditional continuous <b>Flow</b> mode, and customize your Arabic font (Scheherazade, Amiri, or XB Zar) via the Customise menu.</p>
+                    <h3 className="font-bold text-base sm:text-lg flex items-center gap-2 mb-2 sm:mb-3 text-slate-900 dark:text-white"><BookOpen className="w-4 h-4 text-amber-500" /> The Quran Reader & Reverse Lookup</h3>
+                    <p className="leading-relaxed text-xs sm:text-sm mb-3">Read through all 114 Surahs. Whenever you are reading an Ayah, you can click <b>"Related Hadiths"</b> beneath it to instantly query the database and find out if any Imam referenced that exact verse.</p>
                   </div>
                   <hr className="border-slate-200 dark:border-slate-700" />
 
@@ -1159,16 +1205,6 @@ export default function App() {
                     <ul className="flex flex-col gap-2 text-xs sm:text-sm leading-relaxed list-disc pl-4">
                       <li><b className="text-slate-900 dark:text-slate-200">Quick Resume:</b> Click the empty search bar on the homepage to instantly view and resume your 5 most recent searches and recitations.</li>
                       <li><b className="text-slate-900 dark:text-slate-200">The Study Drawer:</b> Click the Clock icon in the navigation bar to open your full history, allowing you to seamlessly pick up where you left off across sessions.</li>
-                    </ul>
-                  </div>
-                  <hr className="border-slate-200 dark:border-slate-700" />
-
-                  {/* Advanced Tools */}
-                  <div>
-                    <h3 className="font-bold text-base sm:text-lg flex items-center gap-2 mb-2 sm:mb-3 text-slate-900 dark:text-white"><Filter className="w-4 h-4 text-purple-500" /> Advanced Tools</h3>
-                    <ul className="flex flex-col gap-2 text-xs sm:text-sm leading-relaxed list-disc pl-4">
-                      <li><b className="text-slate-900 dark:text-slate-200">Source Filtering:</b> Use the "Source" dropdown to limit your search to a specific book (e.g., only <i>al-Kafi</i>).</li>
-                      <li><b className="text-slate-900 dark:text-slate-200">Smart Copy:</b> Click "Copy Text" on any Hadith card to instantly copy a perfectly formatted citation including the Book, Volume, Chapter, Arabic, English, and a link back to Kisa.</li>
                     </ul>
                   </div>
 
