@@ -2,8 +2,9 @@ import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Search, Moon, Sun, Sparkles, X, ChevronRight, ChevronLeft, Home, Copy, ChevronDown, ChevronUp, List, Layout, Info, BookOpen, History, HelpCircle, Database, Filter, Share2, Check, Settings2, Menu, Clock, Trash2, LibraryBig } from 'lucide-react';
 import quranData from './quran.json';
+import verseMap from './verse_map.json'; // <-- The new instant map!
 
-const APP_UPDATES = [{ version: "v3.4.0", date: "March 4, 2026", changes: ["Feature: Added 'Reverse Quran Lookup' – click 'Related Hadiths' under any verse in the Quran Reader to instantly find narrations referencing that Ayah.", "Feature: Native Arabic Text Support – Concept Search now translates Arabic queries via AI before vectorizing, and Keyword Search strips harakat (tashkeel) for perfect exact matches."] }];
+const APP_UPDATES = [{ version: "v3.4.1", date: "March 4, 2026", changes: ["Feature Polish: 'Related Hadiths' button is now context-aware! It uses a pre-computed static map to instantly display the exact number of matching narrations, and only appears if hadiths actually exist for that verse, saving you time."] }];
 const CLUSTER_COLORS = ['#10b981', '#8b5cf6', '#f59e0b', '#f43f5e', '#3b82f6'];
 const SOURCES = ["All Twelver Sources", "al-Kafi", "Bihar al-Anwar", "Basa'ir al-Darajat"];
 
@@ -474,18 +475,37 @@ const QuranReader = ({ activeFontFamily, fontStyle, setFontStyle, handleSurahSel
       {readingMode === 'flow' ? (
         <div className="w-full pb-10 max-w-4xl mx-auto px-2 sm:px-0">
           <div className="font-arabic text-3xl sm:text-4xl lg:text-[42px] text-right leading-[2.4] sm:leading-[2.6] text-slate-900 dark:text-slate-100 mb-12 text-justify" dir="rtl" lang="ar" style={{ fontFamily: activeFontFamily }}>
-            {ayahs.map((ayah, idx) => (
-              <span id={`verse-${selectedSurah}-${idx + 1}`} key={`ar-${idx}`} className="inline rounded-lg transition-colors duration-1000">
-                {ayah.ar} <span className="text-amber-700 dark:text-amber-500 opacity-80 text-xl mx-2 font-sans cursor-pointer hover:text-amber-900 dark:hover:text-amber-300 transition-colors" title="Find Related Hadiths" onClick={() => onTafsirClick(selectedSurah, idx + 1)}>﴾{toArabicNum(idx + 1)}﴿</span>
-              </span>
-            ))}
+            {ayahs.map((ayah, idx) => {
+              const verseKey = `${selectedSurah}:${idx + 1}`;
+              const relatedCount = verseMap[verseKey] || 0;
+              return (
+                <span id={`verse-${selectedSurah}-${idx + 1}`} key={`ar-${idx}`} className="inline rounded-lg transition-colors duration-1000">
+                  {ayah.ar}
+                  <span className={`text-amber-700 dark:text-amber-500 opacity-80 text-xl mx-2 font-sans transition-colors ${relatedCount > 0 ? 'cursor-pointer hover:text-amber-900 dark:hover:text-amber-300 drop-shadow-md' : ''}`} title={relatedCount > 0 ? `Read ${relatedCount} Related Hadiths` : ''} onClick={() => relatedCount > 0 && onTafsirClick(selectedSurah, idx + 1)}>
+                    ﴾{toArabicNum(idx + 1)}﴿
+                    {relatedCount > 0 && <sup className="text-[10px] font-bold text-amber-600 bg-amber-100 dark:bg-amber-900/50 rounded px-1 ml-0.5">{relatedCount}</sup>}
+                  </span>
+                </span>
+              );
+            })}
           </div>
           <AnimatePresence>
             {showTranslation && (
               <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
                 <div className="border-t-2 border-[#d4c5b0] dark:border-[#2a2a2a] pt-8 mt-8">
                   <div className="text-lg sm:text-xl text-slate-800 dark:text-slate-300 leading-[2] sm:leading-[2.2] font-serif text-justify">
-                    {ayahs.map((ayah, idx) => (<span key={`en-${idx}`} className="inline mr-3"><sup className="text-xs text-amber-700 dark:text-amber-500 font-bold mr-1 opacity-80 cursor-pointer hover:underline" onClick={() => onTafsirClick(selectedSurah, idx + 1)} title="Find Related Hadiths">{idx + 1}</sup>{ayah.en}</span>))}
+                    {ayahs.map((ayah, idx) => {
+                      const verseKey = `${selectedSurah}:${idx + 1}`;
+                      const relatedCount = verseMap[verseKey] || 0;
+                      return (
+                        <span key={`en-${idx}`} className="inline mr-3">
+                          <sup className={`text-xs font-bold mr-1 opacity-80 transition-colors ${relatedCount > 0 ? 'text-amber-600 dark:text-amber-400 cursor-pointer hover:underline' : 'text-slate-400'}`} onClick={() => relatedCount > 0 && onTafsirClick(selectedSurah, idx + 1)} title={relatedCount > 0 ? `Read ${relatedCount} Related Hadiths` : ''}>
+                            {idx + 1}
+                          </sup>
+                          {ayah.en}
+                        </span>
+                      );
+                    })}
                   </div>
                 </div>
               </motion.div>
@@ -494,30 +514,36 @@ const QuranReader = ({ activeFontFamily, fontStyle, setFontStyle, handleSurahSel
         </div>
       ) : (
         <div className="w-full flex flex-col pb-10">
-          {ayahs.map((ayah, idx) => (
-            <div id={`verse-${selectedSurah}-${idx + 1}`} key={idx} className="py-8 sm:py-10 border-b border-[#d4c5b0] dark:border-[#2a2a2a] first:pt-0 relative group flex flex-col sm:block rounded-xl transition-colors duration-1000 px-2 sm:px-4">
-              <div className="mb-4 sm:mb-0 sm:absolute sm:top-12 sm:left-4">
-                <span className="text-[10px] sm:text-xs font-mono font-bold text-amber-900 dark:text-amber-500 bg-[#eaddc6] dark:bg-[#1a1a1a] border border-[#d4c5b0] dark:border-[#333] px-2 py-1 rounded shadow-sm inline-block">
-                  {selectedSurah}:{idx + 1}
-                </span>
-              </div>
-              <div className="sm:pl-20">
-                <p className="font-arabic text-3xl sm:text-4xl lg:text-[40px] text-right leading-[2.4] sm:leading-[2.5] text-slate-900 dark:text-slate-100 mb-6" dir="rtl" lang="ar" style={{ fontFamily: activeFontFamily }}>{ayah.ar} <span className="text-amber-700 dark:text-amber-500 opacity-80 ml-2 text-xl font-sans">﴾{toArabicNum(idx + 1)}﴿</span></p>
-                <AnimatePresence>
-                  {showTranslation && (
-                    <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="overflow-hidden">
-                      <div className="border-t border-[#d4c5b0]/50 dark:border-[#2a2a2a]/50 pt-5 mt-3"><p className="text-lg sm:text-xl text-slate-800 dark:text-slate-300 leading-relaxed font-serif">{ayah.en}</p></div>
-                    </motion.div>
+          {ayahs.map((ayah, idx) => {
+            const verseKey = `${selectedSurah}:${idx + 1}`;
+            const relatedCount = verseMap[verseKey] || 0;
+            return (
+              <div id={`verse-${selectedSurah}-${idx + 1}`} key={idx} className="py-8 sm:py-10 border-b border-[#d4c5b0] dark:border-[#2a2a2a] first:pt-0 relative group flex flex-col sm:block rounded-xl transition-colors duration-1000 px-2 sm:px-4">
+                <div className="mb-4 sm:mb-0 sm:absolute sm:top-12 sm:left-4">
+                  <span className="text-[10px] sm:text-xs font-mono font-bold text-amber-900 dark:text-amber-500 bg-[#eaddc6] dark:bg-[#1a1a1a] border border-[#d4c5b0] dark:border-[#333] px-2 py-1 rounded shadow-sm inline-block">
+                    {selectedSurah}:{idx + 1}
+                  </span>
+                </div>
+                <div className="sm:pl-20">
+                  <p className="font-arabic text-3xl sm:text-4xl lg:text-[40px] text-right leading-[2.4] sm:leading-[2.5] text-slate-900 dark:text-slate-100 mb-6" dir="rtl" lang="ar" style={{ fontFamily: activeFontFamily }}>{ayah.ar} <span className="text-amber-700 dark:text-amber-500 opacity-80 ml-2 text-xl font-sans">﴾{toArabicNum(idx + 1)}﴿</span></p>
+                  <AnimatePresence>
+                    {showTranslation && (
+                      <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="overflow-hidden">
+                        <div className="border-t border-[#d4c5b0]/50 dark:border-[#2a2a2a]/50 pt-5 mt-3"><p className="text-lg sm:text-xl text-slate-800 dark:text-slate-300 leading-relaxed font-serif">{ayah.en}</p></div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                  {relatedCount > 0 && (
+                    <div className="mt-4 flex justify-end">
+                      <button onClick={() => onTafsirClick(selectedSurah, idx + 1)} className="flex items-center gap-1.5 text-[10px] sm:text-xs uppercase tracking-wider font-bold text-amber-700 hover:text-amber-900 dark:text-amber-500 dark:hover:text-amber-400 transition-colors bg-amber-100/50 dark:bg-amber-900/20 px-3 py-1.5 rounded-md cursor-pointer shadow-sm">
+                        <LibraryBig className="w-3.5 h-3.5" /> Related Hadiths <span className="bg-amber-200 dark:bg-amber-800 text-amber-900 dark:text-amber-100 px-1.5 py-0.5 rounded text-[10px] ml-1">{relatedCount}</span>
+                      </button>
+                    </div>
                   )}
-                </AnimatePresence>
-                <div className="mt-4 flex justify-end">
-                  <button onClick={() => onTafsirClick(selectedSurah, idx + 1)} className="flex items-center gap-1.5 text-[10px] sm:text-xs uppercase tracking-wider font-bold text-amber-700 hover:text-amber-900 dark:text-amber-500 dark:hover:text-amber-400 transition-colors bg-amber-100/50 dark:bg-amber-900/20 px-3 py-1.5 rounded-md cursor-pointer">
-                    <LibraryBig className="w-3.5 h-3.5" /> Related Hadiths
-                  </button>
                 </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
     </div>
@@ -543,10 +569,9 @@ export default function App() {
   const [activeTab, setActiveTab] = useState('search');
   const [quranPopup, setQuranPopup] = useState(null);
 
-  // Reverse Tafsir Search State
   const [tafsirData, setTafsirData] = useState(null);
   const [tafsirLoading, setTafsirLoading] = useState(false);
-  const [tafsirTarget, setTafsirTarget] = useState(null); // {surah, ayah}
+  const [tafsirTarget, setTafsirTarget] = useState(null);
 
   const [showMobileMenu, setShowMobileMenu] = useState(false);
   const [showHistoryDrawer, setShowHistoryDrawer] = useState(false);
@@ -672,7 +697,6 @@ export default function App() {
     setTafsirLoading(true);
     setTafsirData(null);
     try {
-      // Standardize the search to exactly what is inside the Hadith text (Surah:Ayah)
       const queryStr = `(${surah}:${ayah})`;
       const response = await fetch('https://concept-atlas-backend.onrender.com/api/explore', {
         method: 'POST',
