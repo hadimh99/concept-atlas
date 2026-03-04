@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Search, Moon, Sun, Sparkles, X, ChevronRight, ChevronLeft, Home, Copy, ChevronDown, ChevronUp, List, Layout, Info, BookOpen, History, HelpCircle, Database, Filter, Share2, Check, Settings2, Menu, Clock, Trash2 } from 'lucide-react';
 import quranData from './quran.json';
 
-const APP_UPDATES = [{ version: "v3.3.4", date: "March 4, 2026", changes: ["Documentation: Completely overhauled the 'How to Use Kisa' guide to include instructions for the Quran Reader, Study History, and Advanced Tools."] }, { version: "v3.3.3", date: "March 4, 2026", changes: ["UI Polish: Darkened the hover state on the Source Selection dropdown in Light Mode (to slate-200) to ensure clear visibility against the frosted glass background."] }, { version: "v3.3.2", date: "March 4, 2026", changes: ["UI Polish: Fixed an issue where the source selection dropdown hover states were too bright in Dark Mode and too faint in Light Mode."] }, { version: "v3.3.1", date: "March 4, 2026", changes: ["Critical Bug Fix: Resolved the 'Black Screen of Death' freeze when switching to the Quran Reader by optimizing the background indexing loops.", "Keyboard UX Fix: Restored the ability to press 'Enter' to immediately execute a search in both Keyword and Concept modes."] }];
+const APP_UPDATES = [{ version: "v3.3.5", date: "March 4, 2026", changes: ["Bug Fix: Fixed an issue where cloud timeouts could permanently trap users on the loading screen. Reloading the page or clicking the Kisa logo now acts as an instant 'Escape Hatch' to return home."] }, { version: "v3.3.4", date: "March 4, 2026", changes: ["Documentation: Completely overhauled the 'How to Use Kisa' guide to include instructions for the Quran Reader, Study History, and Advanced Tools."] }, { version: "v3.3.3", date: "March 4, 2026", changes: ["UI Polish: Darkened the hover state on the Source Selection dropdown in Light Mode (to slate-200) to ensure clear visibility against the frosted glass background."] }, { version: "v3.3.2", date: "March 4, 2026", changes: ["UI Polish: Fixed an issue where the source selection dropdown hover states were too bright in Dark Mode and too faint in Light Mode."] }];
 const CLUSTER_COLORS = ['#10b981', '#8b5cf6', '#f59e0b', '#f43f5e', '#3b82f6'];
 const SOURCES = ["All Twelver Sources", "al-Kafi", "Bihar al-Anwar", "Basa'ir al-Darajat"];
 
@@ -407,7 +407,7 @@ const QuranReader = ({ activeFontFamily, fontStyle, setFontStyle, handleSurahSel
             {showSurahMenu && (
               <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="absolute top-full left-0 mt-2 w-full sm:w-[340px] max-h-[400px] overflow-y-auto bg-[#f4ecd8] dark:bg-[#1a1a1a] border border-slate-300 dark:border-slate-700 rounded-xl shadow-xl z-[70] smart-scrollbar">
                 {surahs.map(s => (
-                  <div key={s.id} onClick={() => { executeSurahSelection(s.id); setShowSurahMenu(false); }} className={`px-4 py-3.5 cursor-pointer transition-colors flex justify-between items-center border-b last:border-b-0 border-slate-300/40 dark:border-slate-700/50 ${selectedSurah === s.id ? 'bg-amber-200/60 dark:bg-amber-900/40' : 'hover:bg-amber-200/30 dark:hover:bg-amber-600/10'}`}>
+                  <div key={s.id} onClick={() => { executeSurahSelection(s.id); setShowSurahMenu(false); }} className={`px-4 py-3.5 cursor-pointer transition-colors flex justify-between items-center border-b last:border-b-0 border-slate-300/40 dark:border-slate-700/50 ${selectedSurah === s.id ? 'bg-amber-200/60 dark:bg-amber-900/40' : 'hover:bg-amber-200/50 dark:hover:bg-amber-600/10'}`}>
                     <div className="flex flex-col">
                       <span className={`font-bold text-sm sm:text-base ${selectedSurah === s.id ? 'text-amber-900 dark:text-amber-500' : 'text-slate-800 dark:text-slate-200'}`}>{s.id}. {s.enName}</span>
                       <span className="text-[11px] sm:text-xs text-slate-500 dark:text-slate-400 mt-0.5">{s.meaning}</span>
@@ -522,14 +522,15 @@ const QuranReader = ({ activeFontFamily, fontStyle, setFontStyle, handleSurahSel
 };
 
 export default function App() {
-  const urlParams = new URLSearchParams(typeof window !== 'undefined' ? window.location.search : '');
-  const [query, setQuery] = useState(urlParams.get('q') || '');
-  const [searchMode, setSearchMode] = useState(urlParams.get('mode') || 'concept');
-  const [sourceFilter, setSourceFilter] = useState(urlParams.get('source') || SOURCES[0]);
+  // Removed old URL state parsing to prevent infinite refresh loops
+  const [query, setQuery] = useState('');
+  const [searchMode, setSearchMode] = useState('concept');
+  const [sourceFilter, setSourceFilter] = useState(SOURCES[0]);
+
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [theme, setTheme] = useState('dark');
-  const [viewMode, setViewMode] = useState(window.innerWidth < 800 || urlParams.get('mode') === 'keyword' ? 'list' : 'map');
+  const [viewMode, setViewMode] = useState(typeof window !== 'undefined' && window.innerWidth < 800 ? 'list' : 'map');
   const [activeCluster, setActiveCluster] = useState(null);
   const [hoveredCluster, setHoveredCluster] = useState(null);
   const [showDropdown, setShowDropdown] = useState(false);
@@ -548,6 +549,9 @@ export default function App() {
 
   const [fontStyle, setFontStyle] = useState('scheherazade');
 
+  // Security reference to prevent hanging fetches from overwriting a cancelled search
+  const searchIdRef = useRef(0);
+
   const activeFontFamily =
     fontStyle === 'scheherazade' ? '"Scheherazade New", "Noto Naskh Arabic", sans-serif' :
       fontStyle === 'uthmani' ? '"Amiri Quran", "Amiri", serif' :
@@ -558,10 +562,17 @@ export default function App() {
   const searchInputContainerRef = useRef(null);
 
   const [centerPos, setCenterPos] = useState({ x: 0, y: 0 });
-  const [windowWidth, setWindowWidth] = useState(window.innerWidth);
+  const [windowWidth, setWindowWidth] = useState(typeof window !== 'undefined' ? window.innerWidth : 1200);
   const [loadingMessage, setLoadingMessage] = useState('Deep Search');
   const [showUpdates, setShowUpdates] = useState(false);
   const [showInfo, setShowInfo] = useState(false);
+
+  // Guarantee a clean URL on first load to prevent reload traps
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      window.history.replaceState({}, '', window.location.pathname);
+    }
+  }, []);
 
   useEffect(() => {
     const storedHistory = localStorage.getItem('kisa_history');
@@ -604,8 +615,6 @@ export default function App() {
     theme === 'dark' ? document.documentElement.classList.add('dark') : document.documentElement.classList.remove('dark');
   }, [theme]);
 
-  useEffect(() => { const initialQ = urlParams.get('q'); if (initialQ && !data && !loading && activeTab === 'search') executeSearch(initialQ, searchMode, sourceFilter); }, []);
-
   useEffect(() => {
     if (!loading) return; let timeouts = [];
     if (searchMode === 'concept') {
@@ -635,18 +644,34 @@ export default function App() {
 
   const executeSearch = async (searchQuery, currentMode, currentSource) => {
     if (!searchQuery.trim()) return;
+
+    // Tag this search to prevent overlapping fetch resolutions
+    const currentSearchId = ++searchIdRef.current;
+
     saveToHistory({ type: 'search', query: searchQuery, mode: currentMode, source: currentSource, timestamp: Date.now() });
     setShowSearchDropdown(false);
-    const newUrl = new URL(window.location);
-    newUrl.searchParams.set('q', searchQuery); newUrl.searchParams.set('mode', currentMode); newUrl.searchParams.set('source', currentSource);
-    window.history.pushState({}, '', newUrl);
+
+    // Visually clean the URL (no push state)
+    window.history.replaceState({}, '', window.location.pathname);
+
     setLoading(true);
     try {
       const response = await fetch('https://concept-atlas-backend.onrender.com/api/explore', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' }, body: JSON.stringify({ query: searchQuery, source: currentSource, searchMode: currentMode }) });
       const result = await response.json();
+
+      // If the user cancelled via the logo before this finished, abort silently
+      if (searchIdRef.current !== currentSearchId) return;
+
       if (result.clusters && result.clusters.length > 0) { setData(result); if (currentMode === 'keyword') setViewMode('list'); }
       else setData(null);
-    } catch (err) { console.error(err); } finally { setLoading(false); }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      // Only turn off loading if this is still the active search
+      if (searchIdRef.current === currentSearchId) {
+        setLoading(false);
+      }
+    }
   };
 
   const handleSearchSubmit = (e) => {
@@ -657,13 +682,16 @@ export default function App() {
     executeSearch(query, searchMode, sourceFilter);
   };
 
+  // THE ULTIMATE ESCAPE HATCH
   const handleHomeClick = () => {
+    searchIdRef.current++; // Instantly invalidates any background searches
     setData(null);
     setQuery('');
     setActiveCluster(null);
     setHoveredCluster(null);
     setActiveTab('search');
-    window.history.pushState({}, '', window.location.pathname);
+    setLoading(false); // Force the loading screen to die
+    window.history.replaceState({}, '', window.location.pathname); // Scrub the URL
   };
 
   const handleHistoryClick = (item) => {
@@ -736,6 +764,7 @@ export default function App() {
 
       <header className="fixed top-0 w-full z-[75] p-4 sm:p-6 flex justify-between items-center pointer-events-none">
 
+        {/* CLICKING THIS LOGO NOW ACTS AS AN INSTANT ESCAPE HATCH */}
         <div onClick={handleHomeClick} className="flex items-center gap-3 pointer-events-auto cursor-pointer group">
           <div className={`w-10 h-10 rounded-full flex items-center justify-center transition-all duration-500 group-hover:scale-105 ${activeTab === 'quran' ? 'bg-amber-500/10 border border-amber-500/20' : isKeyword ? 'bg-blue-500/10 border border-blue-500/20 shadow-sm' : 'bg-indigo-500/10 border border-indigo-500/20'}`}>
             <KisaLogo className="w-5 h-5 text-amber-600 dark:text-amber-500" />
@@ -853,7 +882,11 @@ export default function App() {
                         {showDropdown && (
                           <motion.div initial={{ opacity: 0, y: -5 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -5 }} className={`absolute top-[100px] sm:top-14 right-2 sm:right-0 w-[calc(100%-16px)] sm:w-[220px] rounded-xl border shadow-xl overflow-hidden z-50 backdrop-blur-xl ${isKeyword ? 'bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-600' : 'glass-panel bg-white/95 dark:bg-slate-900/95 border-slate-200 dark:border-slate-700'}`}>
                             {SOURCES.map((source) => (
-                              <div key={source} onClick={() => { setSourceFilter(source); setShowDropdown(false); }} className={`px-4 py-3 text-sm cursor-pointer transition-colors ${sourceFilter === source ? (isKeyword ? 'bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400' : 'bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400') : 'text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'}`}>
+                              <div
+                                key={source}
+                                onClick={() => { setSourceFilter(source); setShowDropdown(false); }}
+                                className={`px-4 py-3 text-sm cursor-pointer transition-colors ${sourceFilter === source ? (isKeyword ? 'bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400' : 'bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400') : 'text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'}`}
+                              >
                                 {source}
                               </div>
                             ))}
