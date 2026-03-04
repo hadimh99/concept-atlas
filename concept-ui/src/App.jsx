@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Search, Moon, Sun, Sparkles, X, ChevronRight, ChevronLeft, Home, Copy, ChevronDown, ChevronUp, List, Layout, Info, BookOpen, History, HelpCircle, Database, Filter, Share2, Check, Settings2, Menu } from 'lucide-react';
+import { Search, Moon, Sun, Sparkles, X, ChevronRight, ChevronLeft, Home, Copy, ChevronDown, ChevronUp, List, Layout, Info, BookOpen, History, HelpCircle, Database, Filter, Share2, Check, Settings2, Menu, Clock, Trash2 } from 'lucide-react';
 import quranData from './quran.json';
 
-const APP_UPDATES = [{ version: "v3.2.1", date: "March 4, 2026", changes: ["UI Polish: Perfectly centered the Surah dropdown menu on mobile devices.", "Added an interactive up/down arrow indicator to the Surah selector button."] }, { version: "v3.2.0", date: "March 4, 2026", changes: ["UI Polish: Completely redesigned the Surah selection dropdown to match premium printed Qurans. It now features a rich dual-language layout detailing English meanings and total Ayah counts for all 114 Surahs."] }, { version: "v3.1.2", date: "March 3, 2026", changes: ["Clipboard Formatting: Added a clean spatial break before the '— Via Kisa' branding when copying Hadith text."] }];
+const APP_UPDATES = [{ version: "v3.3.0", date: "March 4, 2026", changes: ["Feature: Added a comprehensive 'Study History' system. Kisa now remembers your recent searches and Surah recitations.", "UX Polish: Clicking the empty search bar now reveals a Google-style dropdown to instantly resume your last 5 activities.", "UI Polish: Added a dedicated Study Drawer (Clock Icon) to view and clear your full exploration history."] }, { version: "v3.2.1", date: "March 4, 2026", changes: ["UI Polish: Perfectly centered the Surah dropdown menu on mobile devices.", "Added an interactive up/down arrow indicator to the Surah selector button."] }, { version: "v3.2.0", date: "March 4, 2026", changes: ["UI Polish: Completely redesigned the Surah selection dropdown to match premium printed Qurans."] }];
 const CLUSTER_COLORS = ['#10b981', '#8b5cf6', '#f59e0b', '#f43f5e', '#3b82f6'];
 const SOURCES = ["All Twelver Sources", "al-Kafi", "Bihar al-Anwar", "Basa'ir al-Darajat"];
 
@@ -14,6 +14,14 @@ const KisaLogo = ({ className }) => (
     <path d="M13.5 8.5L9.5 11L12.5 13.5L8.5 16" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
   </svg>
 );
+
+const timeAgo = (ts) => {
+  const diff = Math.floor((Date.now() - ts) / 60000);
+  if (diff < 1) return 'Just now';
+  if (diff < 60) return `${diff}m ago`;
+  if (diff < 1440) return `${Math.floor(diff / 60)}h ago`;
+  return `${Math.floor(diff / 1440)}d ago`;
+};
 
 const HadithCard = ({ item, handleCopyHadith, searchMode, onVerseClick }) => {
   const [showArabic, setShowArabic] = useState(false);
@@ -172,12 +180,7 @@ const HadithCard = ({ item, handleCopyHadith, searchMode, onVerseClick }) => {
   );
 };
 
-const toArabicNum = (n) => {
-  const digits = ['٠', '١', '٢', '٣', '٤', '٥', '٦', '٧', '٨', '٩'];
-  return n.toString().split('').map(d => digits[d]).join('');
-};
-
-const QuranReader = ({ activeFontFamily, fontStyle, setFontStyle }) => {
+const QuranReader = ({ activeFontFamily, fontStyle, setFontStyle, handleSurahSelectHook }) => {
   const [selectedSurah, setSelectedSurah] = useState(1);
   const [showTranslation, setShowTranslation] = useState(true);
   const [readingMode, setReadingMode] = useState('verse');
@@ -219,14 +222,12 @@ const QuranReader = ({ activeFontFamily, fontStyle, setFontStyle }) => {
     111: "The Palm Fiber", 112: "The Sincerity", 113: "The Daybreak", 114: "Mankind"
   };
 
-  // Initialize Rich Surah List
   const surahs = useMemo(() => {
     const list = [];
     for (let i = 1; i <= 114; i++) {
       if (quranData[`${i}:1`]) {
         let aIdx = 1;
         while (quranData[`${i}:${aIdx}`]) aIdx++;
-
         list.push({
           id: i,
           enName: quranData[`${i}:1`].surahName,
@@ -275,11 +276,7 @@ const QuranReader = ({ activeFontFamily, fontStyle, setFontStyle }) => {
 
   const handleSearchChange = (val) => {
     setQuranSearchQuery(val);
-    if (!val.trim()) {
-      setSearchResults([]);
-      return;
-    }
-
+    if (!val.trim()) { setSearchResults([]); return; }
     const query = val.trim();
     const numMatch = query.match(/^(\d+)\s*:\s*(\d+)$/);
     let results = [];
@@ -304,10 +301,18 @@ const QuranReader = ({ activeFontFamily, fontStyle, setFontStyle }) => {
     setSearchResults(results.slice(0, 5));
   };
 
+  const executeSurahSelection = (id) => {
+    setSelectedSurah(id);
+    const s = surahs.find(x => x.id === id);
+    if (s && handleSurahSelectHook) {
+      handleSurahSelectHook(id, s.enName);
+    }
+  };
+
   const handleSelectResult = (res) => {
     setQuranSearchQuery('');
     setSearchResults([]);
-    setSelectedSurah(res.surahId);
+    executeSurahSelection(res.surahId);
 
     if (res.type === 'verse') {
       setReadingMode('verse');
@@ -322,9 +327,7 @@ const QuranReader = ({ activeFontFamily, fontStyle, setFontStyle }) => {
     if (searchResults.length > 0) {
       handleSelectResult(searchResults[0]);
     }
-    if (quranSearchInputRef.current) {
-      quranSearchInputRef.current.blur();
-    }
+    if (quranSearchInputRef.current) quranSearchInputRef.current.blur();
   };
 
   const ayahsRaw = []; let aIdx = 1;
@@ -353,9 +356,7 @@ const QuranReader = ({ activeFontFamily, fontStyle, setFontStyle }) => {
         if (el) {
           el.scrollIntoView({ behavior: 'smooth', block: 'center' });
           el.classList.add('bg-amber-500/20', 'dark:bg-amber-500/30');
-          setTimeout(() => {
-            el.classList.remove('bg-amber-500/20', 'dark:bg-amber-500/30');
-          }, 2000);
+          setTimeout(() => el.classList.remove('bg-amber-500/20', 'dark:bg-amber-500/30'), 2000);
         }
         setTargetVerse(null);
       }, 100);
@@ -364,7 +365,6 @@ const QuranReader = ({ activeFontFamily, fontStyle, setFontStyle }) => {
 
   return (
     <div className="w-full max-w-4xl px-4 sm:px-6 pt-24 sm:pt-28 pb-12 mx-auto min-h-screen flex flex-col items-center pointer-events-auto">
-
       {(showSurahMenu || showSettingsMenu || searchResults.length > 0) && (
         <div className="fixed inset-0 z-[60] pointer-events-auto" onClick={() => { setShowSurahMenu(false); setShowSettingsMenu(false); setSearchResults([]); }} />
       )}
@@ -372,14 +372,7 @@ const QuranReader = ({ activeFontFamily, fontStyle, setFontStyle }) => {
       <div className="w-full relative mb-4 sm:mb-6 z-[70]">
         <form onSubmit={handleQuranSearchSubmit} className="flex items-center bg-white/40 dark:bg-black/30 backdrop-blur-sm border border-slate-300/50 dark:border-slate-800 rounded-2xl px-4 py-3 sm:py-3.5 shadow-sm transition-all focus-within:border-amber-500/50 dark:focus-within:border-amber-500/50 focus-within:bg-white/60 dark:focus-within:bg-black/50">
           <Search className="w-4 h-4 sm:w-5 sm:h-5 text-slate-400 mr-3 shrink-0" />
-          <input
-            ref={quranSearchInputRef}
-            type="text"
-            value={quranSearchQuery}
-            onChange={(e) => handleSearchChange(e.target.value)}
-            placeholder="Search Surah (e.g. Baqarah) or Verse (e.g. 2:255)..."
-            className="w-full bg-transparent border-none outline-none text-slate-800 dark:text-slate-200 placeholder:text-slate-500 text-base font-medium"
-          />
+          <input ref={quranSearchInputRef} type="text" value={quranSearchQuery} onChange={(e) => handleSearchChange(e.target.value)} placeholder="Search Surah (e.g. Baqarah) or Verse (e.g. 2:255)..." className="w-full bg-transparent border-none outline-none text-slate-800 dark:text-slate-200 placeholder:text-slate-500 text-base font-medium" />
           {quranSearchQuery && <button type="button" onClick={() => { setQuranSearchQuery(''); setSearchResults([]); quranSearchInputRef.current?.focus(); }} className="p-1 hover:bg-slate-200 dark:hover:bg-slate-800 rounded-full transition-colors cursor-pointer"><X className="w-4 h-4 text-slate-400" /></button>}
         </form>
 
@@ -398,12 +391,8 @@ const QuranReader = ({ activeFontFamily, fontStyle, setFontStyle }) => {
       </div>
 
       <div className="w-full bg-white/40 dark:bg-black/30 backdrop-blur-sm p-4 sm:p-5 rounded-2xl mb-12 border border-slate-300/50 dark:border-slate-800 shadow-sm flex flex-col md:flex-row items-center justify-between gap-4 relative z-[65]">
-
         <div className="relative w-full md:w-[280px]">
-          <button
-            onClick={() => { setShowSurahMenu(!showSurahMenu); setShowSettingsMenu(false); }}
-            className="w-full bg-white dark:bg-[#1a1a1a] border border-slate-300 dark:border-slate-700 text-slate-800 dark:text-slate-200 text-sm rounded-lg px-4 py-2.5 flex justify-between items-center transition-colors font-medium shadow-sm hover:border-amber-500 dark:hover:border-amber-500 cursor-pointer"
-          >
+          <button onClick={() => { setShowSurahMenu(!showSurahMenu); setShowSettingsMenu(false); }} className="w-full bg-white dark:bg-[#1a1a1a] border border-slate-300 dark:border-slate-700 text-slate-800 dark:text-slate-200 text-sm rounded-lg px-4 py-2.5 flex justify-between items-center transition-colors font-medium shadow-sm hover:border-amber-500 dark:hover:border-amber-500 cursor-pointer">
             <span className="truncate">{selectedSurah}. Surah {surahs.find(s => s.id === selectedSurah)?.enName}</span>
             {showSurahMenu ? <ChevronUp className="w-4 h-4 opacity-50 shrink-0 ml-2" /> : <ChevronDown className="w-4 h-4 opacity-50 shrink-0 ml-2" />}
           </button>
@@ -412,26 +401,14 @@ const QuranReader = ({ activeFontFamily, fontStyle, setFontStyle }) => {
             {showSurahMenu && (
               <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="absolute top-full left-0 mt-2 w-full sm:w-[340px] max-h-[400px] overflow-y-auto bg-[#f4ecd8] dark:bg-[#1a1a1a] border border-slate-300 dark:border-slate-700 rounded-xl shadow-xl z-[70] smart-scrollbar">
                 {surahs.map(s => (
-                  <div
-                    key={s.id}
-                    onClick={() => { setSelectedSurah(s.id); setShowSurahMenu(false); }}
-                    className={`px-4 py-3.5 cursor-pointer transition-colors flex justify-between items-center border-b last:border-b-0 border-slate-300/40 dark:border-slate-700/50 ${selectedSurah === s.id ? 'bg-amber-200/60 dark:bg-amber-900/40' : 'hover:bg-amber-200/30 dark:hover:bg-amber-600/10'}`}
-                  >
+                  <div key={s.id} onClick={() => { executeSurahSelection(s.id); setShowSurahMenu(false); }} className={`px-4 py-3.5 cursor-pointer transition-colors flex justify-between items-center border-b last:border-b-0 border-slate-300/40 dark:border-slate-700/50 ${selectedSurah === s.id ? 'bg-amber-200/60 dark:bg-amber-900/40' : 'hover:bg-amber-200/30 dark:hover:bg-amber-600/10'}`}>
                     <div className="flex flex-col">
-                      <span className={`font-bold text-sm sm:text-base ${selectedSurah === s.id ? 'text-amber-900 dark:text-amber-500' : 'text-slate-800 dark:text-slate-200'}`}>
-                        {s.id}. {s.enName}
-                      </span>
-                      <span className="text-[11px] sm:text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                        {s.meaning}
-                      </span>
+                      <span className={`font-bold text-sm sm:text-base ${selectedSurah === s.id ? 'text-amber-900 dark:text-amber-500' : 'text-slate-800 dark:text-slate-200'}`}>{s.id}. {s.enName}</span>
+                      <span className="text-[11px] sm:text-xs text-slate-500 dark:text-slate-400 mt-0.5">{s.meaning}</span>
                     </div>
                     <div className="flex flex-col items-end">
-                      <span className={`font-arabic text-lg sm:text-xl ${selectedSurah === s.id ? 'text-amber-900 dark:text-amber-500' : 'text-slate-800 dark:text-slate-200'}`} dir="rtl" lang="ar">
-                        {s.arName}
-                      </span>
-                      <span className="text-[10px] sm:text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                        {s.ayahCount} ayahs
-                      </span>
+                      <span className={`font-arabic text-lg sm:text-xl ${selectedSurah === s.id ? 'text-amber-900 dark:text-amber-500' : 'text-slate-800 dark:text-slate-200'}`} dir="rtl" lang="ar">{s.arName}</span>
+                      <span className="text-[10px] sm:text-xs text-slate-500 dark:text-slate-400 mt-0.5">{s.ayahCount} ayahs</span>
                     </div>
                   </div>
                 ))}
@@ -441,24 +418,19 @@ const QuranReader = ({ activeFontFamily, fontStyle, setFontStyle }) => {
         </div>
 
         <div className="flex w-full md:w-auto items-center justify-between md:justify-end gap-3 relative">
-
           <div className="flex items-center bg-white/60 dark:bg-slate-900/60 p-1 rounded-lg border border-slate-300 dark:border-slate-700 shadow-sm">
             <button onClick={() => setReadingMode('verse')} className={`px-3 py-1.5 rounded-md text-[10px] sm:text-xs font-bold uppercase tracking-wider transition-colors cursor-pointer ${readingMode === 'verse' ? 'bg-amber-700 dark:bg-amber-600 text-white shadow-md' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'}`}>Verse</button>
             <button onClick={() => setReadingMode('flow')} className={`px-3 py-1.5 rounded-md text-[10px] sm:text-xs font-bold uppercase tracking-wider transition-colors cursor-pointer ${readingMode === 'flow' ? 'bg-amber-700 dark:bg-amber-600 text-white shadow-md' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'}`}>Flow</button>
           </div>
 
           <div className="relative">
-            <button
-              onClick={() => { setShowSettingsMenu(!showSettingsMenu); setShowSurahMenu(false); }}
-              className={`px-4 py-2.5 rounded-lg text-xs font-bold uppercase tracking-wider transition-colors border shadow-sm flex items-center gap-2 cursor-pointer ${showSettingsMenu ? 'bg-slate-800 dark:bg-slate-200 text-white dark:text-slate-900 border-transparent' : 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 border-slate-300 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800'}`}
-            >
+            <button onClick={() => { setShowSettingsMenu(!showSettingsMenu); setShowSurahMenu(false); }} className={`px-4 py-2.5 rounded-lg text-xs font-bold uppercase tracking-wider transition-colors border shadow-sm flex items-center gap-2 cursor-pointer ${showSettingsMenu ? 'bg-slate-800 dark:bg-slate-200 text-white dark:text-slate-900 border-transparent' : 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 border-slate-300 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800'}`}>
               <Settings2 className="w-4 h-4" /> Customise
             </button>
 
             <AnimatePresence>
               {showSettingsMenu && (
                 <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="absolute right-0 top-full mt-2 w-[220px] bg-[#f4ecd8] dark:bg-[#1a1a1a] border border-slate-300 dark:border-slate-700 rounded-xl shadow-xl z-[70] p-4 flex flex-col gap-4">
-
                   <div>
                     <p className="text-[10px] uppercase tracking-widest font-bold text-slate-500 dark:text-slate-400 mb-2">Quranic Font</p>
                     <div className="flex flex-col gap-1">
@@ -467,9 +439,7 @@ const QuranReader = ({ activeFontFamily, fontStyle, setFontStyle }) => {
                       <button onClick={() => { setFontStyle('xbzar'); setShowSettingsMenu(false); }} className={`w-full text-left px-3 py-2 rounded-md text-sm transition-colors cursor-pointer ${fontStyle === 'xbzar' ? 'bg-amber-200/60 dark:bg-amber-900/40 text-amber-900 dark:text-amber-500 font-bold' : 'text-slate-700 dark:text-slate-300 hover:bg-black/5 dark:hover:bg-white/5'}`}>XB Zar</button>
                     </div>
                   </div>
-
                   <hr className="border-slate-300 dark:border-slate-700" />
-
                   <div>
                     <p className="text-[10px] uppercase tracking-widest font-bold text-slate-500 dark:text-slate-400 mb-2">Translation</p>
                     <button onClick={() => setShowTranslation(!showTranslation)} className={`w-full text-left px-3 py-2 rounded-md text-sm transition-colors cursor-pointer flex items-center justify-between ${showTranslation ? 'bg-amber-200/60 dark:bg-amber-900/40 text-amber-900 dark:text-amber-500 font-bold' : 'text-slate-700 dark:text-slate-300 hover:bg-black/5 dark:hover:bg-white/5'}`}>
@@ -479,7 +449,6 @@ const QuranReader = ({ activeFontFamily, fontStyle, setFontStyle }) => {
                       </div>
                     </button>
                   </div>
-
                 </motion.div>
               )}
             </AnimatePresence>
@@ -566,6 +535,9 @@ export default function App() {
   const [quranPopup, setQuranPopup] = useState(null);
 
   const [showMobileMenu, setShowMobileMenu] = useState(false);
+  const [showHistoryDrawer, setShowHistoryDrawer] = useState(false);
+  const [showSearchDropdown, setShowSearchDropdown] = useState(false);
+  const [appHistory, setAppHistory] = useState([]);
 
   const [fontStyle, setFontStyle] = useState('scheherazade');
 
@@ -576,11 +548,43 @@ export default function App() {
 
   const containerRef = useRef(null);
   const modalScrollRef = useRef(null);
+  const searchInputContainerRef = useRef(null);
+
   const [centerPos, setCenterPos] = useState({ x: 0, y: 0 });
   const [windowWidth, setWindowWidth] = useState(window.innerWidth);
   const [loadingMessage, setLoadingMessage] = useState('Deep Search');
   const [showUpdates, setShowUpdates] = useState(false);
   const [showInfo, setShowInfo] = useState(false);
+
+  useEffect(() => {
+    const storedHistory = localStorage.getItem('kisa_history');
+    if (storedHistory) {
+      try { setAppHistory(JSON.parse(storedHistory)); } catch (e) { }
+    }
+  }, []);
+
+  const saveToHistory = (newItem) => {
+    setAppHistory(prev => {
+      const filtered = prev.filter(item => {
+        if (newItem.type === 'search' && item.type === 'search') return item.query !== newItem.query;
+        if (newItem.type === 'quran' && item.type === 'quran') return item.surahId !== newItem.surahId;
+        return true;
+      });
+      const updated = [newItem, ...filtered].slice(0, 30);
+      localStorage.setItem('kisa_history', JSON.stringify(updated));
+      return updated;
+    });
+  };
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (searchInputContainerRef.current && !searchInputContainerRef.current.contains(event.target)) {
+        setShowSearchDropdown(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [searchInputContainerRef]);
 
   const handleModalScroll = (e) => {
     const el = e.currentTarget;
@@ -624,6 +628,8 @@ export default function App() {
 
   const executeSearch = async (searchQuery, currentMode, currentSource) => {
     if (!searchQuery.trim()) return;
+    saveToHistory({ type: 'search', query: searchQuery, mode: currentMode, source: currentSource, timestamp: Date.now() });
+    setShowSearchDropdown(false);
     const newUrl = new URL(window.location);
     newUrl.searchParams.set('q', searchQuery); newUrl.searchParams.set('mode', currentMode); newUrl.searchParams.set('source', currentSource);
     window.history.pushState({}, '', newUrl);
@@ -651,6 +657,24 @@ export default function App() {
     setHoveredCluster(null);
     setActiveTab('search');
     window.history.pushState({}, '', window.location.pathname);
+  };
+
+  const handleHistoryClick = (item) => {
+    setShowSearchDropdown(false);
+    setShowHistoryDrawer(false);
+    if (item.type === 'search') {
+      setActiveTab('search');
+      setQuery(item.query);
+      setSearchMode(item.mode);
+      setSourceFilter(item.source);
+      executeSearch(item.query, item.mode, item.source);
+    } else if (item.type === 'quran') {
+      setActiveTab('quran');
+      setTimeout(() => {
+        const btn = document.getElementById(`surah-trigger-${item.surahId}`);
+        if (btn) btn.click();
+      }, 100);
+    }
   };
 
   const handleCopyHadith = (item) => {
@@ -708,7 +732,6 @@ export default function App() {
 
       <header className="fixed top-0 w-full z-[75] p-4 sm:p-6 flex justify-between items-center pointer-events-none">
 
-        {/* CLICKABLE MASTER LOGO: Gold Letter, Dynamic Box Background */}
         <div onClick={handleHomeClick} className="flex items-center gap-3 pointer-events-auto cursor-pointer group">
           <div className={`w-10 h-10 rounded-full flex items-center justify-center transition-all duration-500 group-hover:scale-105 ${activeTab === 'quran' ? 'bg-amber-500/10 border border-amber-500/20' : isKeyword ? 'bg-blue-500/10 border border-blue-500/20 shadow-sm' : 'bg-indigo-500/10 border border-indigo-500/20'}`}>
             <KisaLogo className="w-5 h-5 text-amber-600 dark:text-amber-500" />
@@ -727,54 +750,98 @@ export default function App() {
 
         <div className="flex items-center gap-2 sm:gap-4 relative z-[75] pointer-events-auto">
 
-          <div className={`flex items-center rounded-full p-1 mr-2 ${activeTab === 'quran' ? 'bg-white/40 dark:bg-slate-800/50 backdrop-blur-md shadow-sm border border-slate-300/30 dark:border-slate-700' : 'glass-panel border-white/20'}`}>
+          <div className={`flex items-center rounded-full p-1 mr-1 sm:mr-2 ${activeTab === 'quran' ? 'bg-white/40 dark:bg-slate-800/50 backdrop-blur-md shadow-sm border border-slate-300/30 dark:border-slate-700' : 'glass-panel border-white/20'}`}>
             <button onClick={() => setActiveTab('search')} className={`p-2 rounded-full transition-all duration-300 cursor-pointer ${activeTab === 'search' ? 'bg-indigo-500/20 text-indigo-500 dark:text-indigo-400' : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}`} title="Search Engine"><Search className="w-4 h-4" /></button>
             <button onClick={() => setActiveTab('quran')} className={`p-2 rounded-full transition-all duration-300 cursor-pointer ${activeTab === 'quran' ? 'bg-amber-600/20 text-amber-800 dark:text-amber-500' : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}`} title="Quran Reader"><BookOpen className="w-4 h-4" /></button>
           </div>
 
+          {/* DESKTOP NAV */}
           <div className="hidden md:flex items-center gap-2 sm:gap-4">
             {activeTab === 'search' && data && !isKeyword && (<div className="flex items-center glass-panel rounded-full p-1 border-white/20"><button onClick={() => setViewMode('map')} className={`p-2 rounded-full transition-all duration-300 cursor-pointer ${viewMode === 'map' ? 'bg-indigo-500/20 text-indigo-400' : 'text-slate-500 hover:text-slate-300'}`}><Layout className="w-4 h-4" /></button><button onClick={() => setViewMode('list')} className={`p-2 rounded-full transition-all duration-300 cursor-pointer ${viewMode === 'list' ? 'bg-indigo-500/20 text-indigo-400' : 'text-slate-500 hover:text-slate-300'}`}><List className="w-4 h-4" /></button></div>)}
             <AnimatePresence>{activeTab === 'search' && data && (<motion.button initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} onClick={handleHomeClick} className="w-10 h-10 sm:w-11 sm:h-11 rounded-full bg-white/0 flex items-center justify-center group transition-all duration-300 hover:scale-110 cursor-pointer"><Home className="w-5 h-5 text-slate-400 group-hover:text-slate-900 dark:text-slate-500 dark:group-hover:text-white" /></motion.button>)}</AnimatePresence>
+            <button onClick={() => setShowHistoryDrawer(true)} className="w-10 h-10 sm:w-11 sm:h-11 rounded-full flex items-center justify-center group transition-all duration-300 hover:scale-110 cursor-pointer"><Clock className={`w-5 h-5 text-slate-400 ${activeTab === 'quran' ? 'group-hover:text-amber-500' : (isKeyword ? 'group-hover:text-blue-500' : 'group-hover:text-indigo-500')}`} /></button>
             {activeTab === 'search' && (<button onClick={() => { navigator.clipboard.writeText(window.location.href); setCopiedLink(true); setTimeout(() => setCopiedLink(false), 2000); }} className={`w-10 h-10 sm:w-11 sm:h-11 rounded-full flex items-center justify-center group transition-all duration-300 hover:scale-110 cursor-pointer ${copiedLink ? 'text-emerald-500' : `text-slate-400 ${isKeyword ? 'hover:text-blue-500' : 'hover:text-indigo-500'}`}`}><Share2 className="w-5 h-5" /></button>)}
             <button onClick={() => setShowInfo(true)} className="w-10 h-10 sm:w-11 sm:h-11 rounded-full flex items-center justify-center group transition-all duration-300 hover:scale-110 cursor-pointer"><HelpCircle className={`w-5 h-5 text-slate-400 ${activeTab === 'search' && isKeyword ? 'group-hover:text-blue-500' : 'group-hover:text-indigo-500'}`} /></button>
             <button onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')} className="w-10 h-10 sm:w-11 sm:h-11 rounded-full flex items-center justify-center group transition-all duration-300 hover:scale-110 cursor-pointer">{theme === 'dark' ? <Sun className="w-5 h-5 text-slate-500 group-hover:text-yellow-400" /> : <Moon className="w-5 h-5 text-slate-400 group-hover:text-slate-900" />}</button>
           </div>
 
-          <div className="md:hidden relative">
-            <button onClick={() => setShowMobileMenu(!showMobileMenu)} className={`w-10 h-10 rounded-full flex items-center justify-center transition-all duration-300 cursor-pointer ${activeTab === 'quran' ? 'bg-white/40 dark:bg-slate-800/50 backdrop-blur-md shadow-sm border border-slate-300/30 dark:border-slate-700 text-slate-600 dark:text-slate-300' : 'glass-panel border-white/20 text-slate-500 dark:text-slate-400'}`}>
-              <Menu className="w-5 h-5" />
+          {/* MOBILE NAV (Option 1: Clock is Top-Tier next to Menu) */}
+          <div className="md:hidden flex items-center gap-1 sm:gap-2 relative">
+            <button onClick={() => setShowHistoryDrawer(true)} className={`w-10 h-10 rounded-full flex items-center justify-center transition-all duration-300 cursor-pointer ${activeTab === 'quran' ? 'bg-white/40 dark:bg-slate-800/50 backdrop-blur-md shadow-sm border border-slate-300/30 dark:border-slate-700 text-slate-600 dark:text-slate-300' : 'glass-panel border-white/20 text-slate-500 dark:text-slate-400'}`}>
+              <Clock className="w-5 h-5" />
             </button>
+            <div className="relative">
+              <button onClick={() => setShowMobileMenu(!showMobileMenu)} className={`w-10 h-10 rounded-full flex items-center justify-center transition-all duration-300 cursor-pointer ${activeTab === 'quran' ? 'bg-white/40 dark:bg-slate-800/50 backdrop-blur-md shadow-sm border border-slate-300/30 dark:border-slate-700 text-slate-600 dark:text-slate-300' : 'glass-panel border-white/20 text-slate-500 dark:text-slate-400'}`}>
+                <Menu className="w-5 h-5" />
+              </button>
 
-            <AnimatePresence>
-              {showMobileMenu && (
-                <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className={`absolute right-0 top-full mt-2 w-48 rounded-xl shadow-xl p-2 flex flex-col gap-1 z-[75] ${activeTab === 'quran' ? 'bg-[#f4ecd8] dark:bg-[#1a1a1a] border border-slate-300 dark:border-slate-700' : 'bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800'}`}>
-                  {activeTab === 'search' && data && <button onClick={() => { handleHomeClick(); setShowMobileMenu(false); }} className="w-full text-left flex items-center gap-3 p-3 rounded-lg text-sm text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 cursor-pointer"><Home className="w-4 h-4 shrink-0" /> Reset Search</button>}
-                  {activeTab === 'search' && <button onClick={() => { navigator.clipboard.writeText(window.location.href); setCopiedLink(true); setTimeout(() => { setCopiedLink(false); setShowMobileMenu(false); }, 1000); }} className={`w-full text-left flex items-center gap-3 p-3 rounded-lg text-sm cursor-pointer ${copiedLink ? 'text-emerald-500' : 'text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'}`}><Share2 className="w-4 h-4 shrink-0" /> Share Link</button>}
-                  <button onClick={() => { setShowUpdates(true); setShowMobileMenu(false); }} className="w-full text-left flex items-center gap-3 p-3 rounded-lg text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer"><Sparkles className="w-4 h-4 shrink-0" /> What's New</button>
-                  <button onClick={() => { setShowInfo(true); setShowMobileMenu(false); }} className="w-full text-left flex items-center gap-3 p-3 rounded-lg text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer"><HelpCircle className="w-4 h-4 shrink-0" /> Help & Guide</button>
-                  <button onClick={() => { setTheme(theme === 'dark' ? 'light' : 'dark'); setShowMobileMenu(false); }} className="w-full text-left flex items-center gap-3 p-3 rounded-lg text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer">{theme === 'dark' ? <Sun className="w-4 h-4 shrink-0 text-amber-500" /> : <Moon className="w-4 h-4 shrink-0" />} Toggle Theme</button>
-                </motion.div>
-              )}
-            </AnimatePresence>
+              <AnimatePresence>
+                {showMobileMenu && (
+                  <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className={`absolute right-0 top-full mt-2 w-48 rounded-xl shadow-xl p-2 flex flex-col gap-1 z-[75] ${activeTab === 'quran' ? 'bg-[#f4ecd8] dark:bg-[#1a1a1a] border border-slate-300 dark:border-slate-700' : 'bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800'}`}>
+                    {activeTab === 'search' && data && <button onClick={() => { handleHomeClick(); setShowMobileMenu(false); }} className="w-full text-left flex items-center gap-3 p-3 rounded-lg text-sm text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 cursor-pointer"><Home className="w-4 h-4 shrink-0" /> Reset Search</button>}
+                    {activeTab === 'search' && <button onClick={() => { navigator.clipboard.writeText(window.location.href); setCopiedLink(true); setTimeout(() => { setCopiedLink(false); setShowMobileMenu(false); }, 1000); }} className={`w-full text-left flex items-center gap-3 p-3 rounded-lg text-sm cursor-pointer ${copiedLink ? 'text-emerald-500' : 'text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'}`}><Share2 className="w-4 h-4 shrink-0" /> Share Link</button>}
+                    <button onClick={() => { setShowUpdates(true); setShowMobileMenu(false); }} className="w-full text-left flex items-center gap-3 p-3 rounded-lg text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer"><Sparkles className="w-4 h-4 shrink-0" /> What's New</button>
+                    <button onClick={() => { setShowInfo(true); setShowMobileMenu(false); }} className="w-full text-left flex items-center gap-3 p-3 rounded-lg text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer"><HelpCircle className="w-4 h-4 shrink-0" /> Help & Guide</button>
+                    <button onClick={() => { setTheme(theme === 'dark' ? 'light' : 'dark'); setShowMobileMenu(false); }} className="w-full text-left flex items-center gap-3 p-3 rounded-lg text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer">{theme === 'dark' ? <Sun className="w-4 h-4 shrink-0 text-amber-500" /> : <Moon className="w-4 h-4 shrink-0" />} Toggle Theme</button>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
           </div>
-
         </div>
       </header>
 
       <main ref={containerRef} className={`relative w-full flex-grow flex flex-col ${lockMainScreen ? 'items-center justify-center h-screen overflow-hidden' : 'min-h-screen'}`}>
-        {activeTab === 'quran' && <QuranReader activeFontFamily={activeFontFamily} fontStyle={fontStyle} setFontStyle={setFontStyle} />}
+
+        {/* We inject the save hook into QuranReader so it saves when you select a surah */}
+        {activeTab === 'quran' && <QuranReader activeFontFamily={activeFontFamily} fontStyle={fontStyle} setFontStyle={setFontStyle} handleSurahSelectHook={(id, name) => saveToHistory({ type: 'quran', surahId: id, surahName: name, timestamp: Date.now() })} />}
 
         <AnimatePresence>
           {activeTab === 'search' && !data && !loading && (
             <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.9, filter: "blur(10px)" }} className="z-10 flex flex-col items-center justify-center w-full max-w-2xl px-4 sm:px-6 mx-auto absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
               <h2 className={`font-serif text-3xl sm:text-4xl md:text-5xl font-medium mb-6 sm:mb-8 text-center leading-tight ${isKeyword ? 'text-slate-800 dark:text-slate-100' : ''}`}>Explore the Depths of <br /><span className="italic">Twelver Literature</span></h2>
-              <div className="w-full relative group pointer-events-auto">
+              <div className="w-full relative group pointer-events-auto" ref={searchInputContainerRef}>
                 <div className={`absolute inset-0 w-full h-full rounded-2xl border shadow-xl pointer-events-none z-0 transition-colors duration-700 ${isKeyword ? 'border-slate-300 dark:border-slate-700' : 'border-white/60 dark:border-white/10'}`} style={{ backgroundColor: isKeyword ? (theme === 'dark' ? 'rgba(30, 41, 59, 0.7)' : 'rgba(255, 255, 255, 0.9)') : (theme === 'dark' ? 'rgba(0, 0, 0, 0.4)' : 'rgba(255, 255, 255, 0.3)'), backdropFilter: 'blur(24px)' }}></div>
+
                 <form onSubmit={handleSearchSubmit} className="relative z-10 flex flex-col p-2">
                   <div className={`flex items-center border-b relative ${isKeyword ? 'border-slate-300 dark:border-slate-700' : 'border-slate-200/50 dark:border-slate-700/50'}`}>
-                    <input type="text" value={query} onChange={(e) => setQuery(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') handleSearchSubmit(e); }} placeholder={isKeyword ? "Enter an exact word or phrase..." : "Enter a phrase or concept (e.g. intellect)..."} className="w-full bg-transparent appearance-none outline-none py-3 sm:py-4 pl-3 sm:pl-4 pr-14 sm:pr-16 text-base font-sans placeholder:text-slate-500 cursor-text" style={{ color: theme === 'dark' ? '#ffffff' : '#000000' }} />
+                    <input
+                      type="text"
+                      value={query}
+                      onFocus={() => setShowSearchDropdown(true)}
+                      onChange={(e) => setQuery(e.target.value)}
+                      onKeyDown={(e) => { if (e.key === 'Enter') handleSearchSubmit(e); }}
+                      placeholder={isKeyword ? "Enter an exact word or phrase..." : "Enter a phrase or concept (e.g. intellect)..."}
+                      className="w-full bg-transparent appearance-none outline-none py-3 sm:py-4 pl-3 sm:pl-4 pr-14 sm:pr-16 text-base font-sans placeholder:text-slate-500 cursor-text"
+                      style={{ color: theme === 'dark' ? '#ffffff' : '#000000' }}
+                    />
                     <button type="submit" className={`absolute right-2 p-2 sm:p-2.5 rounded-xl transition-colors shadow-sm cursor-pointer ${isKeyword ? 'bg-blue-500/10 hover:bg-blue-500 text-blue-500 hover:text-white' : 'bg-indigo-500/10 hover:bg-indigo-500 text-indigo-500 hover:text-white'}`}><Search className="w-4 h-4 sm:w-5 sm:h-5" /></button>
                   </div>
+
+                  {/* Google-Style Dropdown for Quick Resume */}
+                  <AnimatePresence>
+                    {showSearchDropdown && appHistory.length > 0 && query.trim() === '' && (
+                      <motion.div initial={{ opacity: 0, y: -5 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -5 }} className={`absolute left-0 right-0 top-full mt-2 rounded-xl shadow-2xl overflow-hidden z-50 border ${isKeyword ? 'bg-white/95 dark:bg-slate-900/95 border-slate-200 dark:border-slate-700' : 'glass-panel bg-white/95 dark:bg-slate-900/90 border-slate-200 dark:border-slate-700'}`}>
+                        <div className={`px-4 py-2 text-[10px] uppercase tracking-widest font-bold border-b flex justify-between items-center ${isKeyword ? 'text-slate-500 bg-slate-50 dark:bg-slate-800/80 border-slate-200 dark:border-slate-800' : 'text-slate-500 bg-slate-50/50 dark:bg-slate-800/50 border-slate-100 dark:border-slate-800'}`}>
+                          <span>Recent Activity</span>
+                        </div>
+                        <div className="flex flex-col">
+                          {appHistory.slice(0, 5).map((item, i) => (
+                            <div key={i} onClick={() => handleHistoryClick(item)} className={`px-4 py-3 sm:py-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-1 sm:gap-3 cursor-pointer transition-colors border-b last:border-b-0 group ${isKeyword ? 'hover:bg-blue-50/50 dark:hover:bg-blue-900/20 border-slate-100 dark:border-slate-800' : 'hover:bg-indigo-50/50 dark:hover:bg-indigo-900/20 border-slate-100 dark:border-slate-800/50'}`}>
+                              <div className="flex items-center gap-3 truncate">
+                                {item.type === 'quran' ? <BookOpen className="w-4 h-4 text-amber-500 shrink-0" /> : (item.mode === 'keyword' ? <Database className="w-4 h-4 text-blue-500 shrink-0" /> : <Sparkles className="w-4 h-4 text-indigo-500 shrink-0" />)}
+                                <span className={`font-medium truncate text-sm sm:text-base transition-colors ${item.type === 'quran' ? 'text-amber-900 dark:text-amber-500 group-hover:text-amber-700 dark:group-hover:text-amber-400' : (item.mode === 'keyword' ? 'text-slate-700 dark:text-slate-300 group-hover:text-blue-600 dark:group-hover:text-blue-400' : 'text-slate-700 dark:text-slate-300 group-hover:text-indigo-600 dark:group-hover:text-indigo-400')}`}>
+                                  {item.type === 'quran' ? `Surah ${item.surahName}` : item.query}
+                                </span>
+                              </div>
+                              <span className="text-[10px] sm:text-xs font-mono text-slate-400 shrink-0 pl-7 sm:pl-0 opacity-70 group-hover:opacity-100 transition-opacity">{timeAgo(item.timestamp)}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+
                   <div className="relative py-3 px-2 flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
                     <div className={`flex items-center rounded-lg p-1 border ${isKeyword ? 'bg-slate-100 dark:bg-slate-800 border-slate-300 dark:border-slate-700' : 'bg-white/30 dark:bg-slate-800/60 border-white/40 dark:border-slate-700/50'}`}>
                       <button type="button" onClick={() => { setSearchMode('concept'); setViewMode(window.innerWidth < 800 ? 'list' : 'map'); }} className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[10px] sm:text-xs font-bold uppercase tracking-wider transition-all duration-300 flex-1 sm:flex-none justify-center cursor-pointer ${!isKeyword ? 'bg-indigo-500 text-white shadow-md' : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-200'}`}><Sparkles className="w-3.5 h-3.5" /> Concept</button>
@@ -938,6 +1005,52 @@ export default function App() {
                 <div className="p-6 sm:p-8 overflow-y-auto flex-grow smart-scrollbar">
                   <div className="mb-6"><p className="font-arabic text-3xl sm:text-4xl text-right leading-[2.2] text-slate-800 dark:text-slate-100" dir="rtl" lang="ar" style={{ fontFamily: activeFontFamily, fontVariantLigatures: 'normal', fontFeatureSettings: '"ccmp" 1, "mark" 1, "mkmk" 1' }}>{quranPopup.data.ar}</p></div>
                   <div className="border-t border-slate-100 dark:border-slate-800 pt-6"><p className="text-base sm:text-lg text-slate-600 dark:text-slate-300 leading-relaxed font-serif">{quranPopup.data.en}</p></div>
+                </div>
+              </motion.div>
+            </div>
+          )}
+        </AnimatePresence>
+
+        <AnimatePresence>
+          {showHistoryDrawer && (
+            <div className="fixed inset-0 z-[2000] flex items-center justify-center pointer-events-auto p-4 sm:p-0">
+              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setShowHistoryDrawer(false)} className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm cursor-pointer" />
+              <motion.div initial={{ opacity: 0, scale: 0.95, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 20 }} className="relative bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 w-full sm:w-[90vw] max-w-[600px] max-h-[85vh] flex flex-col shadow-2xl rounded-2xl z-[2001]">
+                <div className="flex justify-between items-center bg-slate-50/90 dark:bg-slate-900/90 backdrop-blur-md pt-5 pb-4 px-5 sm:px-6 z-10 border-b border-slate-200 dark:border-slate-800 rounded-t-2xl shrink-0">
+                  <h2 className="text-lg sm:text-xl font-mono font-bold tracking-tight text-slate-800 dark:text-slate-100 flex items-center gap-2"><Clock className="w-5 h-5 text-indigo-500" />Study History</h2>
+                  <div className="flex items-center gap-2">
+                    {appHistory.length > 0 && <button onClick={() => setAppHistory([])} className="p-2 hover:bg-red-50 text-red-500 hover:text-red-600 dark:hover:bg-red-500/10 rounded-full transition-colors cursor-pointer shrink-0" title="Clear History"><Trash2 className="w-4 h-4 sm:w-5 sm:h-5" /></button>}
+                    <button onClick={() => setShowHistoryDrawer(false)} className="p-2 hover:bg-slate-200 dark:hover:bg-slate-800 rounded-full transition-colors cursor-pointer shrink-0"><X className="w-5 h-5" /></button>
+                  </div>
+                </div>
+                <div className="overflow-y-auto flex-grow smart-scrollbar p-2 sm:p-4">
+                  {appHistory.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center py-20 text-slate-400 italic">
+                      <History className="w-10 h-10 mb-4 opacity-20" />
+                      <p>Your study history is empty.</p>
+                    </div>
+                  ) : (
+                    <div className="flex flex-col gap-1 sm:gap-2">
+                      {appHistory.map((item, i) => (
+                        <div key={i} onClick={() => handleHistoryClick(item)} className={`px-4 sm:px-5 py-3 sm:py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-4 rounded-xl cursor-pointer transition-colors border group ${item.type === 'quran' ? 'hover:bg-amber-50 dark:hover:bg-amber-900/20 border-transparent hover:border-amber-200 dark:hover:border-amber-800/50' : (item.mode === 'keyword' ? 'hover:bg-blue-50 dark:hover:bg-blue-900/20 border-transparent hover:border-blue-200 dark:hover:border-blue-800/50' : 'hover:bg-indigo-50 dark:hover:bg-indigo-900/20 border-transparent hover:border-indigo-200 dark:hover:border-indigo-800/50')}`}>
+                          <div className="flex items-start sm:items-center gap-3 sm:gap-4">
+                            <div className={`p-2 sm:p-2.5 rounded-lg shrink-0 ${item.type === 'quran' ? 'bg-amber-100 dark:bg-amber-500/20 text-amber-600 dark:text-amber-500' : (item.mode === 'keyword' ? 'bg-blue-100 dark:bg-blue-500/20 text-blue-600 dark:text-blue-500' : 'bg-indigo-100 dark:bg-indigo-500/20 text-indigo-600 dark:text-indigo-400')}`}>
+                              {item.type === 'quran' ? <BookOpen className="w-4 h-4 sm:w-5 sm:h-5" /> : (item.mode === 'keyword' ? <Database className="w-4 h-4 sm:w-5 sm:h-5" /> : <Sparkles className="w-4 h-4 sm:w-5 sm:h-5" />)}
+                            </div>
+                            <div className="flex flex-col">
+                              <span className={`font-semibold text-sm sm:text-base ${item.type === 'quran' ? 'text-amber-900 dark:text-amber-100' : 'text-slate-800 dark:text-slate-200'}`}>
+                                {item.type === 'quran' ? `Surah ${item.surahName}` : item.query}
+                              </span>
+                              <span className="text-[10px] sm:text-xs text-slate-500 font-mono mt-0.5">
+                                {item.type === 'search' ? `${item.mode === 'concept' ? 'Semantic' : 'Exact Match'} • ${item.source}` : 'Quran Recitation'}
+                              </span>
+                            </div>
+                          </div>
+                          <span className="text-[10px] sm:text-xs font-mono text-slate-400 self-end sm:self-auto shrink-0 opacity-60 group-hover:opacity-100 transition-opacity">{timeAgo(item.timestamp)}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </motion.div>
             </div>
