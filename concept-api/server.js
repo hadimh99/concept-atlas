@@ -31,6 +31,25 @@ const db = new sqlite3.Database(dbPath, sqlite3.OPEN_READONLY, (err) => {
     else console.log("Connected securely to the Twelver SQLite database at:", dbPath);
 });
 
+// ==========================================
+// ARABIC NLP HELPERS
+// ==========================================
+function isArabic(text) {
+    const arabicPattern = /[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF]/;
+    return arabicPattern.test(text);
+}
+
+function normalizeArabic(text) {
+    if (!text) return "";
+    return text
+        .replace(/[\u064B-\u065F\u0670\u0651\u0654\u0655]/g, '') // Remove Harakat (Tashkeel)
+        .replace(/[أإآ]/g, 'ا') // Normalize Alef
+        .replace(/ة/g, 'ه') // Normalize Ta Marbuta
+        .replace(/[يى]/g, 'ي') // Normalize Ya/Alif Maqsura
+        .replace(/ؤ/g, 'و') // Normalize Waw Hamza
+        .replace(/ئ/g, 'ي'); // Normalize Ya Hamza
+}
+
 function cosineSimilarity(vecA, vecB) {
     let dotProduct = 0;
     let normA = 0;
@@ -125,21 +144,23 @@ app.post('/api/explore', async (req, res) => {
         console.log(`[🔍 CACHE MISS] Processing new ${activeSearchMode} query: "${query}" (Source: ${activeSource})`);
 
         // =========================================================================
-        // OPTIMIZED SQLITE KEYWORD SEARCH (Streaming / No RAM Crashes / Blazing Fast)
+        // OPTIMIZED SQLITE KEYWORD SEARCH (Streaming + ARABIC NORMALIZATION)
         // =========================================================================
         if (activeSearchMode === 'keyword') {
             console.log("Executing high-speed streaming keyword search...");
 
+            const isQueryArabic = isArabic(query);
             const lowerQuery = query.toLowerCase().trim();
-            const queryWords = lowerQuery.replace(/[^\w\s]/gi, '').split(/\s+/).filter(w => w.length > 3);
+            const normalizedQuery = isQueryArabic ? normalizeArabic(query) : lowerQuery;
+
+            // Allow Arabic characters in the fuzzy split
+            const queryWords = normalizedQuery.replace(/[^\w\s\u0600-\u06FF]/gi, '').split(/\s+/).filter(w => w.length > (isQueryArabic ? 2 : 3));
 
             let exactMatches = [];
             let fuzzyMatches = [];
             let seenIds = new Set();
             let totalFound = 0;
 
-            // Stream rows one by one. This keeps RAM essentially at zero, 
-            // but uses Node.js's blazing fast V8 engine to do the text matching.
             await new Promise((resolve, reject) => {
                 db.each("SELECT raw_data FROM hadiths", [], (err, row) => {
                     if (err) return;
@@ -148,21 +169,21 @@ app.post('/api/explore', async (req, res) => {
                         const hData = JSON.parse(row.raw_data);
                         const bookName = hData.book || hData.book_number || "al-Kafi";
 
-                        // Filter by source immediately
                         if (activeSource !== "All Twelver Sources" && bookName !== activeSource) return;
 
                         const eng = (hData.en || "").toLowerCase();
                         const ar = hData.ar || "";
+                        const normalizedAr = isQueryArabic ? normalizeArabic(ar) : ar;
 
                         // 1. Check Exact Match
-                        let isExact = eng.includes(lowerQuery) || ar.includes(query);
+                        let isExact = eng.includes(normalizedQuery) || normalizedAr.includes(normalizedQuery);
 
                         // 2. Check Fuzzy Match
                         let isFuzzy = false;
                         if (!isExact && queryWords.length > 1) {
                             let matchCount = 0;
                             queryWords.forEach(word => {
-                                if (eng.includes(word) || ar.includes(word)) matchCount++;
+                                if (eng.includes(word) || normalizedAr.includes(word)) matchCount++;
                             });
                             if (matchCount / queryWords.length >= 0.75) {
                                 isFuzzy = true;
@@ -204,7 +225,6 @@ app.post('/api/explore', async (req, res) => {
                         // Silently skip malformed rows
                     }
                 }, (err, count) => {
-                    // This block runs when all rows are finished streaming
                     if (err) reject(err);
                     else resolve();
                 });
@@ -239,8 +259,23 @@ app.post('/api/explore', async (req, res) => {
         }
 
         // =========================================================================
-        // CONCEPT MODE (No changes below)
+        // CONCEPT MODE (With Gemini Translation Bridge for Arabic)
         // =========================================================================
+
+        let embedQuery = query;
+        if (isArabic(query) && activeSearchMode === 'concept') {
+            console.log("Arabic query detected in Concept Mode. Engaging Gemini Bridge for translation...");
+            try {
+                const translationModel = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+                const prompt = `You are a translator for an Islamic database. Translate the following Arabic query into clear English. Output ONLY the English translation, nothing else: "${query}"`;
+                const translationResult = await translationModel.generateContent(prompt);
+                embedQuery = translationResult.response.text().trim();
+                console.log(`Translated Query for Hugging Face: "${embedQuery}"`);
+            } catch (err) {
+                console.error("Gemini Bridge translation failed, falling back to original Arabic query.", err.message);
+            }
+        }
+
         console.log("Embedding query via Hugging Face Cloud API...");
         const hfToken = process.env.HF_TOKEN;
         if (!hfToken) {
@@ -257,7 +292,7 @@ app.post('/api/explore', async (req, res) => {
                     "Content-Type": "application/json"
                 },
                 method: "POST",
-                body: JSON.stringify({ inputs: [query] })
+                body: JSON.stringify({ inputs: [embedQuery] }) // Use the potentially translated query!
             });
 
             const result = await hfResponse.json();
