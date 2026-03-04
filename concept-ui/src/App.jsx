@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Search, Moon, Sun, Sparkles, X, ChevronRight, ChevronLeft, Home, Copy, ChevronDown, ChevronUp, List, Layout, Info, BookOpen, History, HelpCircle, Database, Filter, Share2, Check, Settings2, Menu, Clock, Trash2 } from 'lucide-react';
 import quranData from './quran.json';
 
-const APP_UPDATES = [{ version: "v3.3.3", date: "March 4, 2026", changes: ["UI Polish: Darkened the hover state on the Source Selection dropdown in Light Mode (to slate-200) to ensure clear visibility against the frosted glass background."] }, { version: "v3.3.2", date: "March 4, 2026", changes: ["UI Polish: Fixed an issue where the source selection dropdown hover states were too bright in Dark Mode and too faint in Light Mode."] }, { version: "v3.3.1", date: "March 4, 2026", changes: ["Critical Bug Fix: Resolved the 'Black Screen of Death' freeze when switching to the Quran Reader by optimizing the background indexing loops.", "Keyboard UX Fix: Restored the ability to press 'Enter' to immediately execute a search in both Keyword and Concept modes."] }];
+const APP_UPDATES = [{ version: "v3.3.4", date: "March 4, 2026", changes: ["Documentation: Completely overhauled the 'How to Use Kisa' guide to include instructions for the Quran Reader, Study History, and Advanced Tools."] }, { version: "v3.3.3", date: "March 4, 2026", changes: ["UI Polish: Darkened the hover state on the Source Selection dropdown in Light Mode (to slate-200) to ensure clear visibility against the frosted glass background."] }, { version: "v3.3.2", date: "March 4, 2026", changes: ["UI Polish: Fixed an issue where the source selection dropdown hover states were too bright in Dark Mode and too faint in Light Mode."] }, { version: "v3.3.1", date: "March 4, 2026", changes: ["Critical Bug Fix: Resolved the 'Black Screen of Death' freeze when switching to the Quran Reader by optimizing the background indexing loops.", "Keyboard UX Fix: Restored the ability to press 'Enter' to immediately execute a search in both Keyword and Concept modes."] }];
 const CLUSTER_COLORS = ['#10b981', '#8b5cf6', '#f59e0b', '#f43f5e', '#3b82f6'];
 const SOURCES = ["All Twelver Sources", "al-Kafi", "Bihar al-Anwar", "Basa'ir al-Darajat"];
 
@@ -407,7 +407,7 @@ const QuranReader = ({ activeFontFamily, fontStyle, setFontStyle, handleSurahSel
             {showSurahMenu && (
               <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="absolute top-full left-0 mt-2 w-full sm:w-[340px] max-h-[400px] overflow-y-auto bg-[#f4ecd8] dark:bg-[#1a1a1a] border border-slate-300 dark:border-slate-700 rounded-xl shadow-xl z-[70] smart-scrollbar">
                 {surahs.map(s => (
-                  <div key={s.id} onClick={() => { executeSurahSelection(s.id); setShowSurahMenu(false); }} className={`px-4 py-3.5 cursor-pointer transition-colors flex justify-between items-center border-b last:border-b-0 border-slate-300/40 dark:border-slate-700/50 ${selectedSurah === s.id ? 'bg-amber-200/60 dark:bg-amber-900/40' : 'hover:bg-amber-200/50 dark:hover:bg-amber-600/10'}`}>
+                  <div key={s.id} onClick={() => { executeSurahSelection(s.id); setShowSurahMenu(false); }} className={`px-4 py-3.5 cursor-pointer transition-colors flex justify-between items-center border-b last:border-b-0 border-slate-300/40 dark:border-slate-700/50 ${selectedSurah === s.id ? 'bg-amber-200/60 dark:bg-amber-900/40' : 'hover:bg-amber-200/30 dark:hover:bg-amber-600/10'}`}>
                     <div className="flex flex-col">
                       <span className={`font-bold text-sm sm:text-base ${selectedSurah === s.id ? 'text-amber-900 dark:text-amber-500' : 'text-slate-800 dark:text-slate-200'}`}>{s.id}. {s.enName}</span>
                       <span className="text-[11px] sm:text-xs text-slate-500 dark:text-slate-400 mt-0.5">{s.meaning}</span>
@@ -848,20 +848,12 @@ export default function App() {
                     </div>
                     <div className="flex items-center w-full sm:w-auto">
                       <div className="flex items-center gap-2 text-slate-500 dark:text-slate-400 mr-3 hidden sm:flex"><BookOpen className="w-4 h-4" /><span className="text-xs uppercase tracking-wider font-semibold">Source:</span></div>
-
-                      {/* FIXED THE HOVER STYLING HERE */}
                       <button type="button" onClick={() => setShowDropdown(!showDropdown)} className={`flex items-center justify-between w-full sm:w-[220px] px-3 py-1.5 sm:py-2 rounded-lg transition-colors text-xs sm:text-sm font-medium border border-transparent cursor-pointer ${isKeyword ? 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300' : 'hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300'}`}><span className="truncate">{sourceFilter}</span><ChevronDown className="w-4 h-4 opacity-50 shrink-0 ml-2" /></button>
-
                       <AnimatePresence>
                         {showDropdown && (
                           <motion.div initial={{ opacity: 0, y: -5 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -5 }} className={`absolute top-[100px] sm:top-14 right-2 sm:right-0 w-[calc(100%-16px)] sm:w-[220px] rounded-xl border shadow-xl overflow-hidden z-50 backdrop-blur-xl ${isKeyword ? 'bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-600' : 'glass-panel bg-white/95 dark:bg-slate-900/95 border-slate-200 dark:border-slate-700'}`}>
                             {SOURCES.map((source) => (
-                              <div
-                                key={source}
-                                onClick={() => { setSourceFilter(source); setShowDropdown(false); }}
-                                /* FIXED THE HOVER AND ACTIVE TEXT STYLING HERE */
-                                className={`px-4 py-3 text-sm cursor-pointer transition-colors ${sourceFilter === source ? (isKeyword ? 'bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400' : 'bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400') : 'text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'}`}
-                              >
+                              <div key={source} onClick={() => { setSourceFilter(source); setShowDropdown(false); }} className={`px-4 py-3 text-sm cursor-pointer transition-colors ${sourceFilter === source ? (isKeyword ? 'bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400' : 'bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400') : 'text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'}`}>
                                 {source}
                               </div>
                             ))}
@@ -1091,11 +1083,62 @@ export default function App() {
               <motion.div initial={{ opacity: 0, scale: 0.95, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 20 }} className="relative bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 w-full sm:w-[90vw] max-w-[600px] max-h-[85vh] flex flex-col shadow-2xl rounded-2xl z-[2001]">
                 <div className="flex justify-between items-center bg-slate-50/90 dark:bg-slate-900/90 backdrop-blur-md pt-5 pb-4 px-5 z-10 border-b border-slate-200 dark:border-slate-800 rounded-t-2xl shrink-0"><h2 className="text-lg sm:text-xl font-mono font-bold tracking-tight text-slate-800 dark:text-slate-100 flex items-center gap-2"><KisaLogo className="w-5 h-5 text-emerald-500" />How to Use Kisa</h2><button onClick={() => setShowInfo(false)} className="p-2 hover:bg-slate-200 dark:hover:bg-slate-800 rounded-full transition-colors cursor-pointer shrink-0"><X className="w-5 h-5" /></button></div>
                 <div className="p-5 sm:p-6 overflow-y-auto flex-grow smart-scrollbar flex flex-col gap-6 text-slate-700 dark:text-slate-300">
-                  <div><h3 className="font-bold text-base sm:text-lg mb-2 text-slate-900 dark:text-white">Welcome to the Explorer</h3><p className="leading-relaxed text-xs sm:text-sm">Kisa is a semantic search engine designed specifically to explore authentic Twelver Shia literature, prioritizing core texts like <i>al-Kafi</i>, <i>Bihar al-Anwar</i>, and <i>Basa'ir al-Darajat</i>. It mathematically groups verified texts so you can explore concepts without AI hallucinations.</p></div>
+
+                  {/* Intro */}
+                  <div>
+                    <h3 className="font-bold text-base sm:text-lg mb-2 text-slate-900 dark:text-white">Welcome to Kisa</h3>
+                    <p className="leading-relaxed text-xs sm:text-sm">Kisa is a semantic search engine designed specifically to explore authentic Twelver Shia literature, prioritizing core texts like <i>al-Kafi</i>, <i>Bihar al-Anwar</i>, and <i>Basa'ir al-Darajat</i>. It mathematically groups verified texts so you can explore concepts without AI hallucinations.</p>
+                  </div>
                   <hr className="border-slate-200 dark:border-slate-700" />
-                  <div><h3 className="font-bold text-base sm:text-lg flex items-center gap-2 mb-2 sm:mb-3 text-slate-900 dark:text-white"><Sparkles className="w-4 h-4 text-indigo-500" /> Concept Mode (Thematic Search)</h3><p className="leading-relaxed text-xs sm:text-sm mb-3">This mode uses AI vector math to find underlying themes, even if the exact words aren't used. It is perfect for exploring abstract theology like <i>"divine justice"</i> or <i>"the nature of the intellect."</i></p><div className="bg-orange-50 dark:bg-orange-500/10 border-l-4 border-orange-500 p-3 sm:p-4 rounded-r-lg"><p className="text-xs sm:text-sm font-semibold text-orange-800 dark:text-orange-300 mb-1">⚠️ The Historical Fact Trap</p><p className="text-xs sm:text-sm text-orange-700 dark:text-orange-200/80">Concept Mode finds themes, not historical facts. If you search <i>"How was Imam Jafar Sadiq martyred?"</i>, it won't give you a Wikipedia summary. Instead, it will pull dozens of thematic narrations about grief, martyrdom, and the Imam.</p></div></div>
+
+                  {/* Concept Mode */}
+                  <div>
+                    <h3 className="font-bold text-base sm:text-lg flex items-center gap-2 mb-2 sm:mb-3 text-slate-900 dark:text-white"><Sparkles className="w-4 h-4 text-indigo-500" /> Concept Mode (Thematic Search)</h3>
+                    <p className="leading-relaxed text-xs sm:text-sm mb-3">This mode uses AI vector math to find underlying themes, even if the exact words aren't used. It is perfect for exploring abstract theology like <i>"divine justice"</i> or <i>"the nature of the intellect."</i></p>
+                    <div className="bg-orange-50 dark:bg-orange-500/10 border-l-4 border-orange-500 p-3 sm:p-4 rounded-r-lg">
+                      <p className="text-xs sm:text-sm font-semibold text-orange-800 dark:text-orange-300 mb-1">⚠️ The Historical Fact Trap</p>
+                      <p className="text-xs sm:text-sm text-orange-700 dark:text-orange-200/80">Concept Mode finds themes, not historical facts. If you search <i>"How was Imam Jafar Sadiq martyred?"</i>, it won't give you a Wikipedia summary. Instead, it will pull dozens of thematic narrations about grief, martyrdom, and the Imam.</p>
+                    </div>
+                  </div>
                   <hr className="border-slate-200 dark:border-slate-700" />
-                  <div><h3 className="font-bold text-base sm:text-lg flex items-center gap-2 mb-2 sm:mb-3 text-slate-900 dark:text-white"><Database className="w-4 h-4 text-blue-500" /> Keyword Mode (Exact Match)</h3><p className="leading-relaxed text-xs sm:text-sm mb-3">This mode strictly searches the exact English or Arabic text you type, functioning like a traditional database index.</p><div className="bg-blue-50 dark:bg-blue-500/10 border-l-4 border-blue-500 p-3 sm:p-4 rounded-r-lg"><p className="text-xs sm:text-sm font-semibold text-blue-800 dark:text-blue-300 mb-1">⚠️ The Translator's Trap</p><p className="text-xs sm:text-sm text-blue-700 dark:text-blue-200/80">If you search an English idiom like <i>"peak of affairs"</i>, you might miss a Hadith because the translator wrote <i>"summit of the matter"</i> instead. To bypass this, search using core "Anchor Words" like <i>"obeying the Imam"</i> to catch exactly what you are looking for.</p></div></div>
+
+                  {/* Keyword Mode */}
+                  <div>
+                    <h3 className="font-bold text-base sm:text-lg flex items-center gap-2 mb-2 sm:mb-3 text-slate-900 dark:text-white"><Database className="w-4 h-4 text-blue-500" /> Keyword Mode (Exact Match)</h3>
+                    <p className="leading-relaxed text-xs sm:text-sm mb-3">This mode strictly searches the exact English or Arabic text you type, functioning like a traditional database index.</p>
+                    <div className="bg-blue-50 dark:bg-blue-500/10 border-l-4 border-blue-500 p-3 sm:p-4 rounded-r-lg">
+                      <p className="text-xs sm:text-sm font-semibold text-blue-800 dark:text-blue-300 mb-1">⚠️ The Translator's Trap</p>
+                      <p className="text-xs sm:text-sm text-blue-700 dark:text-blue-200/80">If you search an English idiom like <i>"peak of affairs"</i>, you might miss a Hadith because the translator wrote <i>"summit of the matter"</i> instead. To bypass this, search using core "Anchor Words" like <i>"obeying the Imam"</i> to catch exactly what you are looking for.</p>
+                    </div>
+                  </div>
+                  <hr className="border-slate-200 dark:border-slate-700" />
+
+                  {/* Quran Reader */}
+                  <div>
+                    <h3 className="font-bold text-base sm:text-lg flex items-center gap-2 mb-2 sm:mb-3 text-slate-900 dark:text-white"><BookOpen className="w-4 h-4 text-amber-500" /> The Quran Reader</h3>
+                    <p className="leading-relaxed text-xs sm:text-sm mb-3">Toggle to the Quran section via the top-right book icon. You can search for specific Surahs or Verses (e.g., "2:255"), read in isolated <b>Verse</b> mode or traditional continuous <b>Flow</b> mode, and customize your Arabic font (Scheherazade, Amiri, or XB Zar) via the Customise menu.</p>
+                  </div>
+                  <hr className="border-slate-200 dark:border-slate-700" />
+
+                  {/* Study History */}
+                  <div>
+                    <h3 className="font-bold text-base sm:text-lg flex items-center gap-2 mb-2 sm:mb-3 text-slate-900 dark:text-white"><Clock className="w-4 h-4 text-emerald-500" /> Study History & Quick Resume</h3>
+                    <ul className="flex flex-col gap-2 text-xs sm:text-sm leading-relaxed list-disc pl-4">
+                      <li><b className="text-slate-900 dark:text-slate-200">Quick Resume:</b> Click the empty search bar on the homepage to instantly view and resume your 5 most recent searches and recitations.</li>
+                      <li><b className="text-slate-900 dark:text-slate-200">The Study Drawer:</b> Click the Clock icon in the navigation bar to open your full history, allowing you to seamlessly pick up where you left off across sessions.</li>
+                    </ul>
+                  </div>
+                  <hr className="border-slate-200 dark:border-slate-700" />
+
+                  {/* Advanced Tools */}
+                  <div>
+                    <h3 className="font-bold text-base sm:text-lg flex items-center gap-2 mb-2 sm:mb-3 text-slate-900 dark:text-white"><Filter className="w-4 h-4 text-purple-500" /> Advanced Tools</h3>
+                    <ul className="flex flex-col gap-2 text-xs sm:text-sm leading-relaxed list-disc pl-4">
+                      <li><b className="text-slate-900 dark:text-slate-200">Source Filtering:</b> Use the "Source" dropdown to limit your search to a specific book (e.g., only <i>al-Kafi</i>).</li>
+                      <li><b className="text-slate-900 dark:text-slate-200">Smart Copy:</b> Click "Copy Text" on any Hadith card to instantly copy a perfectly formatted citation including the Book, Volume, Chapter, Arabic, English, and a link back to Kisa.</li>
+                    </ul>
+                  </div>
+
                 </div>
               </motion.div>
             </div>
