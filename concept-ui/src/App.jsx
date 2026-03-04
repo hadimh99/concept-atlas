@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Search, Moon, Sun, Sparkles, X, ChevronRight, ChevronLeft, Home, Copy, ChevronDown, ChevronUp, List, Layout, Info, BookOpen, History, HelpCircle, Database, Filter, Share2, Check, Settings2, Menu, Clock, Trash2 } from 'lucide-react';
 import quranData from './quran.json';
 
-const APP_UPDATES = [{ version: "v3.3.1", date: "March 4, 2026", changes: ["Critical Bug Fix: Resolved the 'Black Screen of Death' freeze when switching to the Quran Reader by optimizing the background indexing loops.", "Keyboard UX Fix: Restored the ability to press 'Enter' to immediately execute a search in both Keyword and Concept modes.", "History Fix: Clicking a previously recited Surah in the Study Drawer now correctly routes you straight to that exact Surah."] }, { version: "v3.3.0", date: "March 4, 2026", changes: ["Feature: Added a comprehensive 'Study History' system. Kisa now remembers your recent searches and Surah recitations.", "UX Polish: Clicking the empty search bar now reveals a Google-style dropdown to instantly resume your last 5 activities.", "UI Polish: Added a dedicated Study Drawer (Clock Icon) to view and clear your full exploration history."] }];
+const APP_UPDATES = [{ version: "v3.3.2", date: "March 4, 2026", changes: ["UI Polish: Fixed an issue where the source selection dropdown hover states were too bright in Dark Mode and too faint in Light Mode."] }, { version: "v3.3.1", date: "March 4, 2026", changes: ["Critical Bug Fix: Resolved the 'Black Screen of Death' freeze when switching to the Quran Reader by optimizing the background indexing loops.", "Keyboard UX Fix: Restored the ability to press 'Enter' to immediately execute a search in both Keyword and Concept modes.", "History Fix: Clicking a previously recited Surah in the Study Drawer now correctly routes you straight to that exact Surah."] }, { version: "v3.3.0", date: "March 4, 2026", changes: ["Feature: Added a comprehensive 'Study History' system. Kisa now remembers your recent searches and Surah recitations."] }];
 const CLUSTER_COLORS = ['#10b981', '#8b5cf6', '#f59e0b', '#f43f5e', '#3b82f6'];
 const SOURCES = ["All Twelver Sources", "al-Kafi", "Bihar al-Anwar", "Basa'ir al-Darajat"];
 
@@ -238,14 +238,12 @@ const QuranReader = ({ activeFontFamily, fontStyle, setFontStyle, handleSurahSel
 
   const quranSearchInputRef = useRef(null);
 
-  // Automatically switch to Surah when triggered from History Drawer
   useEffect(() => {
     if (externalSurahTarget) {
       setSelectedSurah(externalSurahTarget);
     }
   }, [externalSurahTarget]);
 
-  // Robust parsing to completely avoid Black Screen freeze bugs
   const surahs = useMemo(() => {
     const list = [];
     for (let i = 1; i <= 114; i++) {
@@ -254,7 +252,7 @@ const QuranReader = ({ activeFontFamily, fontStyle, setFontStyle, handleSurahSel
         let aIdx = 1;
         while (quranData[`${i}:${aIdx}`]) {
           aIdx++;
-          if (aIdx > 350) break; // Strict safety break
+          if (aIdx > 350) break;
         }
         list.push({
           id: i,
@@ -338,7 +336,7 @@ const QuranReader = ({ activeFontFamily, fontStyle, setFontStyle, handleSurahSel
   while (quranData[`${selectedSurah}:${aIdx}`]) {
     ayahsRaw.push(quranData[`${selectedSurah}:${aIdx}`]);
     aIdx++;
-    if (aIdx > 350) break; // Strict safety break
+    if (aIdx > 350) break;
   }
 
   let surahBismillah = null;
@@ -407,7 +405,7 @@ const QuranReader = ({ activeFontFamily, fontStyle, setFontStyle, handleSurahSel
 
           <AnimatePresence>
             {showSurahMenu && (
-              <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="absolute top-full left-0 mt-2 w-[calc(100vw-32px)] sm:w-[340px] max-h-[400px] overflow-y-auto bg-[#f4ecd8] dark:bg-[#1a1a1a] border border-slate-300 dark:border-slate-700 rounded-xl shadow-xl z-[70] smart-scrollbar">
+              <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="absolute top-full left-0 mt-2 w-full sm:w-[340px] max-h-[400px] overflow-y-auto bg-[#f4ecd8] dark:bg-[#1a1a1a] border border-slate-300 dark:border-slate-700 rounded-xl shadow-xl z-[70] smart-scrollbar">
                 {surahs.map(s => (
                   <div key={s.id} onClick={() => { executeSurahSelection(s.id); setShowSurahMenu(false); }} className={`px-4 py-3.5 cursor-pointer transition-colors flex justify-between items-center border-b last:border-b-0 border-slate-300/40 dark:border-slate-700/50 ${selectedSurah === s.id ? 'bg-amber-200/60 dark:bg-amber-900/40' : 'hover:bg-amber-200/30 dark:hover:bg-amber-600/10'}`}>
                     <div className="flex flex-col">
@@ -679,7 +677,7 @@ export default function App() {
       executeSearch(item.query, item.mode, item.source);
     } else if (item.type === 'quran') {
       setActiveTab('quran');
-      setQuranTarget(item.surahId); // Pass direct instruction to QuranReader
+      setQuranTarget(item.surahId);
     }
   };
 
@@ -806,7 +804,6 @@ export default function App() {
               <div className="w-full relative group pointer-events-auto" ref={searchInputContainerRef}>
                 <div className={`absolute inset-0 w-full h-full rounded-2xl border shadow-xl pointer-events-none z-0 transition-colors duration-700 ${isKeyword ? 'border-slate-300 dark:border-slate-700' : 'border-white/60 dark:border-white/10'}`} style={{ backgroundColor: isKeyword ? (theme === 'dark' ? 'rgba(30, 41, 59, 0.7)' : 'rgba(255, 255, 255, 0.9)') : (theme === 'dark' ? 'rgba(0, 0, 0, 0.4)' : 'rgba(255, 255, 255, 0.3)'), backdropFilter: 'blur(24px)' }}></div>
 
-                {/* FORM ONSUBMIT NATURALLY HANDLES 'ENTER' NOW */}
                 <form onSubmit={handleSearchSubmit} className="relative z-10 flex flex-col p-2">
                   <div className={`flex items-center border-b relative ${isKeyword ? 'border-slate-300 dark:border-slate-700' : 'border-slate-200/50 dark:border-slate-700/50'}`}>
                     <input
@@ -851,11 +848,23 @@ export default function App() {
                     </div>
                     <div className="flex items-center w-full sm:w-auto">
                       <div className="flex items-center gap-2 text-slate-500 dark:text-slate-400 mr-3 hidden sm:flex"><BookOpen className="w-4 h-4" /><span className="text-xs uppercase tracking-wider font-semibold">Source:</span></div>
+
+                      {/* FIXED THE HOVER STYLING HERE */}
                       <button type="button" onClick={() => setShowDropdown(!showDropdown)} className={`flex items-center justify-between w-full sm:w-[220px] px-3 py-1.5 sm:py-2 rounded-lg transition-colors text-xs sm:text-sm font-medium border border-transparent cursor-pointer ${isKeyword ? 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300' : 'hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300'}`}><span className="truncate">{sourceFilter}</span><ChevronDown className="w-4 h-4 opacity-50 shrink-0 ml-2" /></button>
+
                       <AnimatePresence>
                         {showDropdown && (
                           <motion.div initial={{ opacity: 0, y: -5 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -5 }} className={`absolute top-[100px] sm:top-14 right-2 sm:right-0 w-[calc(100%-16px)] sm:w-[220px] rounded-xl border shadow-xl overflow-hidden z-50 backdrop-blur-xl ${isKeyword ? 'bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-600' : 'glass-panel bg-white/95 dark:bg-slate-900/95 border-slate-200 dark:border-slate-700'}`}>
-                            {SOURCES.map((source) => (<div key={source} onClick={() => { setSourceFilter(source); setShowDropdown(false); }} className={`px-4 py-3 text-sm cursor-pointer transition-colors ${sourceFilter === source ? (isKeyword ? 'bg-blue-50 dark:bg-blue-500/10 text-blue-600' : 'bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600') : 'text-slate-700 dark:text-slate-300 hover:bg-slate-50'}`}>{source}</div>))}
+                            {SOURCES.map((source) => (
+                              <div
+                                key={source}
+                                onClick={() => { setSourceFilter(source); setShowDropdown(false); }}
+                                /* FIXED THE HOVER AND ACTIVE TEXT STYLING HERE */
+                                className={`px-4 py-3 text-sm cursor-pointer transition-colors ${sourceFilter === source ? (isKeyword ? 'bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400' : 'bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400') : 'text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700'}`}
+                              >
+                                {source}
+                              </div>
+                            ))}
                           </motion.div>
                         )}
                       </AnimatePresence>
@@ -973,7 +982,7 @@ export default function App() {
                         </div>
                         <div className={`px-4 sm:px-6 py-3 border-b shrink-0 flex flex-wrap gap-2 items-center ${isKeyword ? 'bg-slate-100/50 dark:bg-slate-800/30 border-slate-200 dark:border-slate-700' : 'bg-slate-200/30 dark:bg-slate-800/30 border-slate-200 dark:border-slate-800'}`}>
                           <div className="flex items-center gap-1.5 text-slate-500 dark:text-slate-400 mr-1"><Filter className="w-3.5 h-3.5" /><span className="text-[10px] sm:text-xs font-semibold uppercase tracking-wider">Length:</span></div>
-                          {['All', 'Short', 'Medium', 'Long'].map(f => (<button key={f} onClick={() => { setLengthFilter(f); setCurrentPage(1); if (modalScrollRef.current) modalScrollRef.current.scrollTop = 0; }} className={`px-3 py-1 sm:py-1.5 rounded-md text-[10px] sm:text-xs font-medium transition-colors cursor-pointer ${lengthFilter === f ? (isKeyword ? 'bg-blue-500 text-white' : 'bg-indigo-500 text-white') : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700'}`}>{f}</button>))}
+                          {['All', 'Short', 'Medium', 'Long'].map(f => (<button key={f} onClick={() => { setLengthFilter(f); setCurrentPage(1); if (modalScrollRef.current) modalScrollRef.current.scrollTop = 0; }} className={`px-3 py-1 sm:py-1.5 rounded-md text-[10px] sm:text-xs font-medium transition-colors cursor-pointer ${lengthFilter === f ? (isKeyword ? 'bg-blue-500 text-white' : 'bg-indigo-500 text-white') : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700'}`}>{f}</button>))}
                           <span className="ml-auto text-[10px] sm:text-xs font-mono text-slate-400">{filteredItems.length} matches</span>
                         </div>
                         <div ref={modalScrollRef} onScroll={handleModalScroll} className="p-4 sm:p-6 flex flex-col gap-4 sm:gap-6 overflow-y-auto flex-grow smart-scrollbar">
