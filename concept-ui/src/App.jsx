@@ -4,42 +4,12 @@ import { Search, Moon, Sun, Sparkles, X, ChevronRight, ChevronLeft, Home, Copy, 
 import quranData from './quran.json';
 import verseMap from './verse_map.json';
 
-const APP_UPDATES = [{ version: "v3.4.2", date: "March 4, 2026", changes: ["Documentation: Updated the 'How to Use' guide to better explain the Translation Trap in Keyword Mode, advising users on how to effectively search for hadiths when English translations vary."] }, { version: "v3.4.1", date: "March 4, 2026", changes: ["Feature Polish: 'Related Hadiths' button is now context-aware! It uses a pre-computed static map to instantly display the exact number of matching narrations, and only appears if hadiths actually exist for that verse, saving you time."] }, { version: "v3.4.0", date: "March 4, 2026", changes: ["Feature: Added 'Reverse Quran Lookup' – click 'Related Hadiths' under any verse in the Quran Reader to instantly find narrations referencing that Ayah.", "Feature: Native Arabic Text Support – Concept Search now translates Arabic queries via AI before vectorizing, and Keyword Search strips harakat (tashkeel) for perfect exact matches."] }];
+const APP_UPDATES = [{ version: "v3.5.2", date: "March 5, 2026", changes: ["Feature Polish: Added a 'Copy Text' button to all 'Anchored Source' views (both List View accordion and Map View modal) allowing you to copy the full reference, Arabic, and translation instantly.", "Map UX Overhaul: Nodes are uniformly sized and mathematically bounded to never overlap the center box or go off-screen."] }];
 const CLUSTER_COLORS = ['#10b981', '#8b5cf6', '#f59e0b', '#f43f5e', '#3b82f6'];
 const SOURCES = ["All Twelver Sources", "al-Kafi", "Bihar al-Anwar", "Basa'ir al-Darajat"];
 
-const SURAH_MEANINGS = {
-  1: "The Opening", 2: "The Cow", 3: "The Family of Imraan", 4: "The Women", 5: "The Table Spread",
-  6: "The Cattle", 7: "The Heights", 8: "The Spoils of War", 9: "The Repentance", 10: "Jonah",
-  11: "Hud", 12: "Joseph", 13: "The Thunder", 14: "Abraham", 15: "The Rocky Tract",
-  16: "The Bee", 17: "The Night Journey", 18: "The Cave", 19: "Mary", 20: "Ta-Ha",
-  21: "The Prophets", 22: "The Pilgrimage", 23: "The Believers", 24: "The Light", 25: "The Criterion",
-  26: "The Poets", 27: "The Ant", 28: "The Stories", 29: "The Spider", 30: "The Romans",
-  31: "Luqman", 32: "The Prostration", 33: "The Combined Forces", 34: "Sheba", 35: "The Originator",
-  36: "Ya Sin", 37: "Those who set the Ranks", 38: "The Letter \"Saad\"", 39: "The Troops", 40: "The Forgiver",
-  41: "Explained in Detail", 42: "The Consultation", 43: "The Ornaments of Gold", 44: "The Smoke", 45: "The Crouching",
-  46: "The Wind-Curved Sandhills", 47: "Muhammad", 48: "The Victory", 49: "The Rooms", 50: "The Letter \"Qaf\"",
-  51: "The Winnowing Winds", 52: "The Mount", 53: "The Star", 54: "The Moon", 55: "The Beneficent",
-  56: "The Inevitable", 57: "The Iron", 58: "The Pleading Woman", 59: "The Exile", 60: "She that is to be examined",
-  61: "The Ranks", 62: "The Congregation", 63: "The Hypocrites", 64: "The Mutual Disillusion", 65: "The Divorce",
-  66: "The Prohibition", 67: "The Sovereignty", 68: "The Pen", 69: "The Reality", 70: "The Ascending Stairways",
-  71: "Noah", 72: "The Jinn", 73: "The Enshrouded One", 74: "The Cloaked One", 75: "The Resurrection",
-  76: "The Man", 77: "The Emissaries", 78: "The Tidings", 79: "Those who drag forth", 80: "He Frowned",
-  81: "The Overthrowing", 82: "The Cleaving", 83: "The Defrauding", 84: "The Sundering", 85: "The Mansions of the Stars",
-  86: "The Nightcommer", 87: "The Most High", 88: "The Overwhelming", 89: "The Dawn", 90: "The City",
-  91: "The Sun", 92: "The Night", 93: "The Morning Hours", 94: "The Relief", 95: "The Fig",
-  96: "The Clot", 97: "The Power", 98: "The Clear Proof", 99: "The Earthquake", 100: "The Courser",
-  101: "The Calamity", 102: "The Rivalry in world increase", 103: "The Declining Day", 104: "The Traducer", 105: "The Elephant",
-  106: "Quraish", 107: "The Small Kindnesses", 108: "The Abundance", 109: "The Disbelievers", 110: "The Divine Support",
-  111: "The Palm Fiber", 112: "The Sincerity", 113: "The Daybreak", 114: "Mankind"
-};
-
-const SURAH_ALIASES = {
-  1: ["fatiha", "fatihah", "hamd"], 9: ["tawbah", "baraah", "bara'ah", "tawba"],
-  17: ["isra", "bani israel", "bani israeel"], 40: ["ghafir", "mumin", "mu'min"],
-  41: ["fussilat", "ha mim sajdah"], 47: ["muhammad", "qital"],
-  76: ["insan", "dahr"], 94: ["sharh", "inshirah"], 111: ["masad", "lahab"]
-};
+const SURAH_MEANINGS = { 1: "The Opening", 2: "The Cow", 3: "The Family of Imraan", 4: "The Women", 5: "The Table Spread", 6: "The Cattle", 7: "The Heights", 8: "The Spoils of War", 9: "The Repentance", 10: "Jonah", 11: "Hud", 12: "Joseph", 13: "The Thunder", 14: "Abraham", 15: "The Rocky Tract", 16: "The Bee", 17: "The Night Journey", 18: "The Cave", 19: "Mary", 20: "Ta-Ha", 21: "The Prophets", 22: "The Pilgrimage", 23: "The Believers", 24: "The Light", 25: "The Criterion", 26: "The Poets", 27: "The Ant", 28: "The Stories", 29: "The Spider", 30: "The Romans", 31: "Luqman", 32: "The Prostration", 33: "The Combined Forces", 34: "Sheba", 35: "The Originator", 36: "Ya Sin", 37: "Those who set the Ranks", 38: "The Letter \"Saad\"", 39: "The Troops", 40: "The Forgiver", 41: "Explained in Detail", 42: "The Consultation", 43: "The Ornaments of Gold", 44: "The Smoke", 45: "The Crouching", 46: "The Wind-Curved Sandhills", 47: "Muhammad", 48: "The Victory", 49: "The Rooms", 50: "The Letter \"Qaf\"", 51: "The Winnowing Winds", 52: "The Mount", 53: "The Star", 54: "The Moon", 55: "The Beneficent", 56: "The Inevitable", 57: "The Iron", 58: "The Pleading Woman", 59: "The Exile", 60: "She that is to be examined", 61: "The Ranks", 62: "The Congregation", 63: "The Hypocrites", 64: "The Mutual Disillusion", 65: "The Divorce", 66: "The Prohibition", 67: "The Sovereignty", 68: "The Pen", 69: "The Reality", 70: "The Ascending Stairways", 71: "Noah", 72: "The Jinn", 73: "The Enshrouded One", 74: "The Cloaked One", 75: "The Resurrection", 76: "The Man", 77: "The Emissaries", 78: "The Tidings", 79: "Those who drag forth", 80: "He Frowned", 81: "The Overthrowing", 82: "The Cleaving", 83: "The Defrauding", 84: "The Sundering", 85: "The Mansions of the Stars", 86: "The Nightcommer", 87: "The Most High", 88: "The Overwhelming", 89: "The Dawn", 90: "The City", 91: "The Sun", 92: "The Night", 93: "The Morning Hours", 94: "The Relief", 95: "The Fig", 96: "The Clot", 97: "The Power", 98: "The Clear Proof", 99: "The Earthquake", 100: "The Courser", 101: "The Calamity", 102: "The Rivalry in world increase", 103: "The Declining Day", 104: "The Traducer", 105: "The Elephant", 106: "Quraish", 107: "The Small Kindnesses", 108: "The Abundance", 109: "The Disbelievers", 110: "The Divine Support", 111: "The Palm Fiber", 112: "The Sincerity", 113: "The Daybreak", 114: "Mankind" };
+const SURAH_ALIASES = { 1: ["fatiha", "fatihah", "hamd"], 9: ["tawbah", "baraah", "bara'ah", "tawba"], 17: ["isra", "bani israel", "bani israeel"], 40: ["ghafir", "mumin", "mu'min"], 41: ["fussilat", "ha mim sajdah"], 47: ["muhammad", "qital"], 76: ["insan", "dahr"], 94: ["sharh", "inshirah"], 111: ["masad", "lahab"] };
 
 const normalizeStr = (str) => {
   if (!str) return '';
@@ -66,7 +36,7 @@ const KisaLogo = ({ className }) => (
   </svg>
 );
 
-const HadithCard = ({ item, handleCopyHadith, searchMode, onVerseClick }) => {
+const HadithCard = ({ item, handleCopyHadith, searchMode, onVerseClick, onFindSimilar }) => {
   const [showArabic, setShowArabic] = useState(false);
   const [showChain, setShowChain] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -74,8 +44,8 @@ const HadithCard = ({ item, handleCopyHadith, searchMode, onVerseClick }) => {
 
   const getCleanData = () => {
     let displayNum = item.hadith_number;
-    let engText = item.english_text || "";
-    let araText = item.arabic_text || "";
+    let engText = String(item.english_text || "");
+    let araText = String(item.arabic_text || "");
     if (displayNum === "Unknown" || !displayNum || displayNum === "") {
       const engMatch = engText.match(/^[\s"'‘“\[\(]*(?:Unknown[\.\s]*)?(\d+)[\.\-:]?\s/i);
       if (engMatch) displayNum = engMatch[1];
@@ -153,7 +123,8 @@ const HadithCard = ({ item, handleCopyHadith, searchMode, onVerseClick }) => {
   const paragraphs = formatParagraphs(body);
   const textToCopy = chain ? `${chain}\n\n${paragraphs.join('\n\n')}` : paragraphs.join('\n\n');
 
-  const handleCopyClick = () => {
+  const handleCopyClick = (e) => {
+    e.stopPropagation();
     handleCopyHadith({ ...item, hadith_number: displayNum, english_text: textToCopy });
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
@@ -179,7 +150,7 @@ const HadithCard = ({ item, handleCopyHadith, searchMode, onVerseClick }) => {
         <span className="text-xs sm:text-sm md:text-base font-medium text-slate-500 dark:text-slate-400 leading-relaxed block">Book: {item.book}, Vol: {item.volume}, {item.sub_book}, Chapter: {item.chapter}{(displayNum && displayNum !== "Unknown") && `, Hadith: ${displayNum}`}</span>
       </div>
       <div className="mb-3">
-        <button onClick={() => setShowArabic(!showArabic)} className={`flex items-center gap-1 text-sm font-medium transition-colors cursor-pointer ${isKeyword ? 'text-blue-500 hover:text-blue-600 dark:text-blue-400' : 'text-indigo-500 hover:text-indigo-600 dark:text-indigo-400'}`}>
+        <button onClick={(e) => { e.stopPropagation(); setShowArabic(!showArabic); }} className={`flex items-center gap-1 text-sm font-medium transition-colors cursor-pointer ${isKeyword ? 'text-blue-500 hover:text-blue-600 dark:text-blue-400' : 'text-indigo-500 hover:text-indigo-600 dark:text-indigo-400'}`}>
           {showArabic ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />} {showArabic ? "Hide Original Arabic" : "View Original Arabic"}
         </button>
         <AnimatePresence>
@@ -195,7 +166,7 @@ const HadithCard = ({ item, handleCopyHadith, searchMode, onVerseClick }) => {
         </AnimatePresence>
       </div>
       <div className="mb-4">
-        <button onClick={() => setShowChain(!showChain)} className={`flex items-center gap-1 text-xs font-semibold uppercase tracking-wider transition-colors cursor-pointer ${isKeyword ? 'text-slate-500 hover:text-blue-500 dark:text-blue-400' : 'text-slate-400 hover:text-indigo-500 dark:text-indigo-400'}`}>
+        <button onClick={(e) => { e.stopPropagation(); setShowChain(!showChain); }} className={`flex items-center gap-1 text-xs font-semibold uppercase tracking-wider transition-colors cursor-pointer ${isKeyword ? 'text-slate-500 hover:text-blue-500 dark:text-blue-400' : 'text-slate-400 hover:text-indigo-500 dark:text-indigo-400'}`}>
           {showChain ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />} {showChain ? "Hide Chain of Narrators" : "View Chain of Narrators"}
         </button>
         <AnimatePresence>
@@ -214,7 +185,10 @@ const HadithCard = ({ item, handleCopyHadith, searchMode, onVerseClick }) => {
           </p>
         ))}
       </div>
-      <div className="mt-2 flex justify-end pt-4 border-t border-slate-50 dark:border-slate-700/50">
+      <div className="mt-2 flex justify-between items-center pt-4 border-t border-slate-50 dark:border-slate-700/50">
+        <button onClick={(e) => { e.stopPropagation(); onFindSimilar && onFindSimilar(item); }} className={`flex items-center gap-1.5 text-xs font-mono transition-colors px-3 py-1.5 rounded-md cursor-pointer shadow-sm border ${isKeyword ? 'bg-blue-50/50 border-blue-200 text-blue-600 hover:bg-blue-100 dark:bg-blue-900/20 dark:border-blue-800 dark:text-blue-400 dark:hover:bg-blue-900/40' : 'bg-indigo-50/50 border-indigo-200 text-indigo-600 hover:bg-indigo-100 dark:bg-indigo-900/20 dark:border-indigo-800 dark:text-indigo-400 dark:hover:bg-indigo-900/40'}`}>
+          <Sparkles className="w-3.5 h-3.5" /><span>Find Similar</span>
+        </button>
         <button onClick={handleCopyClick} className={`flex items-center gap-2 text-xs font-mono transition-colors px-3 py-1.5 rounded-md cursor-pointer ${copied ? 'text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-500/10' : (isKeyword ? 'text-slate-500 hover:text-blue-500 hover:bg-slate-200/50 dark:hover:bg-slate-700/50' : 'text-slate-400 hover:text-indigo-500 hover:bg-slate-100 dark:hover:bg-slate-700/50')}`}>
           {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}<span>{copied ? 'Copied!' : 'Copy Text'}</span>
         </button>
@@ -227,39 +201,22 @@ const QuranReader = ({ activeFontFamily, fontStyle, setFontStyle, handleSurahSel
   const [selectedSurah, setSelectedSurah] = useState(1);
   const [showTranslation, setShowTranslation] = useState(true);
   const [readingMode, setReadingMode] = useState('verse');
-
   const [showSurahMenu, setShowSurahMenu] = useState(false);
   const [showSettingsMenu, setShowSettingsMenu] = useState(false);
-
   const [quranSearchQuery, setQuranSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState([]);
   const [targetVerse, setTargetVerse] = useState(null);
-
   const quranSearchInputRef = useRef(null);
 
-  useEffect(() => {
-    if (externalSurahTarget) {
-      setSelectedSurah(externalSurahTarget);
-    }
-  }, [externalSurahTarget]);
+  useEffect(() => { if (externalSurahTarget) { setSelectedSurah(externalSurahTarget); } }, [externalSurahTarget]);
 
   const surahs = useMemo(() => {
     const list = [];
     for (let i = 1; i <= 114; i++) {
       const firstAyah = quranData[`${i}:1`];
       if (firstAyah) {
-        let aIdx = 1;
-        while (quranData[`${i}:${aIdx}`]) {
-          aIdx++;
-          if (aIdx > 350) break;
-        }
-        list.push({
-          id: i,
-          enName: firstAyah.surahName,
-          arName: firstAyah.surahArName,
-          meaning: SURAH_MEANINGS[i] || "",
-          ayahCount: aIdx - 1
-        });
+        let aIdx = 1; while (quranData[`${i}:${aIdx}`]) { aIdx++; if (aIdx > 350) break; }
+        list.push({ id: i, enName: firstAyah.surahName, arName: firstAyah.surahArName, meaning: SURAH_MEANINGS[i] || "", ayahCount: aIdx - 1 });
       }
     }
     return list;
@@ -268,9 +225,7 @@ const QuranReader = ({ activeFontFamily, fontStyle, setFontStyle, handleSurahSel
   const searchableSurahs = useMemo(() => {
     return surahs.map(s => {
       let terms = [normalizeStr(s.enName)];
-      if (SURAH_ALIASES[s.id]) {
-        terms = [...terms, ...SURAH_ALIASES[s.id].map(normalizeStr)];
-      }
+      if (SURAH_ALIASES[s.id]) terms = [...terms, ...SURAH_ALIASES[s.id].map(normalizeStr)];
       return { ...s, terms };
     });
   }, [surahs]);
@@ -281,23 +236,15 @@ const QuranReader = ({ activeFontFamily, fontStyle, setFontStyle, handleSurahSel
     const query = val.trim();
     const numMatch = query.match(/^(\d+)\s*:\s*(\d+)$/);
     let results = [];
-
     if (numMatch) {
-      const sId = parseInt(numMatch[1]);
-      const vId = parseInt(numMatch[2]);
+      const sId = parseInt(numMatch[1]), vId = parseInt(numMatch[2]);
       if (sId >= 1 && sId <= 114) {
         const targetSurah = surahs.find(s => s.id === sId);
-        if (targetSurah && vId >= 1 && vId <= targetSurah.ayahCount) {
-          results.push({ type: 'verse', surahId: sId, verseId: vId, label: `Surah ${targetSurah.enName}, Verse ${vId}` });
-        }
+        if (targetSurah && vId >= 1 && vId <= targetSurah.ayahCount) results.push({ type: 'verse', surahId: sId, verseId: vId, label: `Surah ${targetSurah.enName}, Verse ${vId}` });
       }
     } else {
       const normQuery = normalizeStr(query);
-      searchableSurahs.forEach(s => {
-        if (s.terms.some(t => t.includes(normQuery))) {
-          results.push({ type: 'surah', surahId: s.id, label: `${s.id}. Surah ${s.enName}` });
-        }
-      });
+      searchableSurahs.forEach(s => { if (s.terms.some(t => t.includes(normQuery))) results.push({ type: 'surah', surahId: s.id, label: `${s.id}. Surah ${s.enName}` }); });
     }
     setSearchResults(results.slice(0, 5));
   };
@@ -305,38 +252,22 @@ const QuranReader = ({ activeFontFamily, fontStyle, setFontStyle, handleSurahSel
   const executeSurahSelection = (id) => {
     setSelectedSurah(id);
     const s = surahs.find(x => x.id === id);
-    if (s && handleSurahSelectHook) {
-      handleSurahSelectHook(id, s.enName);
-    }
+    if (s && handleSurahSelectHook) handleSurahSelectHook(id, s.enName);
   };
 
   const handleSelectResult = (res) => {
-    setQuranSearchQuery('');
-    setSearchResults([]);
-    executeSurahSelection(res.surahId);
-
-    if (res.type === 'verse') {
-      setReadingMode('verse');
-      setTargetVerse(res.verseId);
-    } else {
-      setTargetVerse(1);
-    }
+    setQuranSearchQuery(''); setSearchResults([]); executeSurahSelection(res.surahId);
+    if (res.type === 'verse') { setReadingMode('verse'); setTargetVerse(res.verseId); } else { setTargetVerse(1); }
   };
 
   const handleQuranSearchSubmit = (e) => {
     e.preventDefault();
-    if (searchResults.length > 0) {
-      handleSelectResult(searchResults[0]);
-    }
+    if (searchResults.length > 0) handleSelectResult(searchResults[0]);
     if (quranSearchInputRef.current) quranSearchInputRef.current.blur();
   };
 
   const ayahsRaw = []; let aIdx = 1;
-  while (quranData[`${selectedSurah}:${aIdx}`]) {
-    ayahsRaw.push(quranData[`${selectedSurah}:${aIdx}`]);
-    aIdx++;
-    if (aIdx > 350) break;
-  }
+  while (quranData[`${selectedSurah}:${aIdx}`]) { ayahsRaw.push(quranData[`${selectedSurah}:${aIdx}`]); aIdx++; if (aIdx > 350) break; }
 
   let surahBismillah = null;
   const ayahs = ayahsRaw.map((ayah, idx) => {
@@ -345,10 +276,7 @@ const QuranReader = ({ activeFontFamily, fontStyle, setFontStyle, handleSurahSel
       const bismillahEnd = Math.max(arText.indexOf('ٱلرَّحِيمِ'), arText.indexOf('الرَّحِيمِ'), arText.indexOf('الرحيم'));
       if (bismillahEnd !== -1) {
         const splitIndex = arText.indexOf(' ', bismillahEnd);
-        if (splitIndex !== -1) {
-          surahBismillah = arText.substring(0, splitIndex).trim();
-          arText = arText.substring(splitIndex).trim();
-        }
+        if (splitIndex !== -1) { surahBismillah = arText.substring(0, splitIndex).trim(); arText = arText.substring(splitIndex).trim(); }
       }
     }
     return { ...ayah, ar: arText };
@@ -358,11 +286,7 @@ const QuranReader = ({ activeFontFamily, fontStyle, setFontStyle, handleSurahSel
     if (targetVerse && ayahs.length > 0) {
       setTimeout(() => {
         const el = document.getElementById(`verse-${selectedSurah}-${targetVerse}`);
-        if (el) {
-          el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-          el.classList.add('bg-amber-500/20', 'dark:bg-amber-500/30');
-          setTimeout(() => el.classList.remove('bg-amber-500/20', 'dark:bg-amber-500/30'), 2000);
-        }
+        if (el) { el.scrollIntoView({ behavior: 'smooth', block: 'center' }); el.classList.add('bg-amber-500/20', 'dark:bg-amber-500/30'); setTimeout(() => el.classList.remove('bg-amber-500/20', 'dark:bg-amber-500/30'), 2000); }
         setTargetVerse(null);
       }, 100);
     }
@@ -370,17 +294,13 @@ const QuranReader = ({ activeFontFamily, fontStyle, setFontStyle, handleSurahSel
 
   return (
     <div className="w-full max-w-4xl px-4 sm:px-6 pt-24 sm:pt-28 pb-12 mx-auto min-h-screen flex flex-col items-center pointer-events-auto">
-      {(showSurahMenu || showSettingsMenu || searchResults.length > 0) && (
-        <div className="fixed inset-0 z-[60] pointer-events-auto" onClick={() => { setShowSurahMenu(false); setShowSettingsMenu(false); setSearchResults([]); }} />
-      )}
-
+      {(showSurahMenu || showSettingsMenu || searchResults.length > 0) && (<div className="fixed inset-0 z-[60] pointer-events-auto" onClick={() => { setShowSurahMenu(false); setShowSettingsMenu(false); setSearchResults([]); }} />)}
       <div className="w-full relative mb-4 sm:mb-6 z-[70]">
         <form onSubmit={handleQuranSearchSubmit} className="flex items-center bg-white/40 dark:bg-black/30 backdrop-blur-sm border border-slate-300/50 dark:border-slate-800 rounded-2xl px-4 py-3 sm:py-3.5 shadow-sm transition-all focus-within:border-amber-500/50 dark:focus-within:border-amber-500/50 focus-within:bg-white/60 dark:focus-within:bg-black/50">
           <Search className="w-4 h-4 sm:w-5 sm:h-5 text-slate-400 mr-3 shrink-0" />
           <input ref={quranSearchInputRef} type="text" value={quranSearchQuery} onChange={(e) => handleSearchChange(e.target.value)} placeholder="Search Surah (e.g. Baqarah) or Verse (e.g. 2:255)..." className="w-full bg-transparent border-none outline-none text-slate-800 dark:text-slate-200 placeholder:text-slate-500 text-base font-medium" />
           {quranSearchQuery && <button type="button" onClick={() => { setQuranSearchQuery(''); setSearchResults([]); quranSearchInputRef.current?.focus(); }} className="p-1 hover:bg-slate-200 dark:hover:bg-slate-800 rounded-full transition-colors cursor-pointer"><X className="w-4 h-4 text-slate-400" /></button>}
         </form>
-
         <AnimatePresence>
           {searchResults.length > 0 && (
             <motion.div initial={{ opacity: 0, y: -5 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -5 }} className="absolute left-0 top-full mt-2 w-full bg-[#f4ecd8] dark:bg-[#1a1a1a] border border-slate-300 dark:border-slate-700 rounded-xl shadow-xl z-[75] overflow-hidden smart-scrollbar">
@@ -401,7 +321,6 @@ const QuranReader = ({ activeFontFamily, fontStyle, setFontStyle, handleSurahSel
             <span className="truncate">{selectedSurah}. Surah {surahs.find(s => s.id === selectedSurah)?.enName}</span>
             {showSurahMenu ? <ChevronUp className="w-4 h-4 opacity-50 shrink-0 ml-2" /> : <ChevronDown className="w-4 h-4 opacity-50 shrink-0 ml-2" />}
           </button>
-
           <AnimatePresence>
             {showSurahMenu && (
               <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="absolute top-full left-0 mt-2 w-full sm:w-[340px] max-h-[400px] overflow-y-auto bg-[#f4ecd8] dark:bg-[#1a1a1a] border border-slate-300 dark:border-slate-700 rounded-xl shadow-xl z-[70] smart-scrollbar">
@@ -421,18 +340,15 @@ const QuranReader = ({ activeFontFamily, fontStyle, setFontStyle, handleSurahSel
             )}
           </AnimatePresence>
         </div>
-
         <div className="flex w-full md:w-auto items-center justify-between md:justify-end gap-3 relative">
           <div className="flex items-center bg-white/60 dark:bg-slate-900/60 p-1 rounded-lg border border-slate-300 dark:border-slate-700 shadow-sm">
             <button onClick={() => setReadingMode('verse')} className={`px-3 py-1.5 rounded-md text-[10px] sm:text-xs font-bold uppercase tracking-wider transition-colors cursor-pointer ${readingMode === 'verse' ? 'bg-amber-700 dark:bg-amber-600 text-white shadow-md' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'}`}>Verse</button>
             <button onClick={() => setReadingMode('flow')} className={`px-3 py-1.5 rounded-md text-[10px] sm:text-xs font-bold uppercase tracking-wider transition-colors cursor-pointer ${readingMode === 'flow' ? 'bg-amber-700 dark:bg-amber-600 text-white shadow-md' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'}`}>Flow</button>
           </div>
-
           <div className="relative">
             <button onClick={() => { setShowSettingsMenu(!showSettingsMenu); setShowSurahMenu(false); }} className={`px-4 py-2.5 rounded-lg text-xs font-bold uppercase tracking-wider transition-colors border shadow-sm flex items-center gap-2 cursor-pointer ${showSettingsMenu ? 'bg-slate-800 dark:bg-slate-200 text-white dark:text-slate-900 border-transparent' : 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 border-slate-300 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800'}`}>
               <Settings2 className="w-4 h-4" /> Customise
             </button>
-
             <AnimatePresence>
               {showSettingsMenu && (
                 <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="absolute right-0 top-full mt-2 w-[220px] bg-[#f4ecd8] dark:bg-[#1a1a1a] border border-slate-300 dark:border-slate-700 rounded-xl shadow-xl z-[70] p-4 flex flex-col gap-4">
@@ -579,6 +495,11 @@ export default function App() {
   const [appHistory, setAppHistory] = useState([]);
   const [quranTarget, setQuranTarget] = useState(null);
 
+  const [anchorHadith, setAnchorHadith] = useState(null);
+  const [showAnchor, setShowAnchor] = useState(false);
+  const [showAnchorModal, setShowAnchorModal] = useState(false);
+  const [anchorCopied, setAnchorCopied] = useState(false);
+
   const [fontStyle, setFontStyle] = useState('scheherazade');
 
   const searchIdRef = useRef(0);
@@ -673,23 +594,95 @@ export default function App() {
     updateDimensions(); window.addEventListener('resize', updateDimensions); return () => window.removeEventListener('resize', updateDimensions);
   }, [data, viewMode, activeTab]);
 
-  const executeSearch = async (searchQuery, currentMode, currentSource) => {
+  const executeSearch = async (searchQuery, currentMode, currentSource, queryVector = null, excludeId = null, apiQuery = null, anchorObj = null) => {
     if (!searchQuery.trim()) return;
     const currentSearchId = ++searchIdRef.current;
 
-    saveToHistory({ type: 'search', query: searchQuery, mode: currentMode, source: currentSource, timestamp: Date.now() });
+    const textToEmbed = apiQuery || searchQuery;
+
+    saveToHistory({
+      type: 'search',
+      query: searchQuery,
+      mode: currentMode,
+      source: currentSource,
+      timestamp: Date.now(),
+      queryVector: queryVector,
+      excludeId: excludeId,
+      apiQuery: apiQuery,
+      anchorHadith: anchorObj
+    });
+
     setShowSearchDropdown(false);
     window.history.replaceState({}, '', window.location.pathname);
 
     setLoading(true);
+    setData(null);
+    setActiveCluster(null);
+
     try {
-      const response = await fetch('https://concept-atlas-backend.onrender.com/api/explore', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' }, body: JSON.stringify({ query: searchQuery, source: currentSource, searchMode: currentMode }) });
+      const payload = { query: textToEmbed, source: currentSource, searchMode: currentMode };
+      if (queryVector && queryVector.length > 0) payload.queryVector = queryVector;
+      if (excludeId) payload.excludeId = String(excludeId);
+
+      const response = await fetch('https://concept-atlas-backend.onrender.com/api/explore', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+
       const result = await response.json();
       if (searchIdRef.current !== currentSearchId) return;
-      if (result.clusters && result.clusters.length > 0) { setData(result); if (currentMode === 'keyword') setViewMode('list'); }
+
+      if (result.clusters && result.clusters.length > 0) {
+        setData(result);
+        if (currentMode === 'keyword') {
+          setViewMode('list');
+        } else if (window.innerWidth >= 800) {
+          setViewMode('map');
+        }
+      }
       else setData(null);
     } catch (err) { console.error(err); }
     finally { if (searchIdRef.current === currentSearchId) { setLoading(false); } }
+  };
+
+  const handleFindSimilar = (item) => {
+    let displayNum = item.hadith_number;
+    if (displayNum === "Unknown" || !displayNum || displayNum === "") {
+      const engMatch = String(item.english_text || "").match(/^[\s"'‘“\[\(]*(?:Unknown[\.\s]*)?(\d+)[\.\-:]?\s/i);
+      if (engMatch) displayNum = engMatch[1];
+    }
+    if (displayNum === "Unknown" || !displayNum || displayNum === "") {
+      const araMatch = String(item.arabic_text || "").match(/^[\s"'‘“\[\(]*(\d+)[ـ\.\-\s]/);
+      if (araMatch) displayNum = araMatch[1];
+    }
+
+    const safeId = String(item.id || Math.random());
+    const finalNum = displayNum && displayNum !== "Unknown" ? displayNum : safeId.substring(0, 6);
+
+    const fullRef = `Book: ${item.book}, Vol: ${item.volume}, ${item.sub_book}, Chapter: ${item.chapter}${finalNum !== safeId.substring(0, 6) ? `, Hadith: ${finalNum}` : ''}`;
+    const simQuery = `Similar to: ${fullRef}`;
+
+    const anchorWithRef = { ...item, full_reference: fullRef, hadith_number: finalNum };
+
+    setAnchorHadith(anchorWithRef);
+    setShowAnchor(false);
+    setShowAnchorModal(false);
+    setQuery(simQuery);
+
+    setActiveTab('search');
+    setSearchMode('concept');
+
+    if (item.vector && Array.isArray(item.vector) && item.vector.length > 0) {
+      executeSearch(simQuery, 'concept', sourceFilter, item.vector, safeId, null, anchorWithRef);
+    } else {
+      const fallbackText = String(item.english_text || item.arabic_text || "Twelver theology").replace(/\n/g, ' ').substring(0, 300).trim();
+      executeSearch(simQuery, 'concept', sourceFilter, null, safeId, fallbackText, anchorWithRef);
+    }
+
+    setActiveCluster(null);
+    setTafsirData(null);
+    setTafsirTarget(null);
   };
 
   const handleTafsirClick = async (surah, ayah) => {
@@ -713,13 +706,17 @@ export default function App() {
   const handleSearchSubmit = (e) => {
     if (e) e.preventDefault();
     if (document.activeElement instanceof HTMLElement) { document.activeElement.blur(); }
-    executeSearch(query, searchMode, sourceFilter);
+    setAnchorHadith(null);
+    setShowAnchorModal(false);
+    executeSearch(query, searchMode, sourceFilter, null, null, null, null);
   };
 
   const handleHomeClick = () => {
     searchIdRef.current++;
     setData(null);
     setQuery('');
+    setAnchorHadith(null);
+    setShowAnchorModal(false);
     setActiveCluster(null);
     setHoveredCluster(null);
     setActiveTab('search');
@@ -735,7 +732,9 @@ export default function App() {
       setQuery(item.query);
       setSearchMode(item.mode);
       setSourceFilter(item.source);
-      executeSearch(item.query, item.mode, item.source);
+      setAnchorHadith(item.anchorHadith || null);
+      setShowAnchorModal(false);
+      executeSearch(item.query, item.mode, item.source, item.queryVector, item.excludeId, item.apiQuery, item.anchorHadith);
     } else if (item.type === 'quran') {
       setActiveTab('quran');
       setQuranTarget(item.surahId);
@@ -758,11 +757,10 @@ export default function App() {
 
   const getRadialPosition = (index, total, rx, ry) => {
     const angle = (index * (360 / total) - 90) * (Math.PI / 180);
-    const pullIn = (total > 4 && index % 2 !== 0) ? 0.55 : 1;
-    return { x: Math.cos(angle) * (rx * pullIn), y: Math.sin(angle) * (ry * pullIn) };
+    return { x: Math.cos(angle) * rx, y: Math.sin(angle) * ry };
   };
 
-  const uniqueBooks = data ? Array.from(new Set(data.clusters.flatMap(c => c.items.map(item => item.book)))) : [];
+  const uniqueBooks = data && data.clusters ? Array.from(new Set(data.clusters.flatMap(c => c.items ? c.items.map(item => item.book) : []))) : [];
   const isKeyword = searchMode === 'keyword';
 
   const appBgClass = activeTab === 'quran' ? (theme === 'dark' ? 'bg-[#121212] text-slate-100' : 'bg-[#f4ecd8] text-slate-900') : (theme === 'dark' ? (isKeyword && activeTab === 'search' ? 'bg-slate-900 text-slate-100' : 'aurora-bg text-slate-100') : (isKeyword && activeTab === 'search' ? 'bg-slate-50 text-slate-900' : 'light-aurora-bg text-slate-900'));
@@ -876,7 +874,7 @@ export default function App() {
                       className="w-full bg-transparent appearance-none outline-none py-3 sm:py-4 pl-3 sm:pl-4 pr-14 sm:pr-16 text-base font-sans placeholder:text-slate-500 cursor-text"
                       style={{ color: theme === 'dark' ? '#ffffff' : '#000000' }}
                     />
-                    <button type="submit" className={`absolute right-2 p-2 sm:p-2.5 rounded-xl transition-colors shadow-sm cursor-pointer ${isKeyword ? 'bg-blue-500/10 hover:bg-blue-500 text-blue-500 hover:text-white' : 'bg-indigo-500/10 hover:bg-indigo-500 text-indigo-500 hover:text-white'}`}><Search className="w-4 h-4 sm:w-5 sm:h-5" /></button>
+                    <button type="submit" className={`absolute right-2 p-2 sm:p-2.5 rounded-xl transition-colors shadow-sm cursor-pointer ${isKeyword ? 'bg-blue-500/10 hover:bg-blue-50 text-blue-500 hover:text-white' : 'bg-indigo-500/10 hover:bg-indigo-500 text-indigo-500 hover:text-white'}`}><Search className="w-4 h-4 sm:w-5 sm:h-5" /></button>
                   </div>
 
                   <AnimatePresence>
@@ -888,9 +886,9 @@ export default function App() {
                         <div className="flex flex-col">
                           {appHistory.slice(0, 5).map((item, i) => (
                             <div key={i} onClick={() => handleHistoryClick(item)} className={`px-4 py-3 sm:py-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-1 sm:gap-3 cursor-pointer transition-colors border-b last:border-b-0 group ${isKeyword ? 'hover:bg-blue-50/50 dark:hover:bg-blue-900/20 border-slate-100 dark:border-slate-800' : 'hover:bg-indigo-50/50 dark:hover:bg-indigo-900/20 border-slate-100 dark:border-slate-800/50'}`}>
-                              <div className="flex items-center gap-3 truncate">
+                              <div className="flex items-center gap-3 min-w-0 flex-1 pr-2">
                                 {item.type === 'quran' ? <BookOpen className="w-4 h-4 text-amber-500 shrink-0" /> : (item.mode === 'keyword' ? <Database className="w-4 h-4 text-blue-500 shrink-0" /> : <Sparkles className="w-4 h-4 text-indigo-500 shrink-0" />)}
-                                <span className={`font-medium truncate text-sm sm:text-base transition-colors ${item.type === 'quran' ? 'text-amber-900 dark:text-amber-500 group-hover:text-amber-700 dark:group-hover:text-amber-400' : (item.mode === 'keyword' ? 'text-slate-700 dark:text-slate-300 group-hover:text-blue-600 dark:group-hover:text-blue-400' : 'text-slate-700 dark:text-slate-300 group-hover:text-indigo-600 dark:group-hover:text-indigo-400')}`}>
+                                <span className={`font-medium truncate w-full text-sm sm:text-base transition-colors ${item.type === 'quran' ? 'text-amber-900 dark:text-amber-500 group-hover:text-amber-700 dark:group-hover:text-amber-400' : (item.mode === 'keyword' ? 'text-slate-700 dark:text-slate-300 group-hover:text-blue-600 dark:group-hover:text-blue-400' : 'text-slate-700 dark:text-slate-300 group-hover:text-indigo-600 dark:group-hover:text-indigo-400')}`}>
                                   {item.type === 'quran' ? `Surah ${item.surahName}` : item.query}
                                 </span>
                               </div>
@@ -970,31 +968,70 @@ export default function App() {
                 <div className="absolute inset-0 w-full h-full overflow-hidden">
                   <div className="absolute top-1/2 left-1/2 w-0 h-0 flex items-center justify-center z-30 pointer-events-none">
                     <motion.div layoutId="search-node" className="flex flex-col items-center justify-center pointer-events-auto cursor-pointer" onClick={() => setActiveCluster(null)}>
-                      <div className="glass-panel px-6 sm:px-8 py-3 sm:py-4 flex items-center gap-3 backdrop-blur-xl border-white/30 shadow-[0_0_50px_rgba(16,185,129,0.15)] group hover:scale-105 transition-transform">
-                        <span className="font-serif text-xl sm:text-2xl font-medium whitespace-nowrap">{query}</span>
-                        <div className="w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-white/20 flex items-center justify-center"><span className="text-[10px] sm:text-xs font-bold">{data.total_results}</span></div>
+                      <div className="glass-panel px-6 sm:px-8 py-3 sm:py-4 flex flex-col items-center gap-2 backdrop-blur-xl border-white/30 shadow-[0_0_50px_rgba(16,185,129,0.15)] group hover:scale-105 transition-transform mt-8">
+                        {/* MAP VIEW: DYNAMIC CENTER NODE FOR ANCHORS */}
+                        {anchorHadith ? (
+                          <div className="flex flex-col items-center">
+                            <div className="flex items-center gap-3">
+                              <span className="font-serif text-xl sm:text-2xl font-medium whitespace-nowrap">Similar to</span>
+                              <div className="w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-white/20 flex items-center justify-center"><span className="text-[10px] sm:text-xs font-bold">{data.total_results}</span></div>
+                            </div>
+                            <ChevronDown className="w-4 h-4 opacity-50 mt-1 mb-1 animate-bounce text-indigo-300" />
+                            <button onClick={(e) => { e.stopPropagation(); setShowAnchorModal(true); }} className="flex items-center gap-1.5 text-[10px] sm:text-xs uppercase tracking-wider font-bold text-indigo-300 hover:text-white bg-indigo-900/40 px-4 py-1.5 rounded-full transition-colors shadow-sm border border-indigo-500/30 hover:border-indigo-400">
+                              <Sparkles className="w-3 h-3" /> View Source
+                            </button>
+                          </div>
+                        ) : (
+                          <div className="flex items-center gap-3">
+                            <span className="font-serif text-xl sm:text-2xl font-medium truncate max-w-[200px] sm:max-w-[280px]" title={query}>{query}</span>
+                            <div className="w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-white/20 flex items-center justify-center"><span className="text-[10px] sm:text-xs font-bold">{data.total_results}</span></div>
+                          </div>
+                        )}
                       </div>
                     </motion.div>
                   </div>
 
                   <svg className="absolute inset-0 w-full h-full pointer-events-none z-10">
-                    {data.clusters.map((cluster, i) => {
-                      const rx = Math.max(160, centerPos.x - 160), ry = Math.max(140, centerPos.y - 120), pos = getRadialPosition(i, data.clusters.length, rx, ry), color = CLUSTER_COLORS[i % CLUSTER_COLORS.length], isActive = activeCluster === i, isHovered = hoveredCluster === i;
+                    {(data.clusters || []).map((cluster, i) => {
+                      const clusterCount = data.clusters ? Math.max(1, data.clusters.length) : 1;
+                      const rx = Math.max(280, Math.min(centerPos.x - 150, 450));
+                      const ry = Math.max(220, Math.min(centerPos.y - 140, 320));
+                      const pos = getRadialPosition(i, clusterCount, rx, ry);
+
+                      const color = CLUSTER_COLORS[i % CLUSTER_COLORS.length];
+                      const isActive = activeCluster === i;
+                      const isHovered = hoveredCluster === i;
                       return (<motion.line key={`line-${i}`} x1={centerPos.x} y1={centerPos.y} x2={centerPos.x + pos.x} y2={centerPos.y + pos.y} stroke={color} strokeWidth={isActive ? 2 : isHovered ? 1.5 : 1} strokeOpacity={isActive ? 0.8 : isHovered ? 0.6 : 0.15} initial={{ pathLength: 0 }} animate={{ pathLength: 1 }} transition={{ duration: 1, delay: i * 0.2 }} className="transition-all duration-300" />);
                     })}
                   </svg>
 
-                  {data.clusters.map((cluster, i) => {
-                    const rx = Math.max(160, centerPos.x - 160), ry = Math.max(140, centerPos.y - 120), pos = getRadialPosition(i, data.clusters.length, rx, ry), color = CLUSTER_COLORS[i % CLUSTER_COLORS.length], isActive = activeCluster === i, isHovered = hoveredCluster === i, isFaded = activeCluster !== null && !isActive, maxClusterSize = Math.max(...data.clusters.map(c => c.items.length)), baseScale = Math.max(0.65, (0.85 + ((cluster.items.length / maxClusterSize) * 0.45)) * Math.min(1, windowWidth / 1200));
+                  {(data.clusters || []).map((cluster, i) => {
+                    const clusterCount = data.clusters ? Math.max(1, data.clusters.length) : 1;
+                    const itemsLength = cluster.items ? cluster.items.length : 0;
+
+                    const rx = Math.max(280, Math.min(centerPos.x - 150, 450));
+                    const ry = Math.max(220, Math.min(centerPos.y - 140, 320));
+                    const pos = getRadialPosition(i, clusterCount, rx, ry);
+
+                    const color = CLUSTER_COLORS[i % CLUSTER_COLORS.length];
+                    const isActive = activeCluster === i;
+                    const isHovered = hoveredCluster === i;
+                    const isFaded = activeCluster !== null && !isActive;
+
+                    const isTopMatches = cluster.theme_label && cluster.theme_label.includes("Top Matches");
+                    const screenScale = Math.min(1, windowWidth / 1200);
+                    const baseScale = (isTopMatches ? 1.15 : 0.95) * screenScale;
+
                     return (
                       <div key={`cluster-wrap-${i}`} className="absolute top-1/2 left-1/2 w-0 h-0 flex items-center justify-center z-20 pointer-events-none">
-                        <motion.div initial={{ opacity: 0, scale: 0 }} animate={{ opacity: isFaded ? 0.2 : 1, x: pos.x, y: pos.y, scale: isActive ? baseScale * 1.05 : baseScale }} transition={{ type: "spring", stiffness: 60, delay: i * 0.1 }} className={`pointer-events-auto transition-all duration-300 ${isFaded ? 'pointer-events-none grayscale' : ''}`} onMouseEnter={() => setHoveredCluster(i)} onMouseLeave={() => setHoveredCluster(null)}>
-                          <div className="glass-panel flex flex-col cursor-pointer transition-all duration-300 shadow-lg relative group w-max max-w-[220px] sm:max-w-[280px]" style={{ borderColor: isActive || isHovered ? color : (theme === 'dark' ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.6)'), boxShadow: isActive || isHovered ? `0 0 24px ${color}60` : '0 8px 32px rgba(0,0,0,0.05)' }}>
+                        <motion.div initial={{ opacity: 0, scale: 0 }} animate={{ opacity: isFaded ? 0.2 : 1, x: pos.x, y: pos.y, scale: isActive ? baseScale * 1.05 : baseScale }} transition={{ type: "spring", stiffness: 60, delay: i * 0.1 }} className={`pointer-events-auto transition-all duration-300 mt-8 ${isFaded ? 'pointer-events-none grayscale' : ''}`} onMouseEnter={() => setHoveredCluster(i)} onMouseLeave={() => setHoveredCluster(null)}>
+
+                          <div className="glass-panel flex flex-col cursor-pointer transition-all duration-300 shadow-lg relative group w-[240px] sm:w-[280px]" style={{ borderColor: isActive || isHovered ? color : (theme === 'dark' ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.6)'), boxShadow: isActive || isHovered ? `0 0 24px ${color}60` : '0 8px 32px rgba(0,0,0,0.05)' }}>
                             <div onClick={() => setActiveCluster(isActive ? null : i)} className="px-4 py-3 sm:px-5 sm:py-4 flex items-center justify-between gap-3">
                               <div className="absolute left-0 top-0 bottom-0 w-1.5 transition-all duration-300 group-hover:w-2" style={{ backgroundColor: color }} />
                               <div className="pl-2 pr-1 w-full">
                                 <h3 className="font-mono font-medium text-xs sm:text-sm lg:text-base leading-snug whitespace-normal break-words">{cluster.theme_label}</h3>
-                                <p className="text-[10px] sm:text-xs opacity-60 mt-1">{cluster.items.length} Hadiths</p>
+                                <p className="text-[10px] sm:text-xs opacity-60 mt-1">{itemsLength} Hadiths</p>
                               </div>
                               <div className="opacity-50 group-hover:opacity-100 transition-opacity shrink-0">{isActive ? <X className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}</div>
                             </div>
@@ -1008,26 +1045,75 @@ export default function App() {
 
               {viewMode === 'list' && (
                 <div className="z-30 w-full max-w-4xl mx-auto px-4 sm:px-6 pt-24 sm:pt-28 pb-12 pointer-events-auto">
-                  <div className={`p-5 sm:p-6 rounded-xl mb-6 sm:mb-8 border shadow-sm ${isKeyword ? 'bg-white dark:bg-slate-800 border-slate-200' : 'glass-panel bg-white/40 dark:bg-slate-900/40 border-white/20'}`}>
+                  <div className={`p-5 sm:p-6 rounded-xl mb-6 sm:mb-8 border shadow-sm ${anchorHadith ? 'mt-10' : ''} ${isKeyword ? 'bg-white dark:bg-slate-800 border-slate-200' : 'glass-panel bg-white/40 dark:bg-slate-900/40 border-white/20'}`}>
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                      <div className="flex-1 min-w-0"><h2 className={`font-serif text-2xl sm:text-3xl font-medium tracking-tight truncate ${isKeyword ? 'text-slate-800 dark:text-slate-100' : 'text-slate-900 dark:text-white'}`}>{isKeyword ? 'Index Results:' : 'Search:'} <span className="italic break-words whitespace-normal">"{query}"</span></h2><div className="flex flex-wrap gap-2 mt-3">{uniqueBooks.map((bookName, idx) => (<span key={idx} className={`text-[10px] sm:text-xs uppercase tracking-wider font-bold px-2.5 py-1 rounded-md border ${isKeyword ? 'bg-blue-50 dark:bg-slate-700 text-blue-600 border-blue-200' : 'text-slate-500 bg-slate-500/10 border-slate-500/20'}`}>{bookName}</span>))}</div></div>
-                      <div className={`flex gap-6 sm:border-l sm:pl-6 shrink-0 ${isKeyword ? 'border-slate-200' : 'border-slate-200 dark:border-slate-700/60'}`}>{!isKeyword && (<div><p className="text-[10px] uppercase tracking-widest text-slate-400 font-semibold mb-1">Themes</p><p className="font-mono text-xl text-indigo-500 dark:text-indigo-400">{data.clusters.length}</p></div>)}<div><p className="text-[10px] uppercase tracking-widest text-slate-400 font-semibold mb-1">{isKeyword ? 'Matches' : 'Hadiths'}</p><p className={`font-mono text-xl ${isKeyword ? 'text-blue-500' : 'text-emerald-500'}`}>{data.total_results}</p></div></div>
+                      <div className="flex-1 min-w-0">
+                        <h2 className={`font-serif text-xl sm:text-2xl md:text-3xl font-medium tracking-tight break-words whitespace-normal leading-snug ${isKeyword ? 'text-slate-800 dark:text-slate-100' : 'text-slate-900 dark:text-white'}`}>
+                          {isKeyword ? 'Index Results:' : 'Search:'} <span className="italic text-indigo-400 dark:text-indigo-300">"{query}"</span>
+                        </h2>
+                        <div className="flex flex-wrap gap-2 mt-3">{uniqueBooks.map((bookName, idx) => (<span key={idx} className={`text-[10px] sm:text-xs uppercase tracking-wider font-bold px-2.5 py-1 rounded-md border ${isKeyword ? 'bg-blue-50 dark:bg-slate-700 text-blue-600 border-blue-200' : 'text-slate-500 bg-slate-500/10 border-slate-500/20'}`}>{bookName}</span>))}</div>
+                      </div>
+                      <div className={`flex gap-6 sm:border-l sm:pl-6 shrink-0 ${isKeyword ? 'border-slate-200' : 'border-slate-200 dark:border-slate-700/60'}`}>{!isKeyword && (<div><p className="text-[10px] uppercase tracking-widest text-slate-400 font-semibold mb-1">Themes</p><p className="font-mono text-xl text-indigo-500 dark:text-indigo-400">{data.clusters ? data.clusters.length : 0}</p></div>)}<div><p className="text-[10px] uppercase tracking-widest text-slate-400 font-semibold mb-1">{isKeyword ? 'Matches' : 'Hadiths'}</p><p className={`font-mono text-xl ${isKeyword ? 'text-blue-500' : 'text-emerald-500'}`}>{data.total_results}</p></div></div>
                     </div>
+
+                    {/* LIST VIEW: EMBEDDED ANCHOR ACCORDION */}
+                    {anchorHadith && (
+                      <div className={`mt-5 pt-4 border-t ${isKeyword ? 'border-slate-200 dark:border-slate-700' : 'border-slate-200/50 dark:border-slate-700/50'}`}>
+                        <div className="flex items-center justify-between cursor-pointer group" onClick={() => setShowAnchor(!showAnchor)}>
+                          <div className="flex items-center gap-2">
+                            <Sparkles className={`w-4 h-4 shrink-0 ${isKeyword ? 'text-blue-500' : 'text-indigo-500'}`} />
+                            <span className={`text-xs sm:text-sm font-bold tracking-widest uppercase transition-colors break-words ${isKeyword ? 'text-blue-600 dark:text-blue-400 group-hover:text-blue-500' : 'text-indigo-600 dark:text-indigo-400 group-hover:text-indigo-500'}`}>
+                              View Anchored Source
+                            </span>
+                          </div>
+                          <div className={`p-1.5 shrink-0 rounded-full transition-colors ${isKeyword ? 'bg-blue-50 text-blue-500 group-hover:bg-blue-100 dark:bg-blue-900/30 dark:text-blue-400' : 'bg-indigo-50 text-indigo-500 group-hover:bg-indigo-100 dark:bg-indigo-900/30 dark:text-indigo-400'}`}>
+                            {showAnchor ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+                          </div>
+                        </div>
+                        <AnimatePresence>
+                          {showAnchor && (
+                            <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden">
+                              <div className={`pt-4 pb-2 text-sm sm:text-base font-serif leading-relaxed ${theme === 'dark' ? 'text-slate-300' : 'text-slate-700'}`}>
+                                {anchorHadith.english_text}
+                              </div>
+
+                              {/* ANCHOR LIST VIEW: COPY BUTTON */}
+                              <div className="mt-3 flex justify-end">
+                                <button onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleCopyHadith(anchorHadith);
+                                  setAnchorCopied(true);
+                                  setTimeout(() => setAnchorCopied(false), 2000);
+                                }} className={`flex items-center gap-2 text-xs font-mono transition-colors px-3 py-1.5 rounded-md cursor-pointer ${anchorCopied ? 'text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-500/10' : (isKeyword ? 'text-slate-500 hover:text-blue-500 hover:bg-slate-200/50 dark:hover:bg-slate-700/50' : 'text-slate-400 hover:text-indigo-500 hover:bg-slate-100 dark:hover:bg-slate-700/50')}`}>
+                                  {anchorCopied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}<span>{anchorCopied ? 'Copied!' : 'Copy Text'}</span>
+                                </button>
+                              </div>
+
+                            </motion.div>
+                          )}
+                        </AnimatePresence>
+                      </div>
+                    )}
                   </div>
+
                   <div className={`flex flex-col border-t ${isKeyword ? 'border-slate-200 dark:border-slate-700' : 'border-slate-200 dark:border-slate-800'}`}>
-                    {data.clusters.map((cluster, i) => (
-                      <motion.div key={`list-item-${i}`} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.1 }} onClick={() => setActiveCluster(i)} className={`group relative flex flex-col sm:flex-row sm:items-center justify-between p-4 sm:p-6 cursor-pointer border-b transition-all duration-300 ${isKeyword ? 'border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800' : 'border-slate-200 dark:border-slate-800 hover:bg-white/40 dark:hover:bg-slate-800/40'}`}>
-                        <div className="flex items-start sm:items-center gap-4 sm:gap-6 flex-grow pr-8 sm:pr-0"><span className={`font-mono text-sm sm:text-base font-medium pt-0.5 sm:pt-0 ${isKeyword ? 'text-blue-400/60 group-hover:text-blue-500' : 'text-slate-400 group-hover:text-indigo-500'}`}>0{i + 1}</span><div><h3 className={`font-mono text-base sm:text-lg lg:text-xl font-medium tracking-tight transition-colors ${isKeyword ? 'text-slate-700 dark:text-slate-200 group-hover:text-blue-600' : 'text-slate-800 dark:text-slate-100 group-hover:text-indigo-600'}`}>{cluster.theme_label}</h3><div className="flex items-center gap-3 sm:gap-4 mt-1.5 sm:mt-2"><span className="font-mono text-[10px] sm:text-xs lg:text-sm text-slate-500">[{cluster.items.length} {isKeyword ? 'entries' : 'narrations'}]</span></div></div></div>
-                        <div className="absolute right-4 sm:relative sm:right-0 sm:opacity-0 group-hover:opacity-100 transform sm:translate-x-[-10px] group-hover:translate-x-0 transition-all duration-300 self-center"><ChevronRight className={`w-5 h-5 ${isKeyword ? 'text-blue-500' : 'text-indigo-500'}`} /></div>
-                      </motion.div>
-                    ))}
+                    {(data.clusters || []).map((cluster, i) => {
+                      const itemsLength = cluster.items ? cluster.items.length : 0;
+                      return (
+                        <motion.div key={`list-item-${i}`} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.1 }} onClick={() => setActiveCluster(i)} className={`group relative flex flex-col sm:flex-row sm:items-center justify-between p-4 sm:p-6 cursor-pointer border-b transition-all duration-300 ${isKeyword ? 'border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800' : 'border-slate-200 dark:border-slate-800 hover:bg-white/40 dark:hover:bg-slate-800/40'}`}>
+                          <div className="flex items-start sm:items-center gap-4 sm:gap-6 flex-grow pr-8 sm:pr-0"><span className={`font-mono text-sm sm:text-base font-medium pt-0.5 sm:pt-0 ${isKeyword ? 'text-blue-400/60 group-hover:text-blue-500' : 'text-slate-400 group-hover:text-indigo-500'}`}>0{i + 1}</span><div><h3 className={`font-mono text-base sm:text-lg lg:text-xl font-medium tracking-tight transition-colors ${isKeyword ? 'text-slate-700 dark:text-slate-200 group-hover:text-blue-600' : 'text-slate-800 dark:text-slate-100 group-hover:text-indigo-600'}`}>{cluster.theme_label}</h3><div className="flex items-center gap-3 sm:gap-4 mt-1.5 sm:mt-2"><span className="font-mono text-[10px] sm:text-xs lg:text-sm text-slate-500">[{itemsLength} {isKeyword ? 'entries' : 'narrations'}]</span></div></div></div>
+                          <div className="absolute right-4 sm:relative sm:right-0 sm:opacity-0 group-hover:opacity-100 transform sm:translate-x-[-10px] group-hover:translate-x-0 transition-all duration-300 self-center"><ChevronRight className={`w-5 h-5 ${isKeyword ? 'text-blue-500' : 'text-indigo-500'}`} /></div>
+                        </motion.div>
+                      )
+                    })}
                   </div>
                 </div>
               )}
 
               <AnimatePresence>
-                {activeCluster !== null && data.clusters[activeCluster] && (() => {
-                  const filteredItems = data.clusters[activeCluster].items.filter(item => { if (lengthFilter === 'All') return true; const len = (item.english_text || '').length; if (lengthFilter === 'Short') return len < 300; if (lengthFilter === 'Medium') return len >= 300 && len <= 1000; if (lengthFilter === 'Long') return len > 1000; return true; });
+                {activeCluster !== null && data.clusters && data.clusters[activeCluster] && (() => {
+                  const clusterItems = data.clusters[activeCluster].items || [];
+                  const filteredItems = clusterItems.filter(item => { if (lengthFilter === 'All') return true; const len = String(item.english_text || '').length; if (lengthFilter === 'Short') return len < 300; if (lengthFilter === 'Medium') return len >= 300 && len <= 1000; if (lengthFilter === 'Long') return len > 1000; return true; });
                   const totalPages = Math.ceil(filteredItems.length / ITEMS_PER_PAGE) || 1, safeCurrentPage = Math.min(currentPage, totalPages), startIndex = (safeCurrentPage - 1) * ITEMS_PER_PAGE, paginatedItems = filteredItems.slice(startIndex, startIndex + ITEMS_PER_PAGE);
                   return (
                     <div className="fixed inset-0 z-[1000] flex items-center justify-center pointer-events-auto p-4 sm:p-0">
@@ -1043,7 +1129,7 @@ export default function App() {
                           <span className="ml-auto text-[10px] sm:text-xs font-mono text-slate-400">{filteredItems.length} matches</span>
                         </div>
                         <div ref={modalScrollRef} onScroll={handleModalScroll} className="p-4 sm:p-6 flex flex-col gap-4 sm:gap-6 overflow-y-auto flex-grow smart-scrollbar">
-                          {filteredItems.length === 0 ? <div className="flex flex-col items-center justify-center h-full text-slate-400 italic mt-10"><p>No {lengthFilter.toLowerCase()} hadiths found.</p></div> : paginatedItems.map((item, idx) => (<HadithCard key={idx} item={item} onVerseClick={handleVerseClick} handleCopyHadith={handleCopyHadith} searchMode={searchMode} />))}
+                          {filteredItems.length === 0 ? <div className="flex flex-col items-center justify-center h-full text-slate-400 italic mt-10"><p>No {lengthFilter.toLowerCase()} hadiths found.</p></div> : paginatedItems.map((item, idx) => (<HadithCard key={idx} item={item} onVerseClick={handleVerseClick} handleCopyHadith={handleCopyHadith} searchMode={searchMode} onFindSimilar={handleFindSimilar} />))}
                           {totalPages > 1 && filteredItems.length > 0 && (
                             <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-4 sm:pt-6 border-t border-slate-200 dark:border-slate-700/50 mt-2 sm:mt-4">
                               <button onClick={() => { setCurrentPage(prev => Math.max(prev - 1, 1)); modalScrollRef.current.scrollTop = 0; }} disabled={safeCurrentPage === 1} className={`flex items-center justify-center gap-1 w-full sm:w-auto px-4 py-2 rounded-lg font-medium transition-colors cursor-pointer ${safeCurrentPage === 1 ? 'opacity-30 cursor-not-allowed text-slate-500' : (isKeyword ? 'text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-500/10' : 'text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-500/10')}`}><ChevronLeft className="w-5 h-5" /> Previous</button>
@@ -1061,7 +1147,44 @@ export default function App() {
           )}
         </AnimatePresence>
 
-        {/* --- THE NEW REVERSE QURAN TAFSIR POPUP --- */}
+        {/* --- MAP VIEW: THE ANCHOR POPUP MODAL --- */}
+        <AnimatePresence>
+          {showAnchorModal && anchorHadith && (
+            <div className="fixed inset-0 z-[5000] flex items-center justify-center pointer-events-auto p-4 sm:p-0">
+              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setShowAnchorModal(false)} className="absolute inset-0 bg-slate-900/80 backdrop-blur-md cursor-pointer" />
+              <motion.div initial={{ opacity: 0, scale: 0.95, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 20 }} className="relative bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 w-full sm:w-[90vw] max-w-[600px] max-h-[85vh] flex flex-col shadow-2xl rounded-2xl z-[5001] overflow-hidden">
+                <div className="flex justify-between items-center bg-slate-50/90 dark:bg-slate-900/90 backdrop-blur-md pt-5 pb-4 px-6 z-10 border-b border-slate-200 dark:border-slate-800 shrink-0">
+                  <div>
+                    <h3 className="font-mono text-sm tracking-widest uppercase text-indigo-500 font-bold mb-0.5 flex items-center gap-2"><Sparkles className="w-4 h-4" /> Anchored Source</h3>
+                    <p className="text-[10px] sm:text-xs text-slate-400 font-mono m-0 leading-relaxed pr-4">
+                      {anchorHadith.full_reference || `Book: ${anchorHadith.book}, Vol: ${anchorHadith.volume}, ${anchorHadith.sub_book}, Chapter: ${anchorHadith.chapter}`}
+                    </p>
+                  </div>
+                  <button onClick={() => setShowAnchorModal(false)} className="p-2 hover:bg-slate-200 dark:hover:bg-slate-800 rounded-full transition-colors cursor-pointer shrink-0 self-start"><X className="w-5 h-5 text-slate-500" /></button>
+                </div>
+                <div className="p-6 sm:p-8 overflow-y-auto flex-grow smart-scrollbar">
+                  {anchorHadith.arabic_text && <div className="mb-6"><p className="font-arabic text-3xl sm:text-4xl text-right leading-[2.2] text-slate-800 dark:text-slate-100" dir="rtl" lang="ar" style={{ fontFamily: activeFontFamily, fontVariantLigatures: 'normal', fontFeatureSettings: '"ccmp" 1, "mark" 1, "mkmk" 1' }}>{anchorHadith.arabic_text}</p></div>}
+                  <div className={anchorHadith.arabic_text ? "border-t border-slate-100 dark:border-slate-800 pt-6" : ""}><p className="text-base sm:text-lg text-slate-600 dark:text-slate-300 leading-relaxed font-serif">{anchorHadith.english_text}</p></div>
+
+                  {/* ANCHOR MAP VIEW: COPY BUTTON */}
+                  <div className="mt-6 flex justify-end pt-4 border-t border-slate-100 dark:border-slate-800">
+                    <button onClick={(e) => {
+                      e.stopPropagation();
+                      handleCopyHadith(anchorHadith);
+                      setAnchorCopied(true);
+                      setTimeout(() => setAnchorCopied(false), 2000);
+                    }} className={`flex items-center gap-2 text-xs font-mono transition-colors px-4 py-2 rounded-md cursor-pointer ${anchorCopied ? 'text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-500/10' : 'text-slate-500 hover:text-indigo-500 hover:bg-slate-100 dark:hover:bg-slate-800 dark:text-slate-400'}`}>
+                      {anchorCopied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}<span>{anchorCopied ? 'Copied!' : 'Copy Text'}</span>
+                    </button>
+                  </div>
+
+                </div>
+              </motion.div>
+            </div>
+          )}
+        </AnimatePresence>
+
+        {/* --- REVERSE QURAN TAFSIR POPUP --- */}
         <AnimatePresence>
           {(tafsirLoading || tafsirData) && tafsirTarget && (
             <div className="fixed inset-0 z-[4000] flex items-center justify-center pointer-events-auto p-4 sm:p-0">
@@ -1074,23 +1197,14 @@ export default function App() {
                   </div>
                   <button onClick={() => { setTafsirData(null); setTafsirLoading(false); setTafsirTarget(null); }} className="p-2 hover:bg-slate-200 dark:hover:bg-slate-800 rounded-full transition-colors cursor-pointer shrink-0"><X className="w-5 h-5 text-slate-500" /></button>
                 </div>
-
                 <div ref={tafsirScrollRef} className="p-4 sm:p-6 overflow-y-auto flex-grow smart-scrollbar bg-slate-50 dark:bg-slate-900/50">
                   {tafsirLoading ? (
-                    <div className="flex flex-col items-center justify-center h-full text-slate-400">
-                      <KisaLogo className="w-10 h-10 animate-pulse text-amber-500 mb-4" />
-                      <p className="text-sm font-mono uppercase tracking-widest">Scanning Database...</p>
-                    </div>
+                    <div className="flex flex-col items-center justify-center h-full text-slate-400"><KisaLogo className="w-10 h-10 animate-pulse text-amber-500 mb-4" /><p className="text-sm font-mono uppercase tracking-widest">Scanning Database...</p></div>
                   ) : tafsirData?.empty || !tafsirData?.clusters || tafsirData.clusters.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center h-full text-slate-500 italic">
-                      <LibraryBig className="w-12 h-12 mb-4 opacity-20" />
-                      <p>No hadiths found in the database referencing this specific verse.</p>
-                    </div>
+                    <div className="flex flex-col items-center justify-center h-full text-slate-500 italic"><LibraryBig className="w-12 h-12 mb-4 opacity-20" /><p>No hadiths found in the database referencing this specific verse.</p></div>
                   ) : (
                     <div className="flex flex-col gap-4">
-                      {tafsirData.clusters.flatMap(c => c.items).map((item, idx) => (
-                        <HadithCard key={idx} item={item} searchMode="keyword" handleCopyHadith={handleCopyHadith} />
-                      ))}
+                      {(tafsirData.clusters || []).flatMap(c => c.items || []).map((item, idx) => (<HadithCard key={idx} item={item} searchMode="keyword" handleCopyHadith={handleCopyHadith} onFindSimilar={handleFindSimilar} />))}
                     </div>
                   )}
                 </div>
@@ -1131,25 +1245,18 @@ export default function App() {
                 </div>
                 <div className="overflow-y-auto flex-grow smart-scrollbar p-2 sm:p-4">
                   {appHistory.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center py-20 text-slate-400 italic">
-                      <History className="w-10 h-10 mb-4 opacity-20" />
-                      <p>Your study history is empty.</p>
-                    </div>
+                    <div className="flex flex-col items-center justify-center py-20 text-slate-400 italic"><History className="w-10 h-10 mb-4 opacity-20" /><p>Your study history is empty.</p></div>
                   ) : (
                     <div className="flex flex-col gap-1 sm:gap-2">
                       {appHistory.map((item, i) => (
                         <div key={i} onClick={() => handleHistoryClick(item)} className={`px-4 sm:px-5 py-3 sm:py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-4 rounded-xl cursor-pointer transition-colors border group ${item.type === 'quran' ? 'hover:bg-amber-50 dark:hover:bg-amber-900/20 border-transparent hover:border-amber-200 dark:hover:border-amber-800/50' : (item.mode === 'keyword' ? 'hover:bg-blue-50 dark:hover:bg-blue-900/20 border-transparent hover:border-blue-200 dark:hover:border-blue-800/50' : 'hover:bg-indigo-50 dark:hover:bg-indigo-900/20 border-transparent hover:border-indigo-200 dark:hover:border-indigo-800/50')}`}>
-                          <div className="flex items-start sm:items-center gap-3 sm:gap-4">
+                          <div className="flex items-start sm:items-center gap-3 sm:gap-4 min-w-0 flex-1">
                             <div className={`p-2 sm:p-2.5 rounded-lg shrink-0 ${item.type === 'quran' ? 'bg-amber-100 dark:bg-amber-500/20 text-amber-600 dark:text-amber-500' : (item.mode === 'keyword' ? 'bg-blue-100 dark:bg-blue-500/20 text-blue-600 dark:text-blue-500' : 'bg-indigo-100 dark:bg-indigo-500/20 text-indigo-600 dark:text-indigo-400')}`}>
                               {item.type === 'quran' ? <BookOpen className="w-4 h-4 sm:w-5 sm:h-5" /> : (item.mode === 'keyword' ? <Database className="w-4 h-4 sm:w-5 sm:h-5" /> : <Sparkles className="w-4 h-4 sm:w-5 sm:h-5" />)}
                             </div>
-                            <div className="flex flex-col">
-                              <span className={`font-semibold text-sm sm:text-base ${item.type === 'quran' ? 'text-amber-900 dark:text-amber-100' : 'text-slate-800 dark:text-slate-200'}`}>
-                                {item.type === 'quran' ? `Surah ${item.surahName}` : item.query}
-                              </span>
-                              <span className="text-[10px] sm:text-xs text-slate-500 font-mono mt-0.5">
-                                {item.type === 'search' ? `${item.mode === 'concept' ? 'Semantic' : 'Exact Match'} • ${item.source}` : 'Quran Recitation'}
-                              </span>
+                            <div className="flex flex-col min-w-0 flex-1 pr-2">
+                              <span className={`font-semibold text-sm sm:text-base truncate w-full ${item.type === 'quran' ? 'text-amber-900 dark:text-amber-100' : 'text-slate-800 dark:text-slate-200'}`}>{item.type === 'quran' ? `Surah ${item.surahName}` : item.query}</span>
+                              <span className="text-[10px] sm:text-xs text-slate-500 font-mono mt-0.5">{item.type === 'search' ? `${item.mode === 'concept' ? 'Semantic' : 'Exact Match'} • ${item.source}` : 'Quran Recitation'}</span>
                             </div>
                           </div>
                           <span className="text-[10px] sm:text-xs font-mono text-slate-400 self-end sm:self-auto shrink-0 opacity-60 group-hover:opacity-100 transition-opacity">{timeAgo(item.timestamp)}</span>
@@ -1186,52 +1293,27 @@ export default function App() {
               <motion.div initial={{ opacity: 0, scale: 0.95, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 20 }} className="relative bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 w-full sm:w-[90vw] max-w-[600px] max-h-[85vh] flex flex-col shadow-2xl rounded-2xl z-[2001]">
                 <div className="flex justify-between items-center bg-slate-50/90 dark:bg-slate-900/90 backdrop-blur-md pt-5 pb-4 px-5 z-10 border-b border-slate-200 dark:border-slate-800 rounded-t-2xl shrink-0"><h2 className="text-lg sm:text-xl font-mono font-bold tracking-tight text-slate-800 dark:text-slate-100 flex items-center gap-2"><KisaLogo className="w-5 h-5 text-emerald-500" />How to Use Kisa</h2><button onClick={() => setShowInfo(false)} className="p-2 hover:bg-slate-200 dark:hover:bg-slate-800 rounded-full transition-colors cursor-pointer shrink-0"><X className="w-5 h-5" /></button></div>
                 <div className="p-5 sm:p-6 overflow-y-auto flex-grow smart-scrollbar flex flex-col gap-6 text-slate-700 dark:text-slate-300">
-
-                  {/* Intro */}
                   <div>
                     <h3 className="font-bold text-base sm:text-lg mb-2 text-slate-900 dark:text-white">Welcome to Kisa</h3>
-                    <p className="leading-relaxed text-xs sm:text-sm">Kisa is a semantic search engine designed specifically to explore authentic Twelver Shia literature, prioritizing core texts like <i>al-Kafi</i>, <i>Bihar al-Anwar</i>, and <i>Basa'ir al-Darajat</i>. It mathematically groups verified texts so you can explore concepts without AI hallucinations.</p>
+                    <p className="leading-relaxed text-xs sm:text-sm">Kisa is a semantic search engine designed specifically to explore authentic Twelver Shia literature, prioritizing core texts like <i>al-Kafi</i>, <i>Bihar al-Anwar</i>, and <i>Basa'ir al-Darajat</i>.</p>
                   </div>
                   <hr className="border-slate-200 dark:border-slate-700" />
-
-                  {/* Concept Mode */}
                   <div>
-                    <h3 className="font-bold text-base sm:text-lg flex items-center gap-2 mb-2 sm:mb-3 text-slate-900 dark:text-white"><Sparkles className="w-4 h-4 text-indigo-500" /> Concept Mode (Thematic Search)</h3>
-                    <p className="leading-relaxed text-xs sm:text-sm mb-3">This mode uses AI vector math to find underlying themes, even if the exact words aren't used. It is perfect for exploring abstract theology like <i>"divine justice"</i> or <i>"the nature of the intellect."</i></p>
-                    <div className="bg-orange-50 dark:bg-orange-500/10 border-l-4 border-orange-500 p-3 sm:p-4 rounded-r-lg">
-                      <p className="text-xs sm:text-sm font-semibold text-orange-800 dark:text-orange-300 mb-1">⚠️ The Historical Fact Trap</p>
-                      <p className="text-xs sm:text-sm text-orange-700 dark:text-orange-200/80">Concept Mode finds themes, not historical facts. If you search <i>"How was Imam Jafar Sadiq martyred?"</i>, it won't give you a Wikipedia summary. Instead, it will pull dozens of thematic narrations about grief, martyrdom, and the Imam.</p>
-                    </div>
+                    <h3 className="font-bold text-base sm:text-lg flex items-center gap-2 mb-2 sm:mb-3 text-slate-900 dark:text-white"><Sparkles className="w-4 h-4 text-indigo-500" /> Concept Mode</h3>
+                    <p className="leading-relaxed text-xs sm:text-sm mb-3">This mode uses AI vector math to find underlying themes, even if the exact words aren't used. Perfect for exploring abstract theology.</p>
+                    <div className="bg-orange-50 dark:bg-orange-500/10 border-l-4 border-orange-500 p-3 sm:p-4 rounded-r-lg"><p className="text-xs sm:text-sm font-semibold text-orange-800 dark:text-orange-300 mb-1">⚠️ The Historical Fact Trap</p><p className="text-xs sm:text-sm text-orange-700 dark:text-orange-200/80">Concept Mode finds themes, not historical facts. If you search <i>"How was Imam Jafar Sadiq martyred?"</i>, it will pull thematic narrations about grief and martyrdom, not a Wikipedia summary.</p></div>
                   </div>
                   <hr className="border-slate-200 dark:border-slate-700" />
-
-                  {/* Keyword Mode */}
                   <div>
-                    <h3 className="font-bold text-base sm:text-lg flex items-center gap-2 mb-2 sm:mb-3 text-slate-900 dark:text-white"><Database className="w-4 h-4 text-blue-500" /> Keyword Mode (Exact Match)</h3>
+                    <h3 className="font-bold text-base sm:text-lg flex items-center gap-2 mb-2 sm:mb-3 text-slate-900 dark:text-white"><Database className="w-4 h-4 text-blue-500" /> Keyword Mode</h3>
                     <p className="leading-relaxed text-xs sm:text-sm mb-3">This mode strictly searches the exact English or Arabic text you type, functioning like a traditional database index.</p>
-                    <div className="bg-blue-50 dark:bg-blue-500/10 border-l-4 border-blue-500 p-3 sm:p-4 rounded-r-lg">
-                      <p className="text-xs sm:text-sm font-semibold text-blue-800 dark:text-blue-300 mb-1">⚠️ The Translation Trap</p>
-                      <p className="text-xs sm:text-sm text-blue-700 dark:text-blue-200/80">English translations vary wildly. If you remember a Hadith mentioning the <i>"peak of affairs"</i> or <i>"knowing your Imam"</i>, the database might actually be translated as <i>"top most matter"</i> or <i>"finding out who the Imam is"</i>. To avoid this, do not search long phrases in this mode. Either search using a single undeniable word (like <i>"obedience"</i>), search in Arabic directly, or switch to <b>Concept Mode</b> to let the AI find the meaning regardless of vocabulary.</p>
-                    </div>
+                    <div className="bg-blue-50 dark:bg-blue-500/10 border-l-4 border-blue-500 p-3 sm:p-4 rounded-r-lg"><p className="text-xs sm:text-sm font-semibold text-blue-800 dark:text-blue-300 mb-1">⚠️ The Translation Trap</p><p className="text-xs sm:text-sm text-blue-700 dark:text-blue-200/80">English translations vary wildly. If you remember a Hadith mentioning the <i>"peak of affairs"</i>, it might actually be translated as <i>"top most matter"</i>. To avoid this, do not search long phrases. Either search using a single undeniable word, or switch to <b>Concept Mode</b>.</p></div>
                   </div>
                   <hr className="border-slate-200 dark:border-slate-700" />
-
-                  {/* Quran Reader */}
                   <div>
-                    <h3 className="font-bold text-base sm:text-lg flex items-center gap-2 mb-2 sm:mb-3 text-slate-900 dark:text-white"><BookOpen className="w-4 h-4 text-amber-500" /> The Quran Reader & Reverse Lookup</h3>
-                    <p className="leading-relaxed text-xs sm:text-sm mb-3">Read through all 114 Surahs in your preferred font. Beneath certain verses, you will see a <b>"Related Hadiths"</b> button with a number. This means Kisa has already pre-calculated that narrations exist referencing that exact Ayah. Click it to instantly open a popup and read the context without losing your place.</p>
+                    <h3 className="font-bold text-base sm:text-lg flex items-center gap-2 mb-2 sm:mb-3 text-slate-900 dark:text-white"><BookOpen className="w-4 h-4 text-amber-500" /> The Quran Reader</h3>
+                    <p className="leading-relaxed text-xs sm:text-sm mb-3">Read all 114 Surahs. Beneath certain verses, you will see a <b>"Related Hadiths"</b> button. This means Kisa has already pre-calculated that narrations exist referencing that exact Ayah. Click it to instantly read the context without losing your place.</p>
                   </div>
-                  <hr className="border-slate-200 dark:border-slate-700" />
-
-                  {/* Study History */}
-                  <div>
-                    <h3 className="font-bold text-base sm:text-lg flex items-center gap-2 mb-2 sm:mb-3 text-slate-900 dark:text-white"><Clock className="w-4 h-4 text-emerald-500" /> Study History & Quick Resume</h3>
-                    <ul className="flex flex-col gap-2 text-xs sm:text-sm leading-relaxed list-disc pl-4">
-                      <li><b className="text-slate-900 dark:text-slate-200">Quick Resume:</b> Click the empty search bar on the homepage to instantly view and resume your 5 most recent searches and recitations.</li>
-                      <li><b className="text-slate-900 dark:text-slate-200">The Study Drawer:</b> Click the Clock icon in the navigation bar to open your full history, allowing you to seamlessly pick up where you left off across sessions.</li>
-                    </ul>
-                  </div>
-
                 </div>
               </motion.div>
             </div>

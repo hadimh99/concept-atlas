@@ -42,12 +42,12 @@ function isArabic(text) {
 function normalizeArabic(text) {
     if (!text) return "";
     return text
-        .replace(/[\u064B-\u065F\u0670\u0651\u0654\u0655]/g, '') // Remove Harakat (Tashkeel)
-        .replace(/[أإآ]/g, 'ا') // Normalize Alef
-        .replace(/ة/g, 'ه') // Normalize Ta Marbuta
-        .replace(/[يى]/g, 'ي') // Normalize Ya/Alif Maqsura
-        .replace(/ؤ/g, 'و') // Normalize Waw Hamza
-        .replace(/ئ/g, 'ي'); // Normalize Ya Hamza
+        .replace(/[\u064B-\u065F\u0670\u0651\u0654\u0655]/g, '')
+        .replace(/[أإآ]/g, 'ا')
+        .replace(/ة/g, 'ه')
+        .replace(/[يى]/g, 'ي')
+        .replace(/ؤ/g, 'و')
+        .replace(/ئ/g, 'ي');
 }
 
 function cosineSimilarity(vecA, vecB) {
@@ -127,14 +127,15 @@ const generateAllClusterLabelsAI = async (clusters, query) => {
 
 app.post('/api/explore', async (req, res) => {
     try {
-        const { query, source, searchMode } = req.body;
+        // ADDED: excludeId support
+        const { query, source, searchMode, queryVector, excludeId } = req.body;
         if (!query) {
             return res.status(400).json({ error: "Query is required." });
         }
 
         const activeSource = source || "All Twelver Sources";
         const activeSearchMode = searchMode || "concept";
-        const cacheKey = `${query.toLowerCase().trim()}_${activeSource}_${activeSearchMode}`;
+        const cacheKey = `${query.toLowerCase().trim()}_${activeSource}_${activeSearchMode}_${excludeId || 'none'}`;
 
         if (searchCache.has(cacheKey)) {
             console.log(`[⚡ CACHE HIT] Serving instant ${activeSearchMode} results for: "${query}"`);
@@ -143,9 +144,6 @@ app.post('/api/explore', async (req, res) => {
 
         console.log(`[🔍 CACHE MISS] Processing new ${activeSearchMode} query: "${query}" (Source: ${activeSource})`);
 
-        // =========================================================================
-        // OPTIMIZED SQLITE KEYWORD SEARCH (Streaming + ARABIC NORMALIZATION)
-        // =========================================================================
         if (activeSearchMode === 'keyword') {
             console.log("Executing high-speed streaming keyword search...");
 
@@ -153,7 +151,6 @@ app.post('/api/explore', async (req, res) => {
             const lowerQuery = query.toLowerCase().trim();
             const normalizedQuery = isQueryArabic ? normalizeArabic(query) : lowerQuery;
 
-            // Allow Arabic characters in the fuzzy split
             const queryWords = normalizedQuery.replace(/[^\w\s\u0600-\u06FF]/gi, '').split(/\s+/).filter(w => w.length > (isQueryArabic ? 2 : 3));
 
             let exactMatches = [];
@@ -175,10 +172,8 @@ app.post('/api/explore', async (req, res) => {
                         const ar = hData.ar || "";
                         const normalizedAr = isQueryArabic ? normalizeArabic(ar) : ar;
 
-                        // 1. Check Exact Match
                         let isExact = eng.includes(normalizedQuery) || normalizedAr.includes(normalizedQuery);
 
-                        // 2. Check Fuzzy Match
                         let isFuzzy = false;
                         if (!isExact && queryWords.length > 1) {
                             let matchCount = 0;
@@ -222,7 +217,6 @@ app.post('/api/explore', async (req, res) => {
                             totalFound++;
                         }
                     } catch (e) {
-                        // Silently skip malformed rows
                     }
                 }, (err, count) => {
                     if (err) reject(err);
@@ -233,22 +227,13 @@ app.post('/api/explore', async (req, res) => {
             const clusters = [];
 
             if (exactMatches.length > 0) {
-                clusters.push({
-                    theme_label: `Exact Matches: "${query}"`,
-                    items: exactMatches
-                });
+                clusters.push({ theme_label: `Exact Matches: "${query}"`, items: exactMatches });
             }
             if (fuzzyMatches.length > 0 && exactMatches.length < 20) {
-                clusters.push({
-                    theme_label: `Partial Text Matches (Translation Variations)`,
-                    items: fuzzyMatches
-                });
+                clusters.push({ theme_label: `Partial Text Matches (Translation Variations)`, items: fuzzyMatches });
             }
 
-            const resultPayload = {
-                total_results: totalFound,
-                clusters: clusters
-            };
+            const resultPayload = { total_results: totalFound, clusters: clusters };
 
             if (searchCache.size >= CACHE_LIMIT) {
                 const firstKey = searchCache.keys().next().value;
@@ -259,59 +244,63 @@ app.post('/api/explore', async (req, res) => {
         }
 
         // =========================================================================
-        // CONCEPT MODE (With Gemini Translation Bridge for Arabic)
+        // CONCEPT MODE
         // =========================================================================
 
-        let embedQuery = query;
-        if (isArabic(query) && activeSearchMode === 'concept') {
-            console.log("Arabic query detected in Concept Mode. Engaging Gemini Bridge for translation...");
-            try {
-                const translationModel = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
-                const prompt = `You are a translator for an Islamic database. Translate the following Arabic query into clear English. Output ONLY the English translation, nothing else: "${query}"`;
-                const translationResult = await translationModel.generateContent(prompt);
-                embedQuery = translationResult.response.text().trim();
-                console.log(`Translated Query for Hugging Face: "${embedQuery}"`);
-            } catch (err) {
-                console.error("Gemini Bridge translation failed, falling back to original Arabic query.", err.message);
-            }
-        }
-
-        console.log("Embedding query via Hugging Face Cloud API...");
-        const hfToken = process.env.HF_TOKEN;
-        if (!hfToken) {
-            return res.status(500).json({ error: "Server missing HF_TOKEN environment variable." });
-        }
-
-        let finalQueryVector = null;
-        let retries = 3;
-
-        while (retries > 0) {
-            const hfResponse = await fetch("https://router.huggingface.co/hf-inference/models/sentence-transformers/all-MiniLM-L6-v2/pipeline/feature-extraction", {
-                headers: {
-                    "Authorization": `Bearer ${hfToken}`,
-                    "Content-Type": "application/json"
-                },
-                method: "POST",
-                body: JSON.stringify({ inputs: [embedQuery] }) // Use the potentially translated query!
-            });
-
-            const result = await hfResponse.json();
-
-            if (hfResponse.ok) {
-                finalQueryVector = Array.isArray(result[0]) ? result[0] : result;
-                break;
-            } else if (result.error && result.error.includes("loading")) {
-                console.log(`Cloud AI is waking up. Waiting ${result.estimated_time || 10} seconds...`);
-                await new Promise(resolve => setTimeout(resolve, (result.estimated_time || 10) * 1000));
-                retries--;
-            } else {
-                console.error("Hugging Face API Error:", result);
-                return res.status(500).json({ error: "Failed to communicate with Cloud AI." });
-            }
-        }
+        let finalQueryVector = (queryVector && Array.isArray(queryVector) && queryVector.length > 0) ? queryVector : null;
 
         if (!finalQueryVector) {
-            return res.status(500).json({ error: "Cloud AI timed out while waking up. Try again." });
+            let embedQuery = query;
+            if (isArabic(query) && activeSearchMode === 'concept') {
+                console.log("Arabic query detected in Concept Mode. Engaging Gemini Bridge for translation...");
+                try {
+                    const translationModel = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+                    const prompt = `You are a translator for an Islamic database. Translate the following Arabic query into clear English. Output ONLY the English translation, nothing else: "${query}"`;
+                    const translationResult = await translationModel.generateContent(prompt);
+                    embedQuery = translationResult.response.text().trim();
+                    console.log(`Translated Query for Hugging Face: "${embedQuery}"`);
+                } catch (err) {
+                    console.error("Gemini Bridge translation failed, falling back to original Arabic query.", err.message);
+                }
+            }
+
+            console.log("Embedding query via Hugging Face Cloud API...");
+            const hfToken = process.env.HF_TOKEN;
+            if (!hfToken) {
+                return res.status(500).json({ error: "Server missing HF_TOKEN environment variable." });
+            }
+
+            let retries = 3;
+            while (retries > 0) {
+                const hfResponse = await fetch("https://router.huggingface.co/hf-inference/models/sentence-transformers/all-MiniLM-L6-v2/pipeline/feature-extraction", {
+                    headers: {
+                        "Authorization": `Bearer ${hfToken}`,
+                        "Content-Type": "application/json"
+                    },
+                    method: "POST",
+                    body: JSON.stringify({ inputs: [embedQuery] })
+                });
+
+                const result = await hfResponse.json();
+
+                if (hfResponse.ok) {
+                    finalQueryVector = Array.isArray(result[0]) ? result[0] : result;
+                    break;
+                } else if (result.error && result.error.includes("loading")) {
+                    console.log(`Cloud AI is waking up. Waiting ${result.estimated_time || 10} seconds...`);
+                    await new Promise(resolve => setTimeout(resolve, (result.estimated_time || 10) * 1000));
+                    retries--;
+                } else {
+                    console.error("Hugging Face API Error:", result);
+                    return res.status(500).json({ error: "Failed to communicate with Cloud AI." });
+                }
+            }
+
+            if (!finalQueryVector) {
+                return res.status(500).json({ error: "Cloud AI timed out while waking up. Try again." });
+            }
+        } else {
+            console.log("⚡ Instant Vector received from frontend! Skipping Hugging Face AI entirely.");
         }
 
         if (Object.keys(ontology).length > 0 && activeSearchMode === 'concept') {
@@ -365,7 +354,7 @@ app.post('/api/explore', async (req, res) => {
             }
         }
 
-        const fetchedHadiths = [];
+        let fetchedHadiths = [];
 
         for (let i = 0; i < mapIndices.length; i++) {
             const mapIdx = mapIndices[i];
@@ -392,7 +381,7 @@ app.post('/api/explore', async (req, res) => {
                         }
 
                         fetchedHadiths.push({
-                            id: match.id,
+                            id: match.id, // This is the Pinecone ID (e.g. hadith_1234)
                             arabic_text: foundArabic,
                             english_text: foundEnglish,
                             book: hData.book || hData.book_number || "al-Kafi",
@@ -409,6 +398,11 @@ app.post('/api/explore', async (req, res) => {
             } catch (err) {
                 console.error(`Error fetching ID ${mapIdx}:`, err);
             }
+        }
+
+        // ADDED: Filter out the Anchor Hadith if excludeId is provided!
+        if (excludeId) {
+            fetchedHadiths = fetchedHadiths.filter(h => h.id !== excludeId);
         }
 
         if (fetchedHadiths.length === 0) {
