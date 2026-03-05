@@ -4,7 +4,7 @@ import { Search, Moon, Sun, Sparkles, X, ChevronRight, ChevronLeft, Home, Copy, 
 import quranData from './quran.json';
 import verseMap from './verse_map.json';
 
-const APP_UPDATES = [{ version: "v3.5.2", date: "March 5, 2026", changes: ["Feature Polish: Added a 'Copy Text' button to all 'Anchored Source' views (both List View accordion and Map View modal) allowing you to copy the full reference, Arabic, and translation instantly.", "Map UX Overhaul: Nodes are uniformly sized and mathematically bounded to never overlap the center box or go off-screen."] }];
+const APP_UPDATES = [{ version: "v3.5.3", date: "March 5, 2026", changes: ["Documentation: Completely overhauled the 'Help & Guide' section to detail the comprehensive suite of tools now available in Kisa, including Vector Hopping, Dynamic Map Views, and Reverse Quran Tafsir."] }, { version: "v3.5.2", date: "March 5, 2026", changes: ["Feature Polish: Added a 'Copy Text' button to all 'Anchored Source' views (both List View accordion and Map View modal) allowing you to copy the full reference, Arabic, and translation instantly.", "Map UX Overhaul: Nodes are uniformly sized and mathematically bounded to never overlap the center box or go off-screen."] }];
 const CLUSTER_COLORS = ['#10b981', '#8b5cf6', '#f59e0b', '#f43f5e', '#3b82f6'];
 const SOURCES = ["All Twelver Sources", "al-Kafi", "Bihar al-Anwar", "Basa'ir al-Darajat"];
 
@@ -1292,28 +1292,59 @@ export default function App() {
               <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setShowInfo(false)} className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm cursor-pointer" />
               <motion.div initial={{ opacity: 0, scale: 0.95, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 20 }} className="relative bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 w-full sm:w-[90vw] max-w-[600px] max-h-[85vh] flex flex-col shadow-2xl rounded-2xl z-[2001]">
                 <div className="flex justify-between items-center bg-slate-50/90 dark:bg-slate-900/90 backdrop-blur-md pt-5 pb-4 px-5 z-10 border-b border-slate-200 dark:border-slate-800 rounded-t-2xl shrink-0"><h2 className="text-lg sm:text-xl font-mono font-bold tracking-tight text-slate-800 dark:text-slate-100 flex items-center gap-2"><KisaLogo className="w-5 h-5 text-emerald-500" />How to Use Kisa</h2><button onClick={() => setShowInfo(false)} className="p-2 hover:bg-slate-200 dark:hover:bg-slate-800 rounded-full transition-colors cursor-pointer shrink-0"><X className="w-5 h-5" /></button></div>
+
+                {/* NEW INFO CONTENT SECTION */}
                 <div className="p-5 sm:p-6 overflow-y-auto flex-grow smart-scrollbar flex flex-col gap-6 text-slate-700 dark:text-slate-300">
+
                   <div>
                     <h3 className="font-bold text-base sm:text-lg mb-2 text-slate-900 dark:text-white">Welcome to Kisa</h3>
-                    <p className="leading-relaxed text-xs sm:text-sm">Kisa is a semantic search engine designed specifically to explore authentic Twelver Shia literature, prioritizing core texts like <i>al-Kafi</i>, <i>Bihar al-Anwar</i>, and <i>Basa'ir al-Darajat</i>.</p>
+                    <p className="leading-relaxed text-xs sm:text-sm">Kisa is a semantic search engine designed specifically to explore authentic Twelver Shia literature, prioritizing core texts like <i>al-Kafi</i>, <i>Bihar al-Anwar</i>, and <i>Basa'ir al-Darajat</i>. It maps verified texts mathematically so you can explore concepts without AI hallucinations.</p>
                   </div>
                   <hr className="border-slate-200 dark:border-slate-700" />
+
                   <div>
-                    <h3 className="font-bold text-base sm:text-lg flex items-center gap-2 mb-2 sm:mb-3 text-slate-900 dark:text-white"><Sparkles className="w-4 h-4 text-indigo-500" /> Concept Mode</h3>
-                    <p className="leading-relaxed text-xs sm:text-sm mb-3">This mode uses AI vector math to find underlying themes, even if the exact words aren't used. Perfect for exploring abstract theology.</p>
-                    <div className="bg-orange-50 dark:bg-orange-500/10 border-l-4 border-orange-500 p-3 sm:p-4 rounded-r-lg"><p className="text-xs sm:text-sm font-semibold text-orange-800 dark:text-orange-300 mb-1">⚠️ The Historical Fact Trap</p><p className="text-xs sm:text-sm text-orange-700 dark:text-orange-200/80">Concept Mode finds themes, not historical facts. If you search <i>"How was Imam Jafar Sadiq martyred?"</i>, it will pull thematic narrations about grief and martyrdom, not a Wikipedia summary.</p></div>
+                    <h3 className="font-bold text-base sm:text-lg flex items-center gap-2 mb-3 text-slate-900 dark:text-white"><Search className="w-4 h-4 text-indigo-500" /> Core Search Engine</h3>
+                    <div className="mb-4">
+                      <h4 className="font-semibold text-sm sm:text-base flex items-center gap-1.5 mb-1"><Sparkles className="w-3.5 h-3.5 text-indigo-500" /> Concept Mode</h4>
+                      <p className="leading-relaxed text-xs sm:text-sm mb-2">Uses AI vector math to find underlying themes, even if exact words aren't used. Returns interactive thematic clusters.</p>
+                      <div className="bg-orange-50 dark:bg-orange-500/10 border-l-4 border-orange-500 p-2 sm:p-3 rounded-r-md"><p className="text-[10px] sm:text-xs font-semibold text-orange-800 dark:text-orange-300">⚠️ The Historical Fact Trap: Concept Mode finds themes, not historical facts (e.g., searching "How was Imam Sadiq martyred?" returns thematic narrations about grief/martyrdom, not a Wikipedia summary).</p></div>
+                    </div>
+                    <div>
+                      <h4 className="font-semibold text-sm sm:text-base flex items-center gap-1.5 mb-1"><Database className="w-3.5 h-3.5 text-blue-500" /> Keyword Mode</h4>
+                      <p className="leading-relaxed text-xs sm:text-sm mb-2">Strictly searches the exact English or Arabic text you type, functioning like a traditional database index.</p>
+                      <div className="bg-blue-50 dark:bg-blue-500/10 border-l-4 border-blue-500 p-2 sm:p-3 rounded-r-md"><p className="text-[10px] sm:text-xs font-semibold text-blue-800 dark:text-blue-300">⚠️ The Translation Trap: English translations vary widely. If you remember a Hadith, search a single undeniable word or switch to Concept Mode to let the AI find the meaning regardless of vocabulary.</p></div>
+                    </div>
                   </div>
                   <hr className="border-slate-200 dark:border-slate-700" />
+
                   <div>
-                    <h3 className="font-bold text-base sm:text-lg flex items-center gap-2 mb-2 sm:mb-3 text-slate-900 dark:text-white"><Database className="w-4 h-4 text-blue-500" /> Keyword Mode</h3>
-                    <p className="leading-relaxed text-xs sm:text-sm mb-3">This mode strictly searches the exact English or Arabic text you type, functioning like a traditional database index.</p>
-                    <div className="bg-blue-50 dark:bg-blue-500/10 border-l-4 border-blue-500 p-3 sm:p-4 rounded-r-lg"><p className="text-xs sm:text-sm font-semibold text-blue-800 dark:text-blue-300 mb-1">⚠️ The Translation Trap</p><p className="text-xs sm:text-sm text-blue-700 dark:text-blue-200/80">English translations vary wildly. If you remember a Hadith mentioning the <i>"peak of affairs"</i>, it might actually be translated as <i>"top most matter"</i>. To avoid this, do not search long phrases. Either search using a single undeniable word, or switch to <b>Concept Mode</b>.</p></div>
+                    <h3 className="font-bold text-base sm:text-lg flex items-center gap-2 mb-3 text-slate-900 dark:text-white"><Sparkles className="w-4 h-4 text-amber-500" /> Advanced Features</h3>
+                    <ul className="flex flex-col gap-4 text-xs sm:text-sm leading-relaxed">
+                      <li>
+                        <b className="text-slate-900 dark:text-slate-200 flex items-center gap-1.5 mb-0.5"><Layout className="w-3.5 h-3.5 text-indigo-400" /> Dynamic Concept Map</b>
+                        Concept searches generate a beautiful, non-overlapping orbital map of themes. The "Top Matches" node is highlighted, and you can switch to a traditional List View at any time.
+                      </li>
+                      <li>
+                        <b className="text-slate-900 dark:text-slate-200 flex items-center gap-1.5 mb-0.5"><Sparkles className="w-3.5 h-3.5 text-emerald-500" /> Vector Hopping ("Find Similar")</b>
+                        Click "Find Similar" on any hadith to use its mathematical signature to instantly discover related narrations. The original source is cleanly pinned to the top as an "Anchor" so you never lose your place.
+                      </li>
+                      <li>
+                        <b className="text-slate-900 dark:text-slate-200 flex items-center gap-1.5 mb-0.5"><BookOpen className="w-3.5 h-3.5 text-amber-600" /> Reverse Quran Tafsir</b>
+                        Read all 114 Surahs. If Kisa detects narrations referencing a specific Ayah, a "Related Hadiths" button appears. Click it to open a seamless popup of contextual narrations.
+                      </li>
+                    </ul>
                   </div>
                   <hr className="border-slate-200 dark:border-slate-700" />
+
                   <div>
-                    <h3 className="font-bold text-base sm:text-lg flex items-center gap-2 mb-2 sm:mb-3 text-slate-900 dark:text-white"><BookOpen className="w-4 h-4 text-amber-500" /> The Quran Reader</h3>
-                    <p className="leading-relaxed text-xs sm:text-sm mb-3">Read all 114 Surahs. Beneath certain verses, you will see a <b>"Related Hadiths"</b> button. This means Kisa has already pre-calculated that narrations exist referencing that exact Ayah. Click it to instantly read the context without losing your place.</p>
+                    <h3 className="font-bold text-base sm:text-lg flex items-center gap-2 mb-3 text-slate-900 dark:text-white"><Clock className="w-4 h-4 text-emerald-500" /> Workflow & Study Tools</h3>
+                    <ul className="flex flex-col gap-3 text-xs sm:text-sm leading-relaxed list-disc pl-4">
+                      <li><b className="text-slate-900 dark:text-slate-200">Study History & Quick Resume:</b> Click the empty search bar to instantly resume your 5 most recent searches/recitations, or click the Clock icon to open your full History drawer.</li>
+                      <li><b className="text-slate-900 dark:text-slate-200">Source Filtering:</b> Use the Source dropdown to isolate searches strictly to specific books like <i>al-Kafi</i>.</li>
+                      <li><b className="text-slate-900 dark:text-slate-200">Smart Copy:</b> Click "Copy Text" on any Hadith or Anchored Source to instantly copy the full reference, Arabic text, Chain of Narrators, English translation, and a Kisa link to your clipboard.</li>
+                    </ul>
                   </div>
+
                 </div>
               </motion.div>
             </div>
