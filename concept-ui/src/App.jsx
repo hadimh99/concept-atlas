@@ -470,6 +470,7 @@ const QuranReader = ({ activeFontFamily, fontStyle, setFontStyle, handleSurahSel
 const TranscriptLibrary = ({ transcripts }) => {
   const [activeDoc, setActiveDoc] = useState(transcripts[0]);
   const [isArchiveOpen, setIsArchiveOpen] = useState(true);
+  const [isCustomiseOpen, setIsCustomiseOpen] = useState(true);
   const [isMobileDrawerOpen, setIsMobileDrawerOpen] = useState(true);
   const [fontSize, setFontSize] = useState(18);
 
@@ -502,31 +503,36 @@ const TranscriptLibrary = ({ transcripts }) => {
     mainTitle = activeDoc.title.replace(seriesTitle + ' - ', '');
   }
 
-  // Deep-Scroll Return to Reading Logic
-  const [maxScrollY, setMaxScrollY] = useState(0);
+  // --- PERFORMANCE FIX: Track scroll with a Ref to prevent React re-rendering on every pixel ---
+  const maxScrollYRef = useRef(0);
   const [showReturn, setShowReturn] = useState(false);
 
   useEffect(() => {
+    let ticking = false;
     const handleScroll = () => {
-      const y = window.scrollY;
-      if (y >= maxScrollY - 50) {
-        setMaxScrollY(Math.max(y, maxScrollY));
-        setShowReturn(false);
-      } else if (maxScrollY - y > 1500) {
-        setShowReturn(true);
-      } else {
-        setShowReturn(false);
+      if (!ticking) {
+        window.requestAnimationFrame(() => {
+          const y = window.scrollY;
+          if (y >= maxScrollYRef.current - 50) {
+            maxScrollYRef.current = Math.max(y, maxScrollYRef.current);
+            if (showReturn) setShowReturn(false);
+          } else if (maxScrollYRef.current - y > 1500) {
+            if (!showReturn) setShowReturn(true);
+          } else {
+            if (showReturn) setShowReturn(false);
+          }
+          ticking = false;
+        });
+        ticking = true;
       }
     };
     window.addEventListener('scroll', handleScroll, { passive: true });
     return () => window.removeEventListener('scroll', handleScroll);
-  }, [maxScrollY]);
+  }, [showReturn]);
 
   const jumpBack = () => {
-    // Relying strictly on native browser smooth scroll. 
-    // We do NOT manually hide the button here, because changing React state 
-    // mid-scroll causes Safari to abort the animation.
-    window.scrollTo({ top: maxScrollY, behavior: 'smooth' });
+    window.scrollTo({ top: maxScrollYRef.current, behavior: 'smooth' });
+    setTimeout(() => setShowReturn(false), 150);
   };
 
   const parseFormatting = (text) => {
@@ -540,67 +546,44 @@ const TranscriptLibrary = ({ transcripts }) => {
     });
   };
 
-  // Shared Library Tools (Font Resizer + Archive List)
-  const LibraryTools = ({ isMobile }) => (
-    <div className="flex flex-col h-full">
-      <div className="p-5 border-b border-zinc-100 dark:border-zinc-800/80 shrink-0 flex justify-between items-center">
-        <h2 className="text-[11px] font-bold text-zinc-500 uppercase tracking-widest flex items-center gap-2"><LibraryIcon className="w-4 h-4 text-[#c6a87c]" /> Library Tools</h2>
-        {isMobile ? (
-          <button onClick={() => setIsMobileDrawerOpen(false)} className="p-1"><X className="w-5 h-5 text-zinc-500" /></button>
-        ) : (
-          <button onClick={() => setIsArchiveOpen(false)} className="p-1 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-full transition-colors cursor-pointer"><X className="w-4 h-4 text-zinc-500" /></button>
-        )}
-      </div>
-
-      <div className="p-5 border-b border-zinc-100 dark:border-zinc-800/80 shrink-0">
-        <span className="text-[10px] font-bold uppercase tracking-widest text-zinc-400 block mb-3">Text Size</span>
-        <div className="flex items-center gap-4 bg-zinc-50 dark:bg-[#252528] rounded-xl p-2 border border-zinc-200 dark:border-zinc-700">
-          <button onClick={() => setFontSize(Math.max(14, fontSize - 1))} className="w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center rounded-lg bg-white dark:bg-[#1c1c1e] text-zinc-600 dark:text-zinc-300 font-bold shadow-sm text-xl cursor-pointer hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors">-</button>
-          <span className="text-lg font-mono font-bold text-zinc-700 dark:text-zinc-300 flex-grow text-center">{fontSize}px</span>
-          <button onClick={() => setFontSize(Math.min(28, fontSize + 1))} className="w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center rounded-lg bg-white dark:bg-[#1c1c1e] text-zinc-600 dark:text-zinc-300 font-bold shadow-sm text-xl cursor-pointer hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors">+</button>
+  // Shared Archive List Component
+  const ArchiveList = () => (
+    <div className="flex flex-col gap-2">
+      {Object.entries(groupedTranscripts).map(([groupSeriesName, docs]) => (
+        <div key={groupSeriesName} className="flex flex-col mb-1">
+          <button
+            onClick={() => toggleSeries(groupSeriesName)}
+            className="flex items-center justify-between py-2 px-3 hover:bg-zinc-100 dark:hover:bg-[#2c2c2e] rounded-lg transition-colors group cursor-pointer"
+          >
+            {/* ENLARGED, BOLD SERIES TITLE */}
+            <span className="text-sm sm:text-base font-sans font-extrabold uppercase tracking-widest text-[#c6a87c] dark:text-[#d4b78f] group-hover:text-[#b09265] transition-colors text-left flex-1 pr-4 leading-relaxed">
+              {groupSeriesName}
+            </span>
+            {expandedSeries[groupSeriesName] ? <ChevronUp className="w-4 h-4 text-[#c6a87c] shrink-0" /> : <ChevronDown className="w-4 h-4 text-zinc-500 shrink-0" />}
+          </button>
+          <AnimatePresence>
+            {expandedSeries[groupSeriesName] && (
+              <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden flex flex-col gap-1 mt-2 pl-2 border-l-2 border-zinc-200 dark:border-zinc-700/50 ml-3">
+                {docs.map(doc => {
+                  const displayTitle = doc.title.startsWith(groupSeriesName + ' - ') ? doc.title.replace(groupSeriesName + ' - ', '') : doc.title;
+                  return (
+                    <button key={doc.id} onClick={() => { setActiveDoc(doc); setIsMobileDrawerOpen(false); }} className={`text-left py-2.5 px-3 rounded-xl transition-all duration-200 cursor-pointer ${activeDoc.id === doc.id ? 'bg-zinc-50 dark:bg-[#1c1c1e] text-zinc-900 dark:text-white font-bold shadow-sm border border-zinc-200 dark:border-zinc-700' : 'text-zinc-500 hover:text-zinc-800 dark:text-zinc-400 dark:hover:text-zinc-200 border border-transparent hover:bg-zinc-50 dark:hover:bg-[#2c2c2e]'}`}>
+                      <span className="text-sm leading-snug block">{displayTitle}</span>
+                    </button>
+                  );
+                })}
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
-      </div>
-
-      <div className="p-4 overflow-y-auto smart-scrollbar flex-grow flex flex-col gap-2">
-        <span className="text-[10px] font-bold uppercase tracking-widest text-zinc-400 block ml-1 mb-1">Archive</span>
-        <div className="flex flex-col gap-2">
-          {Object.entries(groupedTranscripts).map(([groupSeriesName, docs]) => (
-            <div key={groupSeriesName} className="flex flex-col mb-1">
-              <button
-                onClick={() => toggleSeries(groupSeriesName)}
-                className="flex items-center justify-between py-2 px-3 hover:bg-zinc-100 dark:hover:bg-[#2c2c2e] rounded-lg transition-colors group cursor-pointer"
-              >
-                <span className="text-[11px] font-mono font-bold uppercase tracking-widest text-[#c6a87c] dark:text-[#d4b78f] group-hover:text-[#b09265] transition-colors text-left flex-1 pr-4 leading-relaxed">
-                  {groupSeriesName}
-                </span>
-                {expandedSeries[groupSeriesName] ? <ChevronUp className="w-4 h-4 text-[#c6a87c] shrink-0" /> : <ChevronDown className="w-4 h-4 text-zinc-500 shrink-0" />}
-              </button>
-              <AnimatePresence>
-                {expandedSeries[groupSeriesName] && (
-                  <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden flex flex-col gap-1 mt-1 pl-2 border-l border-zinc-200 dark:border-zinc-700/50 ml-3">
-                    {docs.map(doc => {
-                      const displayTitle = doc.title.startsWith(groupSeriesName + ' - ') ? doc.title.replace(groupSeriesName + ' - ', '') : doc.title;
-                      return (
-                        <button key={doc.id} onClick={() => { setActiveDoc(doc); if (isMobile) setIsMobileDrawerOpen(false); }} className={`text-left py-2.5 px-3 rounded-xl transition-all duration-200 cursor-pointer ${activeDoc.id === doc.id ? 'bg-zinc-50 dark:bg-[#1c1c1e] text-zinc-900 dark:text-white font-bold shadow-sm border border-zinc-200 dark:border-zinc-700' : 'text-zinc-500 hover:text-zinc-800 dark:text-zinc-400 dark:hover:text-zinc-200 border border-transparent hover:bg-zinc-50 dark:hover:bg-[#2c2c2e]'}`}>
-                          <span className="text-sm leading-snug block">{displayTitle}</span>
-                        </button>
-                      );
-                    })}
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
-          ))}
-        </div>
-      </div>
+      ))}
     </div>
   );
 
   return (
-    // Replaced horizontal padding on mobile (px-0) so the dark canvas stretches perfectly edge-to-edge
-    <div className="w-full min-h-screen pt-20 sm:pt-32 pb-32 flex justify-center font-sans relative px-0 sm:px-6 lg:px-8">
+    <div className="w-full min-h-screen pt-24 sm:pt-32 pb-32 flex justify-center font-sans relative">
 
-      {/* --- RETURN TO READING BUTTONS --- */}
+      {/* --- DESKTOP RETURN TO READING BUTTON --- */}
       <AnimatePresence>
         {showReturn && (
           <motion.button
@@ -608,18 +591,19 @@ const TranscriptLibrary = ({ transcripts }) => {
             onClick={jumpBack}
             className="hidden md:flex fixed top-1/2 right-4 lg:right-6 -translate-y-1/2 z-[100] bg-white dark:bg-[#252528] text-[#c6a87c] border border-zinc-200 dark:border-zinc-800 p-2.5 rounded-full shadow-2xl flex-col items-center gap-3 cursor-pointer hover:scale-105 transition-transform"
           >
-            <span style={{ writingMode: 'vertical-rl' }} className="text-[10px] font-bold uppercase tracking-widest mt-2">Return to Reading</span>
+            <span style={{ writingMode: 'vertical-rl' }} className="text-[10px] font-bold uppercase tracking-widest mb-2 mt-1">Return to Reading</span>
             <ArrowDown className="w-4 h-4 animate-bounce mb-1" />
           </motion.button>
         )}
       </AnimatePresence>
 
+      {/* --- MOBILE RETURN TO READING BUTTON ('R' Module Bottom Right) --- */}
       <AnimatePresence>
         {showReturn && (
           <motion.button
             initial={{ opacity: 0, scale: 0.8, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.8, y: 20 }}
             onClick={jumpBack}
-            className="md:hidden fixed bottom-6 right-6 z-[100] w-12 h-12 bg-zinc-900 dark:bg-white text-[#d4b78f] dark:text-[#8b6b45] border border-zinc-700 dark:border-zinc-300 rounded-full shadow-2xl flex flex-col items-center justify-center cursor-pointer"
+            className="md:hidden fixed bottom-6 right-6 z-[100] w-12 h-12 bg-zinc-900 dark:bg-[#e4d3ba] text-[#d4b78f] dark:text-[#5c4a30] border border-zinc-700 dark:border-zinc-300 rounded-full shadow-2xl flex flex-col items-center justify-center cursor-pointer"
           >
             <span className="font-extrabold text-[14px] leading-none mt-1">R</span>
             <ArrowDown className="w-3.5 h-3.5 animate-bounce mt-0.5" />
@@ -627,7 +611,20 @@ const TranscriptLibrary = ({ transcripts }) => {
         )}
       </AnimatePresence>
 
-      {/* --- DESKTOP FLOATING TOGGLE (When Archive is closed) --- */}
+      {/* --- MOBILE ARCHIVE OPEN BUTTON (Bottom Left FAB) --- */}
+      <AnimatePresence>
+        {!isMobileDrawerOpen && (
+          <motion.button
+            initial={{ opacity: 0, scale: 0.8, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.8, y: 20 }}
+            onClick={() => setIsMobileDrawerOpen(true)}
+            className="md:hidden fixed bottom-6 left-6 z-[50] w-12 h-12 bg-white dark:bg-[#252528] text-[#c6a87c] border border-zinc-200 dark:border-zinc-800 rounded-full shadow-2xl flex flex-col items-center justify-center cursor-pointer"
+          >
+            <LibraryIcon className="w-5 h-5" />
+          </motion.button>
+        )}
+      </AnimatePresence>
+
+      {/* --- DESKTOP FLOATING TOGGLES --- */}
       <div className="hidden md:block">
         <AnimatePresence>
           {!isArchiveOpen && (
@@ -636,21 +633,16 @@ const TranscriptLibrary = ({ transcripts }) => {
             </motion.button>
           )}
         </AnimatePresence>
+        <AnimatePresence>
+          {!isCustomiseOpen && (
+            <motion.button initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }} onClick={() => setIsCustomiseOpen(true)} className="fixed top-32 right-8 z-50 p-3 bg-white dark:bg-[#252528] border border-zinc-200 dark:border-zinc-800 shadow-xl rounded-full text-zinc-500 hover:text-[#c6a87c] transition-colors cursor-pointer group" title="Open Customise">
+              <Settings2 className="w-5 h-5 group-hover:scale-110 transition-transform" />
+            </motion.button>
+          )}
+        </AnimatePresence>
       </div>
 
       {/* --- MOBILE UNIFIED DRAWER --- */}
-      <AnimatePresence>
-        {!isMobileDrawerOpen && (
-          <motion.button
-            initial={{ x: -20, opacity: 0 }} animate={{ x: 0, opacity: 1 }} exit={{ x: -20, opacity: 0 }}
-            onClick={() => setIsMobileDrawerOpen(true)}
-            className="md:hidden fixed left-0 top-1/2 -translate-y-1/2 z-50 bg-white/90 dark:bg-[#252528]/90 backdrop-blur-md border border-l-0 border-zinc-200 dark:border-zinc-800 shadow-xl py-4 px-2 rounded-r-xl cursor-pointer"
-          >
-            <ChevronRight className="w-5 h-5 text-[#c6a87c]" />
-          </motion.button>
-        )}
-      </AnimatePresence>
-
       <AnimatePresence>
         {isMobileDrawerOpen && (
           <>
@@ -660,31 +652,54 @@ const TranscriptLibrary = ({ transcripts }) => {
               className="md:hidden fixed inset-0 bg-black/40 z-[190] cursor-pointer backdrop-blur-sm"
               style={{ touchAction: 'none' }}
             />
+
             <motion.div
               initial={{ x: '-100%' }} animate={{ x: 0 }} exit={{ x: '-100%' }} transition={{ type: "spring", damping: 25, stiffness: 200 }}
-              className="md:hidden fixed top-0 bottom-0 left-0 w-[85vw] max-w-[320px] bg-white dark:bg-[#1c1c1e] z-[200] shadow-2xl border-r border-zinc-200 dark:border-zinc-800 flex flex-col overflow-hidden"
+              className="md:hidden fixed top-0 bottom-0 left-0 w-[85vw] max-w-[340px] bg-white dark:bg-[#1c1c1e] z-[200] shadow-2xl border-r border-zinc-200 dark:border-zinc-800 flex flex-col overflow-hidden"
             >
-              <LibraryTools isMobile={true} />
+              <div className="p-5 border-b border-zinc-100 dark:border-zinc-800/80 shrink-0 flex justify-between items-center">
+                <h2 className="text-[11px] font-bold text-zinc-500 uppercase tracking-widest flex items-center gap-2"><LibraryIcon className="w-4 h-4 text-[#c6a87c]" /> Library Tools</h2>
+                <button onClick={() => setIsMobileDrawerOpen(false)} className="p-1"><X className="w-5 h-5 text-zinc-500" /></button>
+              </div>
+
+              {/* MINIMIZED TEXT RESIZER FOR MOBILE */}
+              <div className="p-5 border-b border-zinc-100 dark:border-zinc-800/80 shrink-0">
+                <span className="text-[10px] font-bold uppercase tracking-widest text-zinc-400 block mb-2">Text Size</span>
+                <div className="flex items-center justify-between bg-zinc-50 dark:bg-[#252528] rounded-xl p-1.5 border border-zinc-200 dark:border-zinc-700 w-[180px]">
+                  <button onClick={() => setFontSize(Math.max(14, fontSize - 1))} className="w-8 h-8 flex items-center justify-center rounded-lg bg-white dark:bg-[#1c1c1e] text-zinc-600 dark:text-zinc-300 font-bold shadow-sm text-base">-</button>
+                  <span className="text-sm font-mono font-bold text-zinc-700 dark:text-zinc-300">{fontSize}px</span>
+                  <button onClick={() => setFontSize(Math.min(28, fontSize + 1))} className="w-8 h-8 flex items-center justify-center rounded-lg bg-white dark:bg-[#1c1c1e] text-zinc-600 dark:text-zinc-300 font-bold shadow-sm text-base">+</button>
+                </div>
+              </div>
+
+              <div className="p-4 overflow-y-auto smart-scrollbar flex-grow flex flex-col gap-2">
+                <ArchiveList />
+              </div>
             </motion.div>
           </>
         )}
       </AnimatePresence>
 
 
-      {/* --- DESKTOP 2-PILLAR LAYOUT ENGINE --- */}
-      <div className="w-full max-w-[1400px] mx-auto flex items-start gap-0 md:gap-8 lg:gap-12">
+      {/* --- DESKTOP THREE-PILLAR LAYOUT ENGINE --- */}
+      <div className="w-full max-w-[1600px] px-4 sm:px-6 lg:px-8 flex justify-between items-start gap-0 lg:gap-8">
 
-        {/* Left Pillar: Unified Archive & Customise */}
-        <motion.div animate={{ width: isArchiveOpen ? 320 : 0, opacity: isArchiveOpen ? 1 : 0 }} className="hidden md:block shrink-0 overflow-hidden transition-all duration-400 ease-in-out">
+        {/* Left Pillar: Archive */}
+        <motion.div animate={{ width: isArchiveOpen ? 320 : 0, opacity: isArchiveOpen ? 1 : 0 }} className="hidden md:block shrink-0 overflow-visible transition-all duration-500 ease-in-out">
           <div className="w-[320px] bg-white dark:bg-[#252528] border border-zinc-200 dark:border-zinc-800/80 rounded-2xl flex flex-col sticky top-32 shadow-sm max-h-[calc(100vh-160px)]">
-            <LibraryTools isMobile={false} />
+            <div className="p-4 border-b border-zinc-100 dark:border-zinc-800/60 shrink-0 flex justify-between items-center">
+              <h2 className="text-[11px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-widest flex items-center gap-2"><LibraryIcon className="w-3.5 h-3.5 text-[#c6a87c]" /> Archive</h2>
+              <button onClick={() => setIsArchiveOpen(false)} className="text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 transition-colors cursor-pointer"><X className="w-4 h-4" /></button>
+            </div>
+            <div className="p-3 overflow-y-auto smart-scrollbar flex-grow flex flex-col gap-1">
+              <ArchiveList />
+            </div>
           </div>
         </motion.div>
 
         {/* Center Pillar: Pure Canvas */}
-        <div className="flex-1 min-w-0 w-full flex justify-center transition-all duration-500">
-          {/* Note: px-5 py-8 on mobile forces the text away from edges, but the background touches the actual screen edges perfectly */}
-          <div className="w-full max-w-4xl mx-auto bg-white dark:bg-[#252528] sm:border sm:border-zinc-200 dark:sm:border-zinc-800/80 sm:rounded-2xl px-5 py-10 sm:p-12 sm:shadow-sm">
+        <div className="flex-grow w-full flex justify-center max-w-4xl mx-auto transition-all duration-500">
+          <div className="w-full bg-white dark:bg-[#252528] sm:border border-zinc-200 dark:border-zinc-800/80 sm:rounded-2xl px-5 py-10 sm:p-12 sm:shadow-sm">
 
             {/* The Structured Editorial Header */}
             <header className="mb-10 sm:mb-12">
@@ -701,7 +716,7 @@ const TranscriptLibrary = ({ transcripts }) => {
                 <span className="text-zinc-300 dark:text-zinc-600 hidden sm:inline">|</span>
                 {activeDoc.source_link && (<a href={activeDoc.source_link} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 text-zinc-500 hover:text-red-600 transition-colors group"><Youtube className="w-4 h-4 group-hover:scale-110 transition-transform" /> Watch Original</a>)}
               </div>
-              <hr className="w-full border-t-[2px] border-zinc-200 dark:border-zinc-700" />
+              <hr className="w-full border-t-[2px] border-zinc-300 dark:border-zinc-700" />
             </header>
 
             {/* Main Text Content */}
@@ -723,6 +738,24 @@ const TranscriptLibrary = ({ transcripts }) => {
             </div>
           </div>
         </div>
+
+        {/* Right Pillar: Customise */}
+        <motion.div animate={{ width: isCustomiseOpen ? 240 : 0, opacity: isCustomiseOpen ? 1 : 0 }} className="hidden md:block shrink-0 overflow-visible transition-all duration-500 ease-in-out">
+          <div className="w-[240px] bg-white dark:bg-[#252528] border border-zinc-200 dark:border-zinc-800/80 rounded-2xl flex flex-col sticky top-32 shadow-sm">
+            <div className="p-4 border-b border-zinc-100 dark:border-zinc-800/60 flex justify-between items-center">
+              <h2 className="text-[11px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-widest flex items-center gap-2"><Settings2 className="w-3.5 h-3.5 text-[#c6a87c]" /> Customise</h2>
+              <button onClick={() => setIsCustomiseOpen(false)} className="text-zinc-400 hover:text-zinc-600 transition-colors cursor-pointer"><X className="w-4 h-4" /></button>
+            </div>
+            <div className="p-5">
+              <span className="text-[10px] font-bold uppercase tracking-widest text-zinc-400 dark:text-zinc-500 block mb-3">Text Size</span>
+              <div className="flex items-center justify-between bg-zinc-50 dark:bg-[#1c1c1e] rounded-lg p-1.5 border border-zinc-200 dark:border-zinc-800/60 shadow-inner">
+                <button onClick={() => setFontSize(Math.max(14, fontSize - 1))} className="w-8 h-8 flex items-center justify-center rounded hover:bg-white dark:hover:bg-[#2c2c2e] text-zinc-600 dark:text-zinc-300 font-bold shadow-sm cursor-pointer transition-colors">-</button>
+                <span className="text-sm font-mono font-bold text-zinc-700 dark:text-zinc-300">{fontSize}px</span>
+                <button onClick={() => setFontSize(Math.min(28, fontSize + 1))} className="w-8 h-8 flex items-center justify-center rounded hover:bg-white dark:hover:bg-[#2c2c2e] text-zinc-600 dark:text-zinc-300 font-bold shadow-sm cursor-pointer transition-colors">+</button>
+              </div>
+            </div>
+          </div>
+        </motion.div>
 
       </div>
     </div>
@@ -1094,8 +1127,8 @@ export default function App() {
 
         <div className="flex items-center gap-2 sm:gap-4 relative z-[75] pointer-events-auto">
           <div className={`flex items-center rounded-full p-1 mr-1 sm:mr-2 ${(activeTab === 'quran' || activeTab === 'library') ? 'bg-white/40 dark:bg-[#252528]/80 backdrop-blur-md shadow-sm border border-slate-300/30 dark:border-zinc-700/50' : 'glass-panel border-white/20'}`}>
-            <button onClick={() => setActiveTab('search')} className={`p-2 rounded-full transition-all duration-300 cursor-pointer ${activeTab === 'search' ? 'bg-indigo-500/20 text-indigo-500 dark:text-indigo-400' : `text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 ${activeTab === 'library' && 'hover:text-[#c6a87c] dark:hover:text-[#d4b78f]'}`}`} title="Search Engine"><Search className="w-4 h-4" /></button>
-            <button onClick={() => setActiveTab('quran')} className={`p-2 rounded-full transition-all duration-300 cursor-pointer ${activeTab === 'quran' ? 'bg-amber-600/20 text-amber-800 dark:text-amber-500' : `text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 ${activeTab === 'library' && 'hover:text-[#c6a87c] dark:hover:text-[#d4b78f]'}`}`} title="Quran Reader"><BookOpen className="w-4 h-4" /></button>
+            <button onClick={() => setActiveTab('search')} className={`p-2 rounded-full transition-all duration-300 cursor-pointer ${activeTab === 'search' ? 'bg-indigo-500/20 text-indigo-500 dark:text-indigo-400' : `text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 ${activeTab === 'library' ? 'hover:text-[#c6a87c] dark:hover:text-[#d4b78f]' : ''}`}`} title="Search Engine"><Search className="w-4 h-4" /></button>
+            <button onClick={() => setActiveTab('quran')} className={`p-2 rounded-full transition-all duration-300 cursor-pointer ${activeTab === 'quran' ? 'bg-amber-600/20 text-amber-800 dark:text-amber-500' : `text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 ${activeTab === 'library' ? 'hover:text-[#c6a87c] dark:hover:text-[#d4b78f]' : ''}`}`} title="Quran Reader"><BookOpen className="w-4 h-4" /></button>
             <button onClick={() => setActiveTab('library')} className={`p-2 rounded-full transition-all duration-300 cursor-pointer ${activeTab === 'library' ? 'bg-[#c6a87c]/20 text-[#c6a87c] dark:text-[#d4b78f]' : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}`} title="Transcript Library"><LibraryIcon className="w-4 h-4" /></button>
           </div>
 
@@ -1105,6 +1138,31 @@ export default function App() {
             <button onClick={() => setShowInfo(true)} className="w-10 h-10 sm:w-11 sm:h-11 rounded-full flex items-center justify-center group transition-all duration-300 hover:scale-110 cursor-pointer"><HelpCircle className={`w-5 h-5 text-slate-400 ${activeTab === 'library' ? 'group-hover:text-[#c6a87c]' : 'group-hover:text-indigo-500'}`} /></button>
             <button onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')} className="w-10 h-10 sm:w-11 sm:h-11 rounded-full flex items-center justify-center group transition-all duration-300 hover:scale-110 cursor-pointer">{theme === 'dark' ? <Sun className="w-5 h-5 text-slate-500 group-hover:text-yellow-400" /> : <Moon className="w-5 h-5 text-slate-400 group-hover:text-slate-900" />}</button>
           </div>
+
+          {/* RESTORED MOBILE MENU BLOCK */}
+          <div className="md:hidden flex items-center gap-1 sm:gap-2 relative">
+            <button onClick={() => setShowHistoryDrawer(true)} className={`w-10 h-10 rounded-full flex items-center justify-center transition-all duration-300 cursor-pointer ${activeTab === 'library' ? 'bg-[#c6a87c]/10 text-[#c6a87c] border border-zinc-700/50' : (activeTab === 'quran' ? 'bg-white/40 dark:bg-slate-800/50 backdrop-blur-md shadow-sm border border-slate-300/30 dark:border-slate-700 text-slate-600 dark:text-slate-300' : 'glass-panel border-white/20 text-slate-500 dark:text-slate-400')}`}>
+              <Clock className="w-5 h-5" />
+            </button>
+            <div className="relative">
+              <button onClick={() => setShowMobileMenu(!showMobileMenu)} className={`w-10 h-10 rounded-full flex items-center justify-center transition-all duration-300 cursor-pointer ${activeTab === 'library' ? 'bg-[#c6a87c]/10 text-[#c6a87c] border border-zinc-700/50' : (activeTab === 'quran' ? 'bg-white/40 dark:bg-slate-800/50 backdrop-blur-md shadow-sm border border-slate-300/30 dark:border-slate-700 text-slate-600 dark:text-slate-300' : 'glass-panel border-white/20 text-slate-500 dark:text-slate-400')}`}>
+                <Menu className="w-5 h-5" />
+              </button>
+
+              <AnimatePresence>
+                {showMobileMenu && (
+                  <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className={`absolute right-0 top-full mt-2 w-48 rounded-xl shadow-xl p-2 flex flex-col gap-1 z-[75] ${activeTab === 'library' ? 'bg-white dark:bg-[#1c1c1e] border border-zinc-200 dark:border-zinc-800' : (activeTab === 'quran' ? 'bg-[#f4ecd8] dark:bg-[#1a1a1a] border border-slate-300 dark:border-slate-700' : 'bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800')}`}>
+                    {activeTab === 'search' && data && <button onClick={() => { handleHomeClick(); setShowMobileMenu(false); }} className="w-full text-left flex items-center gap-3 p-3 rounded-lg text-sm text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 cursor-pointer"><Home className="w-4 h-4 shrink-0" /> Reset Search</button>}
+                    {activeTab === 'search' && <button onClick={() => { navigator.clipboard.writeText(window.location.href); setCopiedLink(true); setTimeout(() => { setCopiedLink(false); setShowMobileMenu(false); }, 1000); }} className={`w-full text-left flex items-center gap-3 p-3 rounded-lg text-sm cursor-pointer ${copiedLink ? 'text-emerald-500' : 'text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'}`}><Share2 className="w-4 h-4 shrink-0" /> Share Link</button>}
+                    <button onClick={() => { setShowUpdates(true); setShowMobileMenu(false); }} className={`w-full text-left flex items-center gap-3 p-3 rounded-lg text-sm cursor-pointer ${activeTab === 'library' ? 'text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-[#2c2c2e]' : 'text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'}`}><Sparkles className="w-4 h-4 shrink-0" /> What's New</button>
+                    <button onClick={() => { setShowInfo(true); setShowMobileMenu(false); }} className={`w-full text-left flex items-center gap-3 p-3 rounded-lg text-sm cursor-pointer ${activeTab === 'library' ? 'text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-[#2c2c2e]' : 'text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'}`}><HelpCircle className="w-4 h-4 shrink-0" /> Help & Guide</button>
+                    <button onClick={() => { setTheme(theme === 'dark' ? 'light' : 'dark'); setShowMobileMenu(false); }} className={`w-full text-left flex items-center gap-3 p-3 rounded-lg text-sm cursor-pointer ${activeTab === 'library' ? 'text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-[#2c2c2e]' : 'text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'}`}>{theme === 'dark' ? <Sun className={`w-4 h-4 shrink-0 ${activeTab === 'library' ? 'text-[#c6a87c]' : 'text-amber-500'}`} /> : <Moon className="w-4 h-4 shrink-0" />} Toggle Theme</button>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+          </div>
+
         </div>
       </header>
 
