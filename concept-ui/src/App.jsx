@@ -470,160 +470,142 @@ const QuranReader = ({ activeFontFamily, fontStyle, setFontStyle, handleSurahSel
 const TranscriptLibrary = ({ transcripts }) => {
   const [activeDoc, setActiveDoc] = useState(transcripts[0]);
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const [fontSize, setFontSize] = useState(18);
 
-  // A tiny custom parser to turn **bold** text in the JSON into actual bold HTML
   const parseFormatting = (text) => {
     if (!text) return null;
     const parts = text.split(/(\*\*.*?\*\*)/g);
     return parts.map((part, index) => {
       if (part.startsWith('**') && part.endsWith('**')) {
-        return <strong key={index} className="font-extrabold text-slate-900 dark:text-white">{part.slice(2, -2)}</strong>;
+        return <strong key={index} className="font-bold text-zinc-900 dark:text-white">{part.slice(2, -2)}</strong>;
       }
       return part;
     });
   };
 
   return (
-    <div className="w-full max-w-[1400px] mx-auto px-4 sm:px-8 pt-24 sm:pt-32 pb-32 flex gap-8 lg:gap-12 pointer-events-auto font-sans relative">
+    <div className="w-full max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 pt-24 sm:pt-28 pb-32 flex flex-col pointer-events-auto font-sans">
 
-      {/* Premium Floating Toggle (Appears when sidebar is closed) */}
-      <AnimatePresence>
-        {!isSidebarOpen && (
-          <motion.button
-            initial={{ opacity: 0, scale: 0.8, x: -20 }}
-            animate={{ opacity: 1, scale: 1, x: 0 }}
-            exit={{ opacity: 0, scale: 0.8, x: -20 }}
-            transition={{ duration: 0.3 }}
-            onClick={() => setIsSidebarOpen(true)}
-            className="fixed top-28 left-4 sm:left-8 z-50 p-3 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border border-slate-200 dark:border-slate-800 rounded-full shadow-xl text-slate-500 hover:text-indigo-600 dark:hover:text-indigo-400 transition-all cursor-pointer hover:scale-105"
-            title="Open Library Archive"
-          >
-            <LibraryIcon className="w-5 h-5" />
-          </motion.button>
-        )}
-      </AnimatePresence>
+      {/* Top Control Bar (Provides structure and holds the Font Resizer) */}
+      <div className="flex flex-col sm:flex-row justify-between items-center bg-white dark:bg-[#252528] border border-zinc-200 dark:border-zinc-800/80 rounded-xl p-3 sm:px-5 sm:py-3 mb-8 shadow-sm">
+        <button
+          onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+          className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-zinc-500 dark:text-zinc-400 hover:text-[#c6a87c] dark:hover:text-[#d4b78f] transition-colors cursor-pointer"
+        >
+          <LibraryIcon className="w-4 h-4" /> {isSidebarOpen ? 'Hide Archive' : 'Show Archive'}
+        </button>
 
-      {/* Collapsible Sidebar (The Archive) */}
-      <AnimatePresence initial={false}>
-        {isSidebarOpen && (
-          <motion.div
-            initial={{ width: 0, opacity: 0 }}
-            animate={{ width: "320px", opacity: 1 }}
-            exit={{ width: 0, opacity: 0 }}
-            transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-            className="shrink-0 overflow-hidden hidden md:block"
-          >
-            <div className="sticky top-32 w-[320px] pr-6">
-              <div className="flex items-center justify-between mb-8 border-b border-slate-200 dark:border-slate-800 pb-4">
-                <h2 className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest flex items-center gap-2">
-                  <LibraryIcon className="w-4 h-4" /> Library Archive
-                </h2>
-                <button
-                  onClick={() => setIsSidebarOpen(false)}
-                  className="text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition-colors p-1 cursor-pointer"
-                  title="Close Archive"
-                >
-                  <X className="w-4 h-4" />
-                </button>
-              </div>
-              <div className="flex flex-col gap-3">
-                {transcripts.map((doc) => (
-                  <button
-                    key={doc.id}
-                    onClick={() => setActiveDoc(doc)}
-                    className={`text-left py-4 px-5 rounded-2xl transition-all duration-300 border cursor-pointer ${activeDoc.id === doc.id
-                      ? 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 shadow-md transform scale-[1.02]'
-                      : 'bg-transparent border-transparent hover:bg-slate-50 dark:hover:bg-slate-800/50 hover:border-slate-200 dark:hover:border-slate-700/50'
-                      }`}
-                  >
-                    <span className={`text-sm font-bold leading-snug block mb-1.5 ${activeDoc.id === doc.id ? 'text-indigo-600 dark:text-indigo-400' : 'text-slate-600 dark:text-slate-400'}`}>{doc.title}</span>
-                    <span className="text-[10px] uppercase tracking-widest text-slate-400 font-mono block">{doc.speaker}</span>
-                  </button>
-                ))}
-              </div>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* Main Reading Area (The Canvas) */}
-      <motion.div
-        layout
-        transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-        className="flex-grow flex justify-center w-full"
-      >
-        <article className="w-full max-w-3xl">
-
-          {/* Mobile Toggle (Visible only on phones) */}
-          <div className="md:hidden flex items-center gap-2 mb-8 text-indigo-500 font-bold text-sm cursor-pointer" onClick={() => setIsSidebarOpen(!isSidebarOpen)}>
-            <LibraryIcon className="w-4 h-4" /> {isSidebarOpen ? 'Close Archive' : 'View Archive'}
+        {/* The Font Resizer */}
+        <div className="flex items-center gap-3 mt-3 sm:mt-0">
+          <span className="text-[10px] font-bold uppercase tracking-widest text-zinc-400 dark:text-zinc-500">Text Size</span>
+          <div className="flex items-center gap-1 bg-zinc-100 dark:bg-[#1c1c1e] rounded-lg p-1 border border-zinc-200 dark:border-zinc-800/60 shadow-inner">
+            <button onClick={() => setFontSize(Math.max(14, fontSize - 1))} className="w-7 h-7 flex items-center justify-center rounded hover:bg-white dark:hover:bg-[#2c2c2e] text-zinc-600 dark:text-zinc-300 transition-colors font-bold shadow-sm cursor-pointer">-</button>
+            <span className="text-xs font-mono font-bold w-10 text-center text-zinc-700 dark:text-zinc-300">{fontSize}px</span>
+            <button onClick={() => setFontSize(Math.min(28, fontSize + 1))} className="w-7 h-7 flex items-center justify-center rounded hover:bg-white dark:hover:bg-[#2c2c2e] text-zinc-600 dark:text-zinc-300 transition-colors font-bold shadow-sm cursor-pointer">+</button>
           </div>
-          <AnimatePresence>
-            {isSidebarOpen && (
-              <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="md:hidden mb-12 border-b border-slate-200 dark:border-slate-800 pb-6 overflow-hidden">
-                {transcripts.map((doc) => (
-                  <button key={doc.id} onClick={() => { setActiveDoc(doc); setIsSidebarOpen(false); }} className={`text-left py-3 px-4 rounded-xl w-full transition-all mb-2 cursor-pointer ${activeDoc.id === doc.id ? 'bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 font-bold' : 'hover:bg-slate-50 dark:hover:bg-slate-800/50 text-slate-700 dark:text-slate-300'}`}>
-                    <span className="text-sm">{doc.title}</span>
-                  </button>
-                ))}
-              </motion.div>
-            )}
-          </AnimatePresence>
+        </div>
+      </div>
 
-          {/* Document Header */}
-          <header className="mb-16">
-            <motion.h1 layout className="text-3xl sm:text-4xl md:text-[46px] font-extrabold text-slate-900 dark:text-white leading-[1.15] mb-8 tracking-tight">
-              {activeDoc.title}
-            </motion.h1>
-            <motion.div layout className="flex flex-wrap items-center gap-4 text-sm font-medium border-y border-slate-200 dark:border-slate-800 py-4">
-              <span className="text-slate-800 dark:text-slate-200 flex items-center gap-2 uppercase tracking-widest text-[11px] font-bold">
-                <span className="w-6 h-6 rounded-full bg-indigo-100 dark:bg-indigo-900/50 text-indigo-600 dark:text-indigo-400 flex items-center justify-center text-[10px]">AG</span>
-                {activeDoc.speaker}
-              </span>
-              <span className="text-slate-300 dark:text-slate-700 hidden sm:inline">|</span>
-              {activeDoc.source_link && (
-                <a href={activeDoc.source_link} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 text-slate-500 hover:text-red-600 dark:text-slate-400 dark:hover:text-red-400 transition-colors uppercase tracking-widest text-[11px] font-bold">
-                  <Youtube className="w-4 h-4" /> Watch Original
-                </a>
-              )}
+      {/* Main Layout Area */}
+      <div className="flex gap-8 relative items-start">
+
+        {/* Sidebar (Structured Card) */}
+        <AnimatePresence initial={false}>
+          {isSidebarOpen && (
+            <motion.div
+              initial={{ width: 0, opacity: 0 }}
+              animate={{ width: "320px", opacity: 1 }}
+              exit={{ width: 0, opacity: 0 }}
+              transition={{ duration: 0.4, ease: "easeInOut" }}
+              className="shrink-0 overflow-hidden hidden md:block"
+            >
+              <div className="bg-white dark:bg-[#252528] border border-zinc-200 dark:border-zinc-800/80 rounded-2xl flex flex-col sticky top-28 shadow-sm w-[320px] max-h-[calc(100vh-160px)]">
+                <div className="p-5 border-b border-zinc-100 dark:border-zinc-800/60 shrink-0">
+                  <h2 className="text-[11px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-widest flex items-center gap-2">
+                    <LibraryIcon className="w-4 h-4 text-[#c6a87c] dark:text-[#d4b78f]" /> Library Archive
+                  </h2>
+                </div>
+                <div className="p-3 overflow-y-auto smart-scrollbar flex-grow flex flex-col gap-1">
+                  {transcripts.map((doc) => (
+                    <button
+                      key={doc.id}
+                      onClick={() => setActiveDoc(doc)}
+                      className={`text-left py-3 px-4 rounded-xl transition-all duration-200 border cursor-pointer ${activeDoc.id === doc.id
+                          ? 'bg-zinc-50 dark:bg-[#1c1c1e] border-zinc-200 dark:border-zinc-700 text-[#c6a87c] dark:text-[#d4b78f] shadow-sm'
+                          : 'bg-transparent border-transparent hover:bg-zinc-50 dark:hover:bg-[#2c2c2e] text-zinc-600 dark:text-zinc-400'
+                        }`}
+                    >
+                      <span className="text-sm font-bold leading-snug block mb-1">{doc.title}</span>
+                      <span className="text-[10px] uppercase tracking-widest opacity-60 font-mono block">{doc.speaker}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
             </motion.div>
-          </header>
+          )}
+        </AnimatePresence>
 
-          {/* Dynamic Content Renderer */}
-          <div className="space-y-8 text-[18px] sm:text-[20px] text-slate-800 dark:text-slate-300 leading-[1.85] antialiased">
-            {activeDoc.content.map((block, idx) => {
+        {/* Reading Canvas (Automatically centers when sidebar width hits 0) */}
+        <motion.div
+          layout
+          transition={{ duration: 0.4, ease: "easeInOut" }}
+          className="flex-grow w-full flex justify-center"
+        >
+          <div className="bg-white dark:bg-[#252528] border border-zinc-200 dark:border-zinc-800/80 rounded-2xl p-6 sm:p-12 shadow-sm w-full max-w-4xl">
 
-              if (block.type === 'h2') return <h2 key={idx} className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-slate-100 mt-16 mb-6 tracking-tight">{block.text}</h2>;
+            {/* Document Header */}
+            <header className="mb-12 border-b border-zinc-100 dark:border-zinc-800/60 pb-8">
+              <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-zinc-900 dark:text-white leading-[1.15] mb-6 tracking-tight">
+                {activeDoc.title}
+              </h1>
+              <div className="flex flex-wrap items-center gap-4 text-xs font-bold uppercase tracking-widest">
+                <span className="text-zinc-700 dark:text-zinc-300">
+                  {activeDoc.speaker}
+                </span>
+                <span className="text-zinc-300 dark:text-zinc-600 hidden sm:inline">|</span>
+                {activeDoc.source_link && (
+                  <a href={activeDoc.source_link} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 text-zinc-500 hover:text-red-600 dark:text-zinc-400 dark:hover:text-red-500 transition-colors group">
+                    <Youtube className="w-4 h-4 group-hover:scale-110 transition-transform" /> Watch Original
+                  </a>
+                )}
+              </div>
+            </header>
 
-              if (block.type === 'summary') return (
-                <div key={idx} className="bg-slate-50/50 dark:bg-slate-900/20 border border-slate-200 dark:border-slate-800 p-6 sm:p-8 my-10 rounded-2xl shadow-sm">
-                  <span className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-indigo-500 dark:text-indigo-400 mb-4">
-                    <Sparkles className="w-3.5 h-3.5" /> Segment Summary
-                  </span>
-                  <p className="text-base sm:text-[18px] text-slate-700 dark:text-slate-300 leading-relaxed font-medium">{parseFormatting(block.text)}</p>
-                </div>
-              );
+            {/* Dynamic Content Renderer */}
+            <div className="text-zinc-800 dark:text-zinc-300 font-sans antialiased" style={{ fontSize: `${fontSize}px`, lineHeight: 1.85 }}>
+              {activeDoc.content.map((block, idx) => {
 
-              if (block.type === 'quote') return (
-                <blockquote key={idx} className="pl-6 sm:pl-8 py-2 my-12 border-l-4 border-amber-500 text-xl sm:text-2xl font-medium text-slate-900 dark:text-slate-100 leading-relaxed italic bg-gradient-to-r from-amber-50/50 to-transparent dark:from-amber-900/10 rounded-r-xl">
-                  "{parseFormatting(block.text)}"
-                </blockquote>
-              );
+                if (block.type === 'h2') return <h2 key={idx} className="font-bold text-zinc-900 dark:text-white mt-14 mb-6 tracking-tight" style={{ fontSize: `${fontSize * 1.3}px`, lineHeight: 1.3 }}>{block.text}</h2>;
 
-              if (block.type === 'divider') return (
-                <div key={idx} className="flex justify-center py-8">
-                  <span className="w-16 h-1 rounded-full bg-slate-200 dark:bg-slate-800"></span>
-                </div>
-              );
+                if (block.type === 'summary') return (
+                  <div key={idx} className="bg-zinc-50 dark:bg-[#1c1c1e] border-l-4 border-[#c6a87c] dark:border-[#d4b78f] p-6 sm:p-8 my-10 rounded-r-xl shadow-sm">
+                    <span className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-[#c6a87c] dark:text-[#d4b78f] mb-3">
+                      <Sparkles className="w-3.5 h-3.5" /> Segment Summary
+                    </span>
+                    <p className="text-zinc-700 dark:text-zinc-300 font-medium" style={{ fontSize: `${Math.max(15, fontSize - 2)}px`, lineHeight: 1.7 }}>{parseFormatting(block.text)}</p>
+                  </div>
+                );
 
-              // Default Paragraph
-              return <p key={idx} className="mb-6 text-justify sm:text-left">{parseFormatting(block.text)}</p>;
-            })}
+                if (block.type === 'quote') return (
+                  <blockquote key={idx} className="pl-6 sm:pl-8 py-2 my-10 border-l-[3px] border-[#c6a87c] dark:border-[#d4b78f] font-medium text-zinc-900 dark:text-zinc-100 italic font-serif" style={{ fontSize: `${fontSize * 1.15}px`, lineHeight: 1.6 }}>
+                    "{parseFormatting(block.text)}"
+                  </blockquote>
+                );
+
+                if (block.type === 'divider') return (
+                  <div key={idx} className="flex justify-center py-10">
+                    <span className="w-12 h-1 rounded-full bg-zinc-200 dark:bg-zinc-700"></span>
+                  </div>
+                );
+
+                // Default Paragraph
+                return <p key={idx} className="mb-6">{parseFormatting(block.text)}</p>;
+              })}
+            </div>
+
           </div>
-
-        </article>
-      </motion.div>
-
+        </motion.div>
+      </div>
     </div>
   );
 };
@@ -926,7 +908,7 @@ export default function App() {
   const isKeyword = searchMode === 'keyword';
 
   const appBgClass = activeTab === 'quran' ? (theme === 'dark' ? 'bg-[#121212] text-slate-100' : 'bg-[#f4ecd8] text-slate-900') :
-    (activeTab === 'library' ? (theme === 'dark' ? 'bg-slate-950 text-slate-100' : 'bg-slate-50 text-slate-900') :
+    (activeTab === 'library' ? (theme === 'dark' ? 'bg-[#1c1c1e] text-zinc-100' : 'bg-[#f4f4f5] text-zinc-900') :
       (theme === 'dark' ? (isKeyword && activeTab === 'search' ? 'bg-slate-900 text-slate-100' : 'aurora-bg text-slate-100') : (isKeyword && activeTab === 'search' ? 'bg-slate-50 text-slate-900' : 'light-aurora-bg text-slate-900')));
   const isMapView = activeTab === 'search' && data && viewMode === 'map' && !loading;
   const lockMainScreen = isMapView;
