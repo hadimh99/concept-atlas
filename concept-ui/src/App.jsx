@@ -3,6 +3,9 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Search, Moon, Sun, Sparkles, X, ChevronRight, ChevronLeft, Home, Copy, ChevronDown, ChevronUp, List, Layout, Info, BookOpen, History, HelpCircle, Database, Filter, Share2, Check, Settings2, Menu, Clock, Trash2, LibraryBig } from 'lucide-react';
 import quranData from './quran.json';
 import verseMap from './verse_map.json';
+import transcriptData from './transcripts.json';
+import { Youtube, Library as LibraryIcon, ChevronRight } from 'lucide-react'; // Add these to your existing lucide-react imports
+
 
 const APP_UPDATES = [{ version: "v3.5.3", date: "March 5, 2026", changes: ["Documentation: Completely overhauled the 'Help & Guide' section to detail the comprehensive suite of tools now available in Kisa, including Vector Hopping, Dynamic Map Views, and Reverse Quran Tafsir."] }, { version: "v3.5.2", date: "March 5, 2026", changes: ["Feature Polish: Added a 'Copy Text' button to all 'Anchored Source' views (both List View accordion and Map View modal) allowing you to copy the full reference, Arabic, and translation instantly.", "Map UX Overhaul: Nodes are uniformly sized and mathematically bounded to never overlap the center box or go off-screen."] }];
 const CLUSTER_COLORS = ['#10b981', '#8b5cf6', '#f59e0b', '#f43f5e', '#3b82f6'];
@@ -466,6 +469,97 @@ const QuranReader = ({ activeFontFamily, fontStyle, setFontStyle, handleSurahSel
   );
 };
 
+const TranscriptLibrary = ({ transcripts }) => {
+  const [activeDoc, setActiveDoc] = useState(transcripts[0]);
+
+  // A tiny custom parser to turn **bold** text in the JSON into actual bold HTML
+  const parseFormatting = (text) => {
+    if (!text) return null;
+    const parts = text.split(/(\*\*.*?\*\*)/g);
+    return parts.map((part, index) => {
+      if (part.startsWith('**') && part.endsWith('**')) {
+        return <strong key={index} className="font-semibold text-slate-900 dark:text-slate-100">{part.slice(2, -2)}</strong>;
+      }
+      return part;
+    });
+  };
+
+  return (
+    <div className="w-full max-w-6xl mx-auto px-4 sm:px-6 pt-24 sm:pt-28 pb-12 flex flex-col md:flex-row gap-8 pointer-events-auto">
+
+      {/* Left Sidebar: Transcript Selection Menu */}
+      <div className="w-full md:w-1/3 lg:w-1/4 shrink-0">
+        <div className="sticky top-28 bg-white/60 dark:bg-slate-900/40 backdrop-blur-md rounded-2xl p-4 border border-slate-200 dark:border-slate-800 shadow-sm">
+          <div className="flex items-center gap-2 mb-4 pb-4 border-b border-slate-200 dark:border-slate-700/50">
+            <LibraryIcon className="w-5 h-5 text-indigo-500" />
+            <h2 className="font-mono font-bold text-slate-800 dark:text-slate-200 tracking-tight uppercase text-sm">Library Archive</h2>
+          </div>
+          <div className="flex flex-col gap-2">
+            {transcripts.map((doc) => (
+              <button
+                key={doc.id}
+                onClick={() => setActiveDoc(doc)}
+                className={`text-left p-3 rounded-xl transition-all duration-300 flex flex-col gap-1 border ${activeDoc.id === doc.id ? 'bg-indigo-50 dark:bg-indigo-500/10 border-indigo-200 dark:border-indigo-500/30' : 'bg-transparent border-transparent hover:bg-slate-100 dark:hover:bg-slate-800'}`}
+              >
+                <span className={`text-sm font-semibold leading-tight ${activeDoc.id === doc.id ? 'text-indigo-700 dark:text-indigo-400' : 'text-slate-700 dark:text-slate-300'}`}>{doc.title}</span>
+                <span className="text-[10px] uppercase tracking-widest text-slate-500 font-mono">{doc.speaker}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Main Reading Area */}
+      <div className="w-full md:w-2/3 lg:w-3/4">
+        <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 sm:p-10 border border-slate-200 dark:border-slate-800 shadow-xl">
+
+          {/* Document Header */}
+          <div className="mb-10">
+            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-serif font-bold text-slate-900 dark:text-slate-50 leading-tight mb-4">{activeDoc.title}</h1>
+            <div className="flex flex-wrap items-center gap-4 text-sm font-mono">
+              <span className="bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 font-semibold uppercase tracking-wider text-[11px]">{activeDoc.speaker}</span>
+              {activeDoc.source_link && (
+                <a href={activeDoc.source_link} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 bg-red-50 dark:bg-red-900/20 px-3 py-1.5 rounded-lg border border-red-200 dark:border-red-900/50 transition-colors">
+                  <Youtube className="w-4 h-4" /> <span className="text-[11px] uppercase tracking-wider font-bold">Watch Original</span>
+                </a>
+              )}
+            </div>
+          </div>
+
+          <hr className="border-slate-200 dark:border-slate-800 mb-10" />
+
+          {/* Dynamic Content Renderer */}
+          <div className="space-y-6 text-lg text-slate-700 dark:text-slate-300 font-serif leading-[1.8]">
+            {activeDoc.content.map((block, idx) => {
+              if (block.type === 'h2') return <h2 key={idx} className="text-xl sm:text-2xl font-bold font-sans text-slate-900 dark:text-slate-100 mt-12 mb-4 tracking-tight">{block.text}</h2>;
+
+              if (block.type === 'summary') return (
+                <div key={idx} className="bg-indigo-50/50 dark:bg-indigo-900/10 border-l-4 border-indigo-500 p-5 rounded-r-xl my-6">
+                  <span className="block text-[10px] font-sans font-bold uppercase tracking-widest text-indigo-600 dark:text-indigo-400 mb-2">Segment Summary</span>
+                  <p className="text-base font-sans italic text-slate-800 dark:text-slate-300">{parseFormatting(block.text)}</p>
+                </div>
+              );
+
+              if (block.type === 'quote') return (
+                <blockquote key={idx} className="pl-6 py-2 my-8 border-l-2 border-amber-500 text-xl font-medium text-slate-800 dark:text-slate-200 italic bg-gradient-to-r from-amber-50/50 to-transparent dark:from-amber-900/10">
+                  "{parseFormatting(block.text)}"
+                </blockquote>
+              );
+
+              if (block.type === 'divider') return <hr key={idx} className="border-t border-slate-200 dark:border-slate-800 my-12 w-1/3 mx-auto" />;
+
+              // Default Paragraph
+              return <p key={idx} className="mb-4 text-justify">{parseFormatting(block.text)}</p>;
+            })}
+          </div>
+
+        </div>
+      </div>
+
+    </div>
+  );
+};
+
 export default function App() {
   const [query, setQuery] = useState('');
   const [searchMode, setSearchMode] = useState('concept');
@@ -763,8 +857,9 @@ export default function App() {
   const uniqueBooks = data && data.clusters ? Array.from(new Set(data.clusters.flatMap(c => c.items ? c.items.map(item => item.book) : []))) : [];
   const isKeyword = searchMode === 'keyword';
 
-  const appBgClass = activeTab === 'quran' ? (theme === 'dark' ? 'bg-[#121212] text-slate-100' : 'bg-[#f4ecd8] text-slate-900') : (theme === 'dark' ? (isKeyword && activeTab === 'search' ? 'bg-slate-900 text-slate-100' : 'aurora-bg text-slate-100') : (isKeyword && activeTab === 'search' ? 'bg-slate-50 text-slate-900' : 'light-aurora-bg text-slate-900'));
-
+  const appBgClass = activeTab === 'quran' ? (theme === 'dark' ? 'bg-[#121212] text-slate-100' : 'bg-[#f4ecd8] text-slate-900') :
+    (activeTab === 'library' ? (theme === 'dark' ? 'bg-slate-950 text-slate-100' : 'bg-slate-50 text-slate-900') :
+      (theme === 'dark' ? (isKeyword && activeTab === 'search' ? 'bg-slate-900 text-slate-100' : 'aurora-bg text-slate-100') : (isKeyword && activeTab === 'search' ? 'bg-slate-50 text-slate-900' : 'light-aurora-bg text-slate-900')));
   const isMapView = activeTab === 'search' && data && viewMode === 'map' && !loading;
   const lockMainScreen = isMapView;
 
@@ -813,9 +908,12 @@ export default function App() {
 
         <div className="flex items-center gap-2 sm:gap-4 relative z-[75] pointer-events-auto">
 
-          <div className={`flex items-center rounded-full p-1 mr-1 sm:mr-2 ${activeTab === 'quran' ? 'bg-white/40 dark:bg-slate-800/50 backdrop-blur-md shadow-sm border border-slate-300/30 dark:border-slate-700' : 'glass-panel border-white/20'}`}>
+          <div className={`flex items-center rounded-full p-1 mr-1 sm:mr-2 ${(activeTab === 'quran' || activeTab === 'library') ? 'bg-white/40 dark:bg-slate-800/50 backdrop-blur-md shadow-sm border border-slate-300/30 dark:border-slate-700' : 'glass-panel border-white/20'}`}>
             <button onClick={() => setActiveTab('search')} className={`p-2 rounded-full transition-all duration-300 cursor-pointer ${activeTab === 'search' ? 'bg-indigo-500/20 text-indigo-500 dark:text-indigo-400' : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}`} title="Search Engine"><Search className="w-4 h-4" /></button>
             <button onClick={() => setActiveTab('quran')} className={`p-2 rounded-full transition-all duration-300 cursor-pointer ${activeTab === 'quran' ? 'bg-amber-600/20 text-amber-800 dark:text-amber-500' : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}`} title="Quran Reader"><BookOpen className="w-4 h-4" /></button>
+
+            {/* NEW LIBRARY BUTTON */}
+            <button onClick={() => setActiveTab('library')} className={`p-2 rounded-full transition-all duration-300 cursor-pointer ${activeTab === 'library' ? 'bg-indigo-600/20 text-indigo-800 dark:text-indigo-400' : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}`} title="Transcript Library"><LibraryIcon className="w-4 h-4" /></button>
           </div>
 
           <div className="hidden md:flex items-center gap-2 sm:gap-4">
@@ -855,6 +953,8 @@ export default function App() {
       <main ref={containerRef} className={`relative w-full flex-grow flex flex-col ${lockMainScreen ? 'items-center justify-center h-screen overflow-hidden' : 'min-h-screen'}`}>
 
         {activeTab === 'quran' && <QuranReader activeFontFamily={activeFontFamily} fontStyle={fontStyle} setFontStyle={setFontStyle} handleSurahSelectHook={(id, name) => saveToHistory({ type: 'quran', surahId: id, surahName: name, timestamp: Date.now() })} externalSurahTarget={quranTarget} onTafsirClick={handleTafsirClick} />}
+        {/* NEW LIBRARY TAB PLACEMENT */}
+        {activeTab === 'library' && <TranscriptLibrary transcripts={transcriptData} />}
 
         <AnimatePresence>
           {activeTab === 'search' && !data && !loading && (
