@@ -524,7 +524,6 @@ const TranscriptLibrary = ({ transcripts }) => {
   }, [maxScrollY]);
 
   const jumpBack = () => {
-    // Scroll first, then hide the button slightly later to prevent Safari from canceling the scroll
     window.scrollTo({ top: maxScrollY, behavior: 'smooth' });
     setTimeout(() => setShowReturn(false), 100);
   };
@@ -577,7 +576,6 @@ const TranscriptLibrary = ({ transcripts }) => {
     <div className="w-full min-h-screen pt-24 sm:pt-32 pb-32 flex justify-center font-sans relative">
 
       {/* --- RETURN TO READING BUTTONS --- */}
-      {/* 1. Desktop: Vertical Right Edge */}
       <AnimatePresence>
         {showReturn && (
           <motion.button
@@ -591,7 +589,6 @@ const TranscriptLibrary = ({ transcripts }) => {
         )}
       </AnimatePresence>
 
-      {/* 2. Mobile: Unobtrusive Bottom-Right 'R' Module */}
       <AnimatePresence>
         {showReturn && (
           <motion.button
@@ -604,7 +601,6 @@ const TranscriptLibrary = ({ transcripts }) => {
           </motion.button>
         )}
       </AnimatePresence>
-
 
       {/* --- DESKTOP FLOATING TOGGLES --- */}
       <div className="hidden md:block">
@@ -624,7 +620,6 @@ const TranscriptLibrary = ({ transcripts }) => {
         </AnimatePresence>
       </div>
 
-
       {/* --- MOBILE UNIFIED DRAWER --- */}
       <AnimatePresence>
         {!isMobileDrawerOpen && (
@@ -641,7 +636,6 @@ const TranscriptLibrary = ({ transcripts }) => {
       <AnimatePresence>
         {isMobileDrawerOpen && (
           <>
-            {/* Clickable dark backdrop (Smoked Glass Effect) */}
             <motion.div
               initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
               onClick={() => setIsMobileDrawerOpen(false)}
@@ -675,7 +669,6 @@ const TranscriptLibrary = ({ transcripts }) => {
         )}
       </AnimatePresence>
 
-
       {/* --- DESKTOP THREE-PILLAR LAYOUT ENGINE --- */}
       <div className="w-full max-w-[1600px] px-4 sm:px-6 lg:px-8 flex justify-between items-start gap-0 lg:gap-8">
 
@@ -692,7 +685,7 @@ const TranscriptLibrary = ({ transcripts }) => {
           </div>
         </motion.div>
 
-        {/* Center Pillar: Pure Canvas */}
+        {/* Center Pillar: Pure Canvas (Framer Motion Removed for Peak Mobile Performance) */}
         <div className="flex-grow w-full flex justify-center max-w-4xl mx-auto transition-all duration-500">
           <div className="w-full bg-white dark:bg-[#252528] border border-zinc-200 dark:border-zinc-800/80 rounded-2xl p-6 sm:p-12 shadow-sm">
 
@@ -1079,7 +1072,7 @@ export default function App() {
   const lockMainScreen = isMapView;
 
   return (
-    <div className={`min-h-screen w-full transition-colors duration-700 flex flex-col ${lockMainScreen ? 'overflow-hidden h-screen' : 'overflow-clip'} ${appBgClass}`}>
+    <div className={`min-h-screen w-full transition-colors duration-700 flex flex-col ${lockMainScreen ? 'overflow-hidden h-screen' : ''} ${appBgClass}`} style={{ WebkitOverflowScrolling: 'touch' }}>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Amiri+Quran&family=Amiri:wght@400;700&family=Scheherazade+New:wght@400;700&family=Noto+Naskh+Arabic:wght@400;700&display=swap');
         
