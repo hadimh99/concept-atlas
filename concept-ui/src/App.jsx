@@ -476,82 +476,82 @@ const TranscriptLibrary = ({ transcripts }) => {
     const parts = text.split(/(\*\*.*?\*\*)/g);
     return parts.map((part, index) => {
       if (part.startsWith('**') && part.endsWith('**')) {
-        return <strong key={index} className="font-semibold text-slate-900 dark:text-slate-100">{part.slice(2, -2)}</strong>;
+        return <strong key={index} className="font-bold text-slate-900 dark:text-white">{part.slice(2, -2)}</strong>;
       }
       return part;
     });
   };
 
   return (
-    <div className="w-full max-w-6xl mx-auto px-4 sm:px-6 pt-24 sm:pt-28 pb-12 flex flex-col md:flex-row gap-8 pointer-events-auto">
+    <div className="w-full max-w-6xl mx-auto px-4 sm:px-6 pt-24 sm:pt-32 pb-24 flex flex-col md:flex-row gap-10 lg:gap-16 pointer-events-auto font-sans">
 
-      {/* Left Sidebar: Transcript Selection Menu */}
-      <div className="w-full md:w-1/3 lg:w-1/4 shrink-0">
-        <div className="sticky top-28 bg-white/60 dark:bg-slate-900/40 backdrop-blur-md rounded-2xl p-4 border border-slate-200 dark:border-slate-800 shadow-sm">
-          <div className="flex items-center gap-2 mb-4 pb-4 border-b border-slate-200 dark:border-slate-700/50">
-            <LibraryIcon className="w-5 h-5 text-indigo-500" />
-            <h2 className="font-mono font-bold text-slate-800 dark:text-slate-200 tracking-tight uppercase text-sm">Library Archive</h2>
-          </div>
-          <div className="flex flex-col gap-2">
+      {/* Left Sidebar: Minimalist Table of Contents */}
+      <div className="w-full md:w-1/4 shrink-0">
+        <div className="sticky top-32">
+          <h2 className="text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-6 border-b border-slate-200 dark:border-slate-800 pb-3">Library Archive</h2>
+          <div className="flex flex-col gap-1">
             {transcripts.map((doc) => (
               <button
                 key={doc.id}
                 onClick={() => setActiveDoc(doc)}
-                className={`text-left p-3 rounded-xl transition-all duration-300 flex flex-col gap-1 border ${activeDoc.id === doc.id ? 'bg-indigo-50 dark:bg-indigo-500/10 border-indigo-200 dark:border-indigo-500/30' : 'bg-transparent border-transparent hover:bg-slate-100 dark:hover:bg-slate-800'}`}
+                className={`text-left py-2 px-3 -mx-3 rounded-lg transition-all duration-200 flex flex-col gap-1 cursor-pointer ${activeDoc.id === doc.id ? 'bg-slate-100 dark:bg-slate-800/50' : 'hover:bg-slate-50 dark:hover:bg-slate-800/30'}`}
               >
-                <span className={`text-sm font-semibold leading-tight ${activeDoc.id === doc.id ? 'text-indigo-700 dark:text-indigo-400' : 'text-slate-700 dark:text-slate-300'}`}>{doc.title}</span>
-                <span className="text-[10px] uppercase tracking-widest text-slate-500 font-mono">{doc.speaker}</span>
+                <span className={`text-sm font-medium leading-snug ${activeDoc.id === doc.id ? 'text-slate-900 dark:text-slate-100' : 'text-slate-500 dark:text-slate-400'}`}>{doc.title}</span>
               </button>
             ))}
           </div>
         </div>
       </div>
 
-      {/* Main Reading Area */}
-      <div className="w-full md:w-2/3 lg:w-3/4">
-        <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 sm:p-10 border border-slate-200 dark:border-slate-800 shadow-xl">
+      {/* Main Reading Area (Editorial Layout) */}
+      <div className="w-full md:w-3/4 flex justify-center">
+        <article className="w-full max-w-3xl">
 
           {/* Document Header */}
-          <div className="mb-10">
-            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-serif font-bold text-slate-900 dark:text-slate-50 leading-tight mb-4">{activeDoc.title}</h1>
-            <div className="flex flex-wrap items-center gap-4 text-sm font-mono">
-              <span className="bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 font-semibold uppercase tracking-wider text-[11px]">{activeDoc.speaker}</span>
+          <header className="mb-14">
+            <h1 className="text-3xl sm:text-4xl md:text-[42px] font-bold text-slate-900 dark:text-slate-50 leading-[1.15] mb-6 tracking-tight">{activeDoc.title}</h1>
+            <div className="flex flex-wrap items-center gap-4 text-sm font-medium">
+              <span className="text-slate-800 dark:text-slate-200 flex items-center gap-2">
+                <span className="w-6 h-6 rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center text-[10px] font-bold tracking-tighter text-slate-600 dark:text-slate-300">AG</span>
+                {activeDoc.speaker}
+              </span>
+              <span className="text-slate-300 dark:text-slate-700">|</span>
               {activeDoc.source_link && (
-                <a href={activeDoc.source_link} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 bg-red-50 dark:bg-red-900/20 px-3 py-1.5 rounded-lg border border-red-200 dark:border-red-900/50 transition-colors">
-                  <Youtube className="w-4 h-4" /> <span className="text-[11px] uppercase tracking-wider font-bold">Watch Original</span>
+                <a href={activeDoc.source_link} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100 transition-colors underline underline-offset-4 decoration-slate-300 dark:decoration-slate-700 hover:decoration-slate-900 dark:hover:decoration-slate-100">
+                  <Youtube className="w-4 h-4" /> Watch Original
                 </a>
               )}
             </div>
-          </div>
-
-          <hr className="border-slate-200 dark:border-slate-800 mb-10" />
+          </header>
 
           {/* Dynamic Content Renderer */}
-          <div className="space-y-6 text-lg text-slate-700 dark:text-slate-300 font-serif leading-[1.8]">
+          <div className="space-y-6 text-[17px] sm:text-[19px] text-slate-800 dark:text-slate-300 leading-[1.8] sm:leading-[1.9] antialiased">
             {activeDoc.content.map((block, idx) => {
-              if (block.type === 'h2') return <h2 key={idx} className="text-xl sm:text-2xl font-bold font-sans text-slate-900 dark:text-slate-100 mt-12 mb-4 tracking-tight">{block.text}</h2>;
+
+              if (block.type === 'h2') return <h2 key={idx} className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-slate-100 mt-14 mb-6 tracking-tight">{block.text}</h2>;
 
               if (block.type === 'summary') return (
-                <div key={idx} className="bg-indigo-50/50 dark:bg-indigo-900/10 border-l-4 border-indigo-500 p-5 rounded-r-xl my-6">
-                  <span className="block text-[10px] font-sans font-bold uppercase tracking-widest text-indigo-600 dark:text-indigo-400 mb-2">Segment Summary</span>
-                  <p className="text-base font-sans italic text-slate-800 dark:text-slate-300">{parseFormatting(block.text)}</p>
+                <div key={idx} className="bg-slate-50 dark:bg-slate-800/30 border-l-2 border-slate-300 dark:border-slate-600 p-6 my-8 rounded-r-lg">
+                  <span className="block text-[11px] font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-3">Segment Summary</span>
+                  <p className="text-base sm:text-[17px] text-slate-700 dark:text-slate-300 leading-relaxed">{parseFormatting(block.text)}</p>
                 </div>
               );
 
               if (block.type === 'quote') return (
-                <blockquote key={idx} className="pl-6 py-2 my-8 border-l-2 border-amber-500 text-xl font-medium text-slate-800 dark:text-slate-200 italic bg-gradient-to-r from-amber-50/50 to-transparent dark:from-amber-900/10">
+                <blockquote key={idx} className="pl-6 sm:pl-8 py-2 my-10 border-l-2 border-slate-900 dark:border-slate-100 text-xl sm:text-2xl font-medium text-slate-900 dark:text-slate-100 leading-snug">
                   "{parseFormatting(block.text)}"
                 </blockquote>
               );
 
-              if (block.type === 'divider') return <hr key={idx} className="border-t border-slate-200 dark:border-slate-800 my-12 w-1/3 mx-auto" />;
+              // The exact thin divider line from your screenshot
+              if (block.type === 'divider') return <hr key={idx} className="border-t border-slate-200 dark:border-slate-800 my-10" />;
 
               // Default Paragraph
-              return <p key={idx} className="mb-4 text-justify">{parseFormatting(block.text)}</p>;
+              return <p key={idx} className="mb-6">{parseFormatting(block.text)}</p>;
             })}
           </div>
 
-        </div>
+        </article>
       </div>
 
     </div>
