@@ -471,9 +471,10 @@ const TranscriptLibrary = ({ transcripts }) => {
   const [activeDoc, setActiveDoc] = useState(transcripts[0]);
   const [isArchiveOpen, setIsArchiveOpen] = useState(true);
   const [isCustomiseOpen, setIsCustomiseOpen] = useState(true);
+  const [isMobileDrawerOpen, setIsMobileDrawerOpen] = useState(true); // Pops up initially on mobile
   const [fontSize, setFontSize] = useState(18);
 
-  // Return to Reading Logic
+  // Deep-Scroll Return to Reading Logic
   const [maxScrollY, setMaxScrollY] = useState(0);
   const [showReturn, setShowReturn] = useState(false);
 
@@ -483,7 +484,7 @@ const TranscriptLibrary = ({ transcripts }) => {
       if (y >= maxScrollY - 20) {
         setMaxScrollY(Math.max(y, maxScrollY));
         setShowReturn(false);
-      } else if (maxScrollY - y > 600) {
+      } else if (maxScrollY - y > 1500) { // Require a MASSIVE scroll (1500px) to trigger
         setShowReturn(true);
       } else {
         setShowReturn(false);
@@ -512,20 +513,36 @@ const TranscriptLibrary = ({ transcripts }) => {
   return (
     <div className="w-full min-h-screen pt-24 sm:pt-32 pb-32 flex justify-center font-sans relative overflow-x-hidden">
 
-      {/* Return to Reading Button */}
+      {/* --- RETURN TO READING BUTTONS --- */}
+      {/* 1. Desktop: Vertical Right Edge */}
+      <AnimatePresence>
+        {showReturn && (
+          <motion.button
+            initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }}
+            onClick={jumpBack}
+            className="hidden md:flex fixed top-1/2 right-4 lg:right-6 -translate-y-1/2 z-[100] bg-white dark:bg-[#252528] text-[#c6a87c] border border-zinc-200 dark:border-zinc-800 p-3 rounded-full shadow-2xl flex-col items-center gap-3 cursor-pointer hover:scale-105 transition-transform"
+          >
+            <ArrowDown className="w-4 h-4 animate-bounce" />
+            <span style={{ writingMode: 'vertical-rl' }} className="text-[10px] font-bold uppercase tracking-widest rotate-180">Return to Reading</span>
+          </motion.button>
+        )}
+      </AnimatePresence>
+
+      {/* 2. Mobile: Small Top Pill */}
       <AnimatePresence>
         {showReturn && (
           <motion.button
             initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }}
             onClick={jumpBack}
-            className="fixed top-24 left-1/2 -translate-x-1/2 z-[100] bg-zinc-900 dark:bg-zinc-100 text-[#d4b78f] dark:text-[#8b6b45] px-5 py-2.5 rounded-full shadow-2xl flex items-center gap-2 text-xs font-bold uppercase tracking-widest cursor-pointer hover:scale-105 transition-transform"
+            className="md:hidden fixed top-24 left-1/2 -translate-x-1/2 z-[100] bg-white dark:bg-[#252528] text-[#c6a87c] border border-zinc-200 dark:border-zinc-800 px-5 py-2 rounded-full shadow-2xl flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest cursor-pointer"
           >
-            Return to Reading <ArrowDown className="w-4 h-4 animate-bounce" />
+            Return <ArrowDown className="w-3 h-3 animate-bounce" />
           </motion.button>
         )}
       </AnimatePresence>
 
-      {/* Desktop Floating Toggles (Visible when sidebars are closed) */}
+
+      {/* --- DESKTOP FLOATING TOGGLES (When Pillars are closed) --- */}
       <div className="hidden md:block">
         <AnimatePresence>
           {!isArchiveOpen && (
@@ -543,17 +560,67 @@ const TranscriptLibrary = ({ transcripts }) => {
         </AnimatePresence>
       </div>
 
-      {/* Mobile Floating Toggles (FABs at bottom of screen) */}
-      <div className="md:hidden fixed bottom-6 left-0 w-full px-6 flex justify-between z-50 pointer-events-none">
-        <button onClick={() => setIsArchiveOpen(!isArchiveOpen)} className="p-4 bg-zinc-900 dark:bg-white text-[#d4b78f] dark:text-[#8b6b45] rounded-full shadow-2xl pointer-events-auto cursor-pointer">
-          <LibraryIcon className="w-5 h-5" />
-        </button>
-        <button onClick={() => setIsCustomiseOpen(!isCustomiseOpen)} className="p-4 bg-zinc-900 dark:bg-white text-[#d4b78f] dark:text-[#8b6b45] rounded-full shadow-2xl pointer-events-auto cursor-pointer">
-          <Settings2 className="w-5 h-5" />
-        </button>
-      </div>
 
-      {/* THREE-PILLAR LAYOUT ENGINE */}
+      {/* --- MOBILE UNIFIED DRAWER --- */}
+      {/* The "Little Arrow" that juts out when drawer is closed */}
+      <AnimatePresence>
+        {!isMobileDrawerOpen && (
+          <motion.button
+            initial={{ x: -20, opacity: 0 }} animate={{ x: 0, opacity: 1 }} exit={{ x: -20, opacity: 0 }}
+            onClick={() => setIsMobileDrawerOpen(true)}
+            className="md:hidden fixed left-0 top-1/2 -translate-y-1/2 z-50 bg-white/90 dark:bg-[#252528]/90 backdrop-blur-md border border-l-0 border-zinc-200 dark:border-zinc-800 shadow-xl py-4 px-2 rounded-r-xl cursor-pointer"
+          >
+            <ChevronRight className="w-5 h-5 text-[#c6a87c]" />
+          </motion.button>
+        )}
+      </AnimatePresence>
+
+      {/* The Unified Drawer Overlay & Panel */}
+      <AnimatePresence>
+        {isMobileDrawerOpen && (
+          <>
+            {/* Clickable dark backdrop to close */}
+            <motion.div
+              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+              onClick={() => setIsMobileDrawerOpen(false)}
+              className="md:hidden fixed inset-0 bg-black/60 z-[190] cursor-pointer backdrop-blur-sm"
+            />
+            {/* The actual sliding drawer */}
+            <motion.div
+              initial={{ x: '-100%' }} animate={{ x: 0 }} exit={{ x: '-100%' }} transition={{ type: "spring", damping: 25, stiffness: 200 }}
+              className="md:hidden fixed inset-y-0 left-0 w-[85vw] max-w-[320px] bg-white dark:bg-[#1c1c1e] z-[200] shadow-2xl border-r border-zinc-200 dark:border-zinc-800 flex flex-col"
+            >
+              <div className="p-5 border-b border-zinc-100 dark:border-zinc-800/80 shrink-0 flex justify-between items-center">
+                <h2 className="text-[11px] font-bold text-zinc-500 uppercase tracking-widest flex items-center gap-2"><LibraryIcon className="w-4 h-4 text-[#c6a87c]" /> Library Tools</h2>
+                <button onClick={() => setIsMobileDrawerOpen(false)} className="p-1"><X className="w-5 h-5 text-zinc-500" /></button>
+              </div>
+
+              {/* Font Resizer Block */}
+              <div className="p-5 border-b border-zinc-100 dark:border-zinc-800/80 shrink-0">
+                <span className="text-[10px] font-bold uppercase tracking-widest text-zinc-400 block mb-3">Text Size</span>
+                <div className="flex items-center gap-4 bg-zinc-50 dark:bg-[#252528] rounded-xl p-2 border border-zinc-200 dark:border-zinc-700">
+                  <button onClick={() => setFontSize(Math.max(14, fontSize - 1))} className="w-12 h-12 flex items-center justify-center rounded-lg bg-white dark:bg-[#1c1c1e] text-zinc-600 dark:text-zinc-300 font-bold shadow-sm text-xl">-</button>
+                  <span className="text-lg font-mono font-bold text-zinc-700 dark:text-zinc-300 flex-grow text-center">{fontSize}px</span>
+                  <button onClick={() => setFontSize(Math.min(28, fontSize + 1))} className="w-12 h-12 flex items-center justify-center rounded-lg bg-white dark:bg-[#1c1c1e] text-zinc-600 dark:text-zinc-300 font-bold shadow-sm text-xl">+</button>
+                </div>
+              </div>
+
+              {/* Archive Block */}
+              <div className="p-4 overflow-y-auto smart-scrollbar flex-grow flex flex-col gap-2">
+                <span className="text-[10px] font-bold uppercase tracking-widest text-zinc-400 block ml-1 mb-1">Archive</span>
+                {transcripts.map((doc) => (
+                  <button key={doc.id} onClick={() => { setActiveDoc(doc); setIsMobileDrawerOpen(false); }} className={`text-left py-4 px-4 rounded-xl border ${activeDoc.id === doc.id ? 'bg-zinc-50 dark:bg-[#252528] border-zinc-200 dark:border-zinc-700 text-[#c6a87c] font-bold shadow-sm' : 'border-transparent text-zinc-600 dark:text-zinc-400 hover:bg-zinc-50 dark:hover:bg-[#252528]/50'} text-sm leading-snug`}>
+                    {doc.title}
+                  </button>
+                ))}
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+
+
+      {/* --- DESKTOP THREE-PILLAR LAYOUT ENGINE --- */}
       <div className="w-full max-w-[1600px] px-4 sm:px-6 lg:px-8 flex justify-between items-start gap-0 lg:gap-8">
 
         {/* Left Pillar: Archive */}
@@ -623,34 +690,6 @@ const TranscriptLibrary = ({ transcripts }) => {
         </motion.div>
 
       </div>
-
-      {/* Mobile Drawers (Slide Over Content) */}
-      <AnimatePresence>
-        {isArchiveOpen && (
-          <motion.div initial={{ x: '-100%' }} animate={{ x: 0 }} exit={{ x: '-100%' }} transition={{ type: "spring", damping: 25, stiffness: 200 }} className="md:hidden fixed inset-y-0 left-0 w-[85vw] max-w-[320px] bg-white dark:bg-[#1c1c1e] z-[200] shadow-2xl border-r border-zinc-200 dark:border-zinc-800 flex flex-col">
-            <div className="p-5 border-b border-zinc-100 dark:border-zinc-800 shrink-0 flex justify-between items-center"><h2 className="text-xs font-bold text-zinc-500 uppercase tracking-widest flex items-center gap-2"><LibraryIcon className="w-4 h-4 text-[#c6a87c]" /> Archive</h2><button onClick={() => setIsArchiveOpen(false)}><X className="w-5 h-5 text-zinc-500" /></button></div>
-            <div className="p-3 overflow-y-auto smart-scrollbar flex-grow flex flex-col gap-2">
-              {transcripts.map((doc) => (<button key={doc.id} onClick={() => { setActiveDoc(doc); setIsArchiveOpen(false); }} className={`text-left py-4 px-4 rounded-xl border ${activeDoc.id === doc.id ? 'bg-zinc-50 dark:bg-[#252528] border-zinc-200 dark:border-zinc-700 text-[#c6a87c] font-bold' : 'border-transparent text-zinc-600 dark:text-zinc-400'} text-sm leading-snug`}>{doc.title}</button>))}
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-      <AnimatePresence>
-        {isCustomiseOpen && (
-          <motion.div initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }} transition={{ type: "spring", damping: 25, stiffness: 200 }} className="md:hidden fixed bottom-0 left-0 w-full bg-white dark:bg-[#1c1c1e] z-[200] shadow-[0_-10px_40px_rgba(0,0,0,0.2)] border-t border-zinc-200 dark:border-zinc-800 rounded-t-3xl flex flex-col">
-            <div className="p-5 border-b border-zinc-100 dark:border-zinc-800 shrink-0 flex justify-between items-center"><h2 className="text-xs font-bold text-zinc-500 uppercase tracking-widest flex items-center gap-2"><Settings2 className="w-4 h-4 text-[#c6a87c]" /> Customise</h2><button onClick={() => setIsCustomiseOpen(false)}><X className="w-5 h-5 text-zinc-500" /></button></div>
-            <div className="p-8 pb-12 flex flex-col items-center">
-              <span className="text-[10px] font-bold uppercase tracking-widest text-zinc-400 block mb-4">Text Size</span>
-              <div className="flex items-center gap-4 bg-zinc-50 dark:bg-[#252528] rounded-xl p-2 border border-zinc-200 dark:border-zinc-700">
-                <button onClick={() => setFontSize(Math.max(14, fontSize - 1))} className="w-12 h-12 flex items-center justify-center rounded-lg bg-white dark:bg-[#1c1c1e] text-zinc-600 dark:text-zinc-300 font-bold shadow-sm text-xl">-</button>
-                <span className="text-lg font-mono font-bold text-zinc-700 dark:text-zinc-300 w-16 text-center">{fontSize}px</span>
-                <button onClick={() => setFontSize(Math.min(28, fontSize + 1))} className="w-12 h-12 flex items-center justify-center rounded-lg bg-white dark:bg-[#1c1c1e] text-zinc-600 dark:text-zinc-300 font-bold shadow-sm text-xl">+</button>
-              </div>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
     </div>
   );
 };
