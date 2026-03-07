@@ -510,7 +510,7 @@ const TranscriptLibrary = ({ transcripts }) => {
   useEffect(() => {
     const handleScroll = () => {
       const y = window.scrollY;
-      if (y >= maxScrollY - 20) {
+      if (y >= maxScrollY - 50) {
         setMaxScrollY(Math.max(y, maxScrollY));
         setShowReturn(false);
       } else if (maxScrollY - y > 1500) {
@@ -524,8 +524,9 @@ const TranscriptLibrary = ({ transcripts }) => {
   }, [maxScrollY]);
 
   const jumpBack = () => {
+    // Scroll first, then hide the button slightly later to prevent Safari from canceling the scroll
     window.scrollTo({ top: maxScrollY, behavior: 'smooth' });
-    setShowReturn(false);
+    setTimeout(() => setShowReturn(false), 100);
   };
 
   const parseFormatting = (text) => {
@@ -559,7 +560,7 @@ const TranscriptLibrary = ({ transcripts }) => {
                 {docs.map(doc => {
                   const displayTitle = doc.title.startsWith(groupSeriesName + ' - ') ? doc.title.replace(groupSeriesName + ' - ', '') : doc.title;
                   return (
-                    <button key={doc.id} onClick={() => { setActiveDoc(doc); setIsMobileDrawerOpen(false); }} className={`text-left py-2.5 px-3 rounded-xl transition-all duration-200 cursor-pointer ${activeDoc.id === doc.id ? 'bg-zinc-50 dark:bg-[#1c1c1e] text-[#c6a87c] font-bold shadow-sm border border-zinc-200 dark:border-zinc-700' : 'text-zinc-500 hover:text-zinc-800 dark:text-zinc-400 dark:hover:text-zinc-200 border border-transparent hover:bg-zinc-50 dark:hover:bg-[#2c2c2e]'}`}>
+                    <button key={doc.id} onClick={() => { setActiveDoc(doc); setIsMobileDrawerOpen(false); }} className={`text-left py-2.5 px-3 rounded-xl transition-all duration-200 cursor-pointer ${activeDoc.id === doc.id ? 'bg-zinc-50 dark:bg-[#1c1c1e] text-zinc-900 dark:text-white font-bold shadow-sm border border-zinc-200 dark:border-zinc-700' : 'text-zinc-500 hover:text-zinc-800 dark:text-zinc-400 dark:hover:text-zinc-200 border border-transparent hover:bg-zinc-50 dark:hover:bg-[#2c2c2e]'}`}>
                       <span className="text-sm leading-snug block">{displayTitle}</span>
                     </button>
                   );
@@ -573,10 +574,10 @@ const TranscriptLibrary = ({ transcripts }) => {
   );
 
   return (
-    // Note: Removed 'overflow-x-hidden' to instantly restore iOS smooth momentum scrolling
-    <div className="w-full min-h-screen pt-24 sm:pt-32 pb-32 flex justify-center font-sans relative" style={{ WebkitOverflowScrolling: 'touch' }}>
+    <div className="w-full min-h-screen pt-24 sm:pt-32 pb-32 flex justify-center font-sans relative">
 
       {/* --- RETURN TO READING BUTTONS --- */}
+      {/* 1. Desktop: Vertical Right Edge */}
       <AnimatePresence>
         {showReturn && (
           <motion.button
@@ -590,6 +591,7 @@ const TranscriptLibrary = ({ transcripts }) => {
         )}
       </AnimatePresence>
 
+      {/* 2. Mobile: Unobtrusive Bottom-Right 'R' Module */}
       <AnimatePresence>
         {showReturn && (
           <motion.button
@@ -639,10 +641,11 @@ const TranscriptLibrary = ({ transcripts }) => {
       <AnimatePresence>
         {isMobileDrawerOpen && (
           <>
+            {/* Clickable dark backdrop (Smoked Glass Effect) */}
             <motion.div
               initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
               onClick={() => setIsMobileDrawerOpen(false)}
-              className="md:hidden fixed inset-0 bg-black/80 z-[190] cursor-pointer backdrop-blur-md"
+              className="md:hidden fixed inset-0 bg-black/40 z-[190] cursor-pointer backdrop-blur-sm"
               style={{ touchAction: 'none' }}
             />
 
@@ -708,7 +711,6 @@ const TranscriptLibrary = ({ transcripts }) => {
                 <span className="text-zinc-300 dark:text-zinc-600 hidden sm:inline">|</span>
                 {activeDoc.source_link && (<a href={activeDoc.source_link} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 text-zinc-500 hover:text-red-600 transition-colors group"><Youtube className="w-4 h-4 group-hover:scale-110 transition-transform" /> Watch Original</a>)}
               </div>
-              {/* Strong Editorial Divider Line */}
               <hr className="w-full border-t-[2px] border-zinc-300 dark:border-zinc-700" />
             </header>
 
@@ -1077,7 +1079,7 @@ export default function App() {
   const lockMainScreen = isMapView;
 
   return (
-    <div className={`min-h-screen w-full transition-colors duration-700 flex flex-col ${lockMainScreen ? 'overflow-hidden h-screen' : 'overflow-x-hidden'} ${appBgClass}`}>
+    <div className={`min-h-screen w-full transition-colors duration-700 flex flex-col ${lockMainScreen ? 'overflow-hidden h-screen' : 'overflow-clip'} ${appBgClass}`}>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Amiri+Quran&family=Amiri:wght@400;700&family=Scheherazade+New:wght@400;700&family=Noto+Naskh+Arabic:wght@400;700&display=swap');
         
