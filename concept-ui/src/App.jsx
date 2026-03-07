@@ -470,9 +470,13 @@ const QuranReader = ({ activeFontFamily, fontStyle, setFontStyle, handleSurahSel
 const TranscriptLibrary = ({ transcripts }) => {
   const [activeDoc, setActiveDoc] = useState(transcripts[0]);
   const [isArchiveOpen, setIsArchiveOpen] = useState(true);
-  const [isCustomiseOpen, setIsCustomiseOpen] = useState(true);
   const [isMobileDrawerOpen, setIsMobileDrawerOpen] = useState(true);
   const [fontSize, setFontSize] = useState(18);
+
+  // Direct DOM Refs for High-Performance Scrolling (Zero Re-renders)
+  const maxScrollYRef = useRef(0);
+  const returnDesktopRef = useRef(null);
+  const returnMobileRef = useRef(null);
 
   // Group transcripts by Series dynamically
   const groupedTranscripts = useMemo(() => {
@@ -503,23 +507,51 @@ const TranscriptLibrary = ({ transcripts }) => {
     mainTitle = activeDoc.title.replace(seriesTitle + ' - ', '');
   }
 
-  // --- PERFORMANCE FIX: Track scroll with a Ref to prevent React re-rendering on every pixel ---
-  const maxScrollYRef = useRef(0);
-  const [showReturn, setShowReturn] = useState(false);
-
+  // HIGH-PERFORMANCE SCROLL TRACKER
   useEffect(() => {
     let ticking = false;
     const handleScroll = () => {
       if (!ticking) {
         window.requestAnimationFrame(() => {
           const y = window.scrollY;
+
           if (y >= maxScrollYRef.current - 50) {
+            // User is at the bottom of their read - update max and HIDE buttons
             maxScrollYRef.current = Math.max(y, maxScrollYRef.current);
-            if (showReturn) setShowReturn(false);
+            if (returnDesktopRef.current) {
+              returnDesktopRef.current.style.opacity = '0';
+              returnDesktopRef.current.style.pointerEvents = 'none';
+              returnDesktopRef.current.style.transform = 'translateY(-50%) translateX(20px)';
+            }
+            if (returnMobileRef.current) {
+              returnMobileRef.current.style.opacity = '0';
+              returnMobileRef.current.style.pointerEvents = 'none';
+              returnMobileRef.current.style.transform = 'translateY(20px) scale(0.8)';
+            }
           } else if (maxScrollYRef.current - y > 1500) {
-            if (!showReturn) setShowReturn(true);
+            // User scrolled UP significantly - SHOW buttons
+            if (returnDesktopRef.current) {
+              returnDesktopRef.current.style.opacity = '1';
+              returnDesktopRef.current.style.pointerEvents = 'auto';
+              returnDesktopRef.current.style.transform = 'translateY(-50%) translateX(0px)';
+            }
+            if (returnMobileRef.current) {
+              returnMobileRef.current.style.opacity = '1';
+              returnMobileRef.current.style.pointerEvents = 'auto';
+              returnMobileRef.current.style.transform = 'translateY(0px) scale(1)';
+            }
           } else {
-            if (showReturn) setShowReturn(false);
+            // User is within standard reading threshold - HIDE buttons
+            if (returnDesktopRef.current) {
+              returnDesktopRef.current.style.opacity = '0';
+              returnDesktopRef.current.style.pointerEvents = 'none';
+              returnDesktopRef.current.style.transform = 'translateY(-50%) translateX(20px)';
+            }
+            if (returnMobileRef.current) {
+              returnMobileRef.current.style.opacity = '0';
+              returnMobileRef.current.style.pointerEvents = 'none';
+              returnMobileRef.current.style.transform = 'translateY(20px) scale(0.8)';
+            }
           }
           ticking = false;
         });
@@ -528,11 +560,10 @@ const TranscriptLibrary = ({ transcripts }) => {
     };
     window.addEventListener('scroll', handleScroll, { passive: true });
     return () => window.removeEventListener('scroll', handleScroll);
-  }, [showReturn]);
+  }, []);
 
   const jumpBack = () => {
     window.scrollTo({ top: maxScrollYRef.current, behavior: 'smooth' });
-    setTimeout(() => setShowReturn(false), 150);
   };
 
   const parseFormatting = (text) => {
@@ -555,8 +586,7 @@ const TranscriptLibrary = ({ transcripts }) => {
             onClick={() => toggleSeries(groupSeriesName)}
             className="flex items-center justify-between py-2 px-3 hover:bg-zinc-100 dark:hover:bg-[#2c2c2e] rounded-lg transition-colors group cursor-pointer"
           >
-            {/* ENLARGED, BOLD SERIES TITLE */}
-            <span className="text-sm sm:text-base font-sans font-extrabold uppercase tracking-widest text-[#c6a87c] dark:text-[#d4b78f] group-hover:text-[#b09265] transition-colors text-left flex-1 pr-4 leading-relaxed">
+            <span className="text-[11px] font-mono font-bold uppercase tracking-widest text-[#c6a87c] dark:text-[#d4b78f] group-hover:text-[#b09265] transition-colors text-left flex-1 pr-4 leading-relaxed">
               {groupSeriesName}
             </span>
             {expandedSeries[groupSeriesName] ? <ChevronUp className="w-4 h-4 text-[#c6a87c] shrink-0" /> : <ChevronDown className="w-4 h-4 text-zinc-500 shrink-0" />}
@@ -580,33 +610,67 @@ const TranscriptLibrary = ({ transcripts }) => {
     </div>
   );
 
+  // Shared Tool Drawer (Resizer + Archive)
+  const LibraryTools = ({ isMobile }) => (
+    <div className="flex flex-col h-full">
+      <div className="p-4 sm:p-5 border-b border-zinc-100 dark:border-zinc-800/80 shrink-0 flex justify-between items-center">
+        <h2 className="text-[11px] font-bold text-zinc-500 uppercase tracking-widest flex items-center gap-2"><LibraryIcon className="w-4 h-4 text-[#c6a87c]" /> Library Tools</h2>
+        {isMobile ? (
+          <button onClick={() => setIsMobileDrawerOpen(false)} className="p-1"><X className="w-5 h-5 text-zinc-500" /></button>
+        ) : (
+          <button onClick={() => setIsArchiveOpen(false)} className="p-1 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-full transition-colors cursor-pointer"><X className="w-4 h-4 text-zinc-500" /></button>
+        )}
+      </div>
+
+      {/* TEXT RESIZER STRETCHED FULL WIDTH */}
+      <div className="p-4 sm:p-5 border-b border-zinc-100 dark:border-zinc-800/80 shrink-0">
+        <span className="text-[10px] font-bold uppercase tracking-widest text-zinc-400 block mb-3">Text Size</span>
+        <div className="flex items-center justify-between bg-zinc-50 dark:bg-[#252528] rounded-xl p-1.5 sm:p-2 border border-zinc-200 dark:border-zinc-700 w-full">
+          <button onClick={() => setFontSize(Math.max(14, fontSize - 1))} className="w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center rounded-lg bg-white dark:bg-[#1c1c1e] text-zinc-600 dark:text-zinc-300 font-bold shadow-sm text-xl cursor-pointer hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors">-</button>
+          <span className="text-lg font-mono font-bold text-zinc-700 dark:text-zinc-300 flex-grow text-center">{fontSize}px</span>
+          <button onClick={() => setFontSize(Math.min(28, fontSize + 1))} className="w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center rounded-lg bg-white dark:bg-[#1c1c1e] text-zinc-600 dark:text-zinc-300 font-bold shadow-sm text-xl cursor-pointer hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors">+</button>
+        </div>
+      </div>
+
+      <div className="p-3 sm:p-4 overflow-y-auto smart-scrollbar flex-grow flex flex-col gap-2">
+        <span className="text-[10px] font-bold uppercase tracking-widest text-zinc-400 block ml-1 mb-1">Archive</span>
+        <ArchiveList />
+      </div>
+    </div>
+  );
+
   return (
-    <div className="w-full min-h-screen pt-24 sm:pt-32 pb-32 flex justify-center font-sans relative">
+    // Note: px-0 on mobile forces edge-to-edge. Desktop keeps px-6 lg:px-8.
+    <div className="w-full min-h-screen pt-20 sm:pt-32 pb-32 flex justify-center font-sans relative px-0 sm:px-6 lg:px-8">
 
       {/* --- DESKTOP RETURN TO READING BUTTON --- */}
-      <AnimatePresence>
-        {showReturn && (
-          <motion.button
-            initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }}
-            onClick={jumpBack}
-            className="hidden md:flex fixed top-1/2 right-4 lg:right-6 -translate-y-1/2 z-[100] bg-white dark:bg-[#252528] text-[#c6a87c] border border-zinc-200 dark:border-zinc-800 p-2.5 rounded-full shadow-2xl flex-col items-center gap-3 cursor-pointer hover:scale-105 transition-transform"
-          >
-            <span style={{ writingMode: 'vertical-rl' }} className="text-[10px] font-bold uppercase tracking-widest mb-2 mt-1">Return to Reading</span>
-            <ArrowDown className="w-4 h-4 animate-bounce mb-1" />
-          </motion.button>
-        )}
-      </AnimatePresence>
+      <button
+        ref={returnDesktopRef}
+        onClick={jumpBack}
+        style={{ opacity: 0, pointerEvents: 'none', transform: 'translateY(-50%) translateX(20px)' }}
+        className="hidden md:flex fixed top-1/2 right-4 lg:right-6 z-[100] bg-white dark:bg-[#252528] text-[#c6a87c] border border-zinc-200 dark:border-zinc-800 p-2.5 rounded-full shadow-2xl flex-col items-center gap-3 cursor-pointer hover:scale-105 transition-all duration-300"
+      >
+        <span style={{ writingMode: 'vertical-rl' }} className="text-[10px] font-bold uppercase tracking-widest mb-2 mt-1">Return to Reading</span>
+        <ArrowDown className="w-4 h-4 animate-bounce mb-1" />
+      </button>
 
-      {/* --- MOBILE RETURN TO READING BUTTON ('R' Module Bottom Right) --- */}
+      {/* --- MOBILE RETURN TO READING BUTTON ('R' Module) --- */}
+      <button
+        ref={returnMobileRef}
+        onClick={jumpBack}
+        style={{ opacity: 0, pointerEvents: 'none', transform: 'translateY(20px) scale(0.8)' }}
+        className="md:hidden fixed bottom-6 right-6 z-[100] w-12 h-12 bg-zinc-900 dark:bg-[#e4d3ba] text-[#d4b78f] dark:text-[#5c4a30] border border-zinc-700 dark:border-zinc-300 rounded-full shadow-2xl flex flex-col items-center justify-center cursor-pointer transition-all duration-300"
+      >
+        <span className="font-extrabold text-[14px] leading-none mt-1">R</span>
+        <ArrowDown className="w-3.5 h-3.5 animate-bounce mt-0.5" />
+      </button>
+
+
+      {/* --- FLOATING ARCHIVE TOGGLE (Visible when sidebar is hidden) --- */}
       <AnimatePresence>
-        {showReturn && (
-          <motion.button
-            initial={{ opacity: 0, scale: 0.8, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.8, y: 20 }}
-            onClick={jumpBack}
-            className="md:hidden fixed bottom-6 right-6 z-[100] w-12 h-12 bg-zinc-900 dark:bg-[#e4d3ba] text-[#d4b78f] dark:text-[#5c4a30] border border-zinc-700 dark:border-zinc-300 rounded-full shadow-2xl flex flex-col items-center justify-center cursor-pointer"
-          >
-            <span className="font-extrabold text-[14px] leading-none mt-1">R</span>
-            <ArrowDown className="w-3.5 h-3.5 animate-bounce mt-0.5" />
+        {!isArchiveOpen && (
+          <motion.button initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} onClick={() => setIsArchiveOpen(true)} className="hidden md:block fixed top-32 left-8 z-50 p-3 bg-white dark:bg-[#252528] border border-zinc-200 dark:border-zinc-800 shadow-xl rounded-full text-zinc-500 hover:text-[#c6a87c] transition-colors cursor-pointer group" title="Open Archive">
+            <LibraryIcon className="w-5 h-5 group-hover:scale-110 transition-transform" />
           </motion.button>
         )}
       </AnimatePresence>
@@ -624,23 +688,6 @@ const TranscriptLibrary = ({ transcripts }) => {
         )}
       </AnimatePresence>
 
-      {/* --- DESKTOP FLOATING TOGGLES --- */}
-      <div className="hidden md:block">
-        <AnimatePresence>
-          {!isArchiveOpen && (
-            <motion.button initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} onClick={() => setIsArchiveOpen(true)} className="fixed top-32 left-8 z-50 p-3 bg-white dark:bg-[#252528] border border-zinc-200 dark:border-zinc-800 shadow-xl rounded-full text-zinc-500 hover:text-[#c6a87c] transition-colors cursor-pointer group" title="Open Archive">
-              <LibraryIcon className="w-5 h-5 group-hover:scale-110 transition-transform" />
-            </motion.button>
-          )}
-        </AnimatePresence>
-        <AnimatePresence>
-          {!isCustomiseOpen && (
-            <motion.button initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }} onClick={() => setIsCustomiseOpen(true)} className="fixed top-32 right-8 z-50 p-3 bg-white dark:bg-[#252528] border border-zinc-200 dark:border-zinc-800 shadow-xl rounded-full text-zinc-500 hover:text-[#c6a87c] transition-colors cursor-pointer group" title="Open Customise">
-              <Settings2 className="w-5 h-5 group-hover:scale-110 transition-transform" />
-            </motion.button>
-          )}
-        </AnimatePresence>
-      </div>
 
       {/* --- MOBILE UNIFIED DRAWER --- */}
       <AnimatePresence>
@@ -657,49 +704,26 @@ const TranscriptLibrary = ({ transcripts }) => {
               initial={{ x: '-100%' }} animate={{ x: 0 }} exit={{ x: '-100%' }} transition={{ type: "spring", damping: 25, stiffness: 200 }}
               className="md:hidden fixed top-0 bottom-0 left-0 w-[85vw] max-w-[340px] bg-white dark:bg-[#1c1c1e] z-[200] shadow-2xl border-r border-zinc-200 dark:border-zinc-800 flex flex-col overflow-hidden"
             >
-              <div className="p-5 border-b border-zinc-100 dark:border-zinc-800/80 shrink-0 flex justify-between items-center">
-                <h2 className="text-[11px] font-bold text-zinc-500 uppercase tracking-widest flex items-center gap-2"><LibraryIcon className="w-4 h-4 text-[#c6a87c]" /> Library Tools</h2>
-                <button onClick={() => setIsMobileDrawerOpen(false)} className="p-1"><X className="w-5 h-5 text-zinc-500" /></button>
-              </div>
-
-              {/* MINIMIZED TEXT RESIZER FOR MOBILE */}
-              <div className="p-5 border-b border-zinc-100 dark:border-zinc-800/80 shrink-0">
-                <span className="text-[10px] font-bold uppercase tracking-widest text-zinc-400 block mb-2">Text Size</span>
-                <div className="flex items-center justify-between bg-zinc-50 dark:bg-[#252528] rounded-xl p-1.5 border border-zinc-200 dark:border-zinc-700 w-[180px]">
-                  <button onClick={() => setFontSize(Math.max(14, fontSize - 1))} className="w-8 h-8 flex items-center justify-center rounded-lg bg-white dark:bg-[#1c1c1e] text-zinc-600 dark:text-zinc-300 font-bold shadow-sm text-base">-</button>
-                  <span className="text-sm font-mono font-bold text-zinc-700 dark:text-zinc-300">{fontSize}px</span>
-                  <button onClick={() => setFontSize(Math.min(28, fontSize + 1))} className="w-8 h-8 flex items-center justify-center rounded-lg bg-white dark:bg-[#1c1c1e] text-zinc-600 dark:text-zinc-300 font-bold shadow-sm text-base">+</button>
-                </div>
-              </div>
-
-              <div className="p-4 overflow-y-auto smart-scrollbar flex-grow flex flex-col gap-2">
-                <ArchiveList />
-              </div>
+              <LibraryTools isMobile={true} />
             </motion.div>
           </>
         )}
       </AnimatePresence>
 
 
-      {/* --- DESKTOP THREE-PILLAR LAYOUT ENGINE --- */}
-      <div className="w-full max-w-[1600px] px-4 sm:px-6 lg:px-8 flex justify-between items-start gap-0 lg:gap-8">
+      {/* --- DESKTOP 2-PILLAR LAYOUT ENGINE --- */}
+      <div className="w-full max-w-[1400px] mx-auto flex items-start gap-0 md:gap-8 lg:gap-12">
 
-        {/* Left Pillar: Archive */}
-        <motion.div animate={{ width: isArchiveOpen ? 320 : 0, opacity: isArchiveOpen ? 1 : 0 }} className="hidden md:block shrink-0 overflow-visible transition-all duration-500 ease-in-out">
+        {/* Left Pillar: Unified Archive & Customise */}
+        <motion.div animate={{ width: isArchiveOpen ? 320 : 0, opacity: isArchiveOpen ? 1 : 0 }} className="hidden md:block shrink-0 overflow-hidden transition-all duration-400 ease-in-out">
           <div className="w-[320px] bg-white dark:bg-[#252528] border border-zinc-200 dark:border-zinc-800/80 rounded-2xl flex flex-col sticky top-32 shadow-sm max-h-[calc(100vh-160px)]">
-            <div className="p-4 border-b border-zinc-100 dark:border-zinc-800/60 shrink-0 flex justify-between items-center">
-              <h2 className="text-[11px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-widest flex items-center gap-2"><LibraryIcon className="w-3.5 h-3.5 text-[#c6a87c]" /> Archive</h2>
-              <button onClick={() => setIsArchiveOpen(false)} className="text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 transition-colors cursor-pointer"><X className="w-4 h-4" /></button>
-            </div>
-            <div className="p-3 overflow-y-auto smart-scrollbar flex-grow flex flex-col gap-1">
-              <ArchiveList />
-            </div>
+            <LibraryTools isMobile={false} />
           </div>
         </motion.div>
 
-        {/* Center Pillar: Pure Canvas */}
-        <div className="flex-grow w-full flex justify-center max-w-4xl mx-auto transition-all duration-500">
-          <div className="w-full bg-white dark:bg-[#252528] sm:border border-zinc-200 dark:border-zinc-800/80 sm:rounded-2xl px-5 py-10 sm:p-12 sm:shadow-sm">
+        {/* Center Pillar: Pure Canvas (Edge-to-Edge on Mobile) */}
+        <div className="flex-1 min-w-0 w-full flex justify-center transition-all duration-500">
+          <div className="w-full max-w-4xl mx-auto bg-white dark:bg-[#252528] sm:border border-zinc-200 dark:border-zinc-800/80 sm:rounded-2xl px-5 sm:px-12 py-10 sm:py-12 shadow-sm">
 
             {/* The Structured Editorial Header */}
             <header className="mb-10 sm:mb-12">
@@ -733,29 +757,11 @@ const TranscriptLibrary = ({ transcripts }) => {
                   <blockquote key={idx} className="pl-6 sm:pl-8 py-2 my-10 border-l-[3px] border-[#c6a87c] font-medium text-zinc-900 dark:text-zinc-100 italic font-serif" style={{ fontSize: `${fontSize * 1.15}px`, lineHeight: 1.6 }}>"{parseFormatting(block.text)}"</blockquote>
                 );
                 if (block.type === 'divider') return <div key={idx} className="flex justify-center py-10"><span className="w-12 h-1 rounded-full bg-zinc-300 dark:bg-zinc-700"></span></div>;
-                return <p key={idx} className="mb-6">{parseFormatting(block.text)}</p>;
+                return <p key={idx} className="mb-6 text-left">{parseFormatting(block.text)}</p>;
               })}
             </div>
           </div>
         </div>
-
-        {/* Right Pillar: Customise */}
-        <motion.div animate={{ width: isCustomiseOpen ? 240 : 0, opacity: isCustomiseOpen ? 1 : 0 }} className="hidden md:block shrink-0 overflow-visible transition-all duration-500 ease-in-out">
-          <div className="w-[240px] bg-white dark:bg-[#252528] border border-zinc-200 dark:border-zinc-800/80 rounded-2xl flex flex-col sticky top-32 shadow-sm">
-            <div className="p-4 border-b border-zinc-100 dark:border-zinc-800/60 flex justify-between items-center">
-              <h2 className="text-[11px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-widest flex items-center gap-2"><Settings2 className="w-3.5 h-3.5 text-[#c6a87c]" /> Customise</h2>
-              <button onClick={() => setIsCustomiseOpen(false)} className="text-zinc-400 hover:text-zinc-600 transition-colors cursor-pointer"><X className="w-4 h-4" /></button>
-            </div>
-            <div className="p-5">
-              <span className="text-[10px] font-bold uppercase tracking-widest text-zinc-400 dark:text-zinc-500 block mb-3">Text Size</span>
-              <div className="flex items-center justify-between bg-zinc-50 dark:bg-[#1c1c1e] rounded-lg p-1.5 border border-zinc-200 dark:border-zinc-800/60 shadow-inner">
-                <button onClick={() => setFontSize(Math.max(14, fontSize - 1))} className="w-8 h-8 flex items-center justify-center rounded hover:bg-white dark:hover:bg-[#2c2c2e] text-zinc-600 dark:text-zinc-300 font-bold shadow-sm cursor-pointer transition-colors">-</button>
-                <span className="text-sm font-mono font-bold text-zinc-700 dark:text-zinc-300">{fontSize}px</span>
-                <button onClick={() => setFontSize(Math.min(28, fontSize + 1))} className="w-8 h-8 flex items-center justify-center rounded hover:bg-white dark:hover:bg-[#2c2c2e] text-zinc-600 dark:text-zinc-300 font-bold shadow-sm cursor-pointer transition-colors">+</button>
-              </div>
-            </div>
-          </div>
-        </motion.div>
 
       </div>
     </div>
