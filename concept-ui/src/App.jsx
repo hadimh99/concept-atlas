@@ -474,6 +474,24 @@ const TranscriptLibrary = ({ transcripts }) => {
   const [isMobileDrawerOpen, setIsMobileDrawerOpen] = useState(true);
   const [fontSize, setFontSize] = useState(18);
 
+  // Group transcripts by Series dynamically
+  const groupedTranscripts = useMemo(() => {
+    return transcripts.reduce((acc, doc) => {
+      const seriesName = doc.series || (doc.title.includes(' - ') ? doc.title.split(' - ')[0] : 'General Transcripts');
+      if (!acc[seriesName]) acc[seriesName] = [];
+      acc[seriesName].push(doc);
+      return acc;
+    }, {});
+  }, [transcripts]);
+
+  // Determine initial open series
+  const initialSeries = activeDoc.series || (activeDoc.title.includes(' - ') ? activeDoc.title.split(' - ')[0] : 'General Transcripts');
+  const [expandedSeries, setExpandedSeries] = useState({ [initialSeries]: true });
+
+  const toggleSeries = (seriesName) => {
+    setExpandedSeries(prev => ({ ...prev, [seriesName]: !prev[seriesName] }));
+  };
+
   // Deep-Scroll Return to Reading Logic
   const [maxScrollY, setMaxScrollY] = useState(0);
   const [showReturn, setShowReturn] = useState(false);
@@ -510,20 +528,51 @@ const TranscriptLibrary = ({ transcripts }) => {
     });
   };
 
+  // Shared Archive List Component
+  const ArchiveList = () => (
+    <div className="flex flex-col gap-2">
+      {Object.entries(groupedTranscripts).map(([seriesName, docs]) => (
+        <div key={seriesName} className="flex flex-col mb-1">
+          <button
+            onClick={() => toggleSeries(seriesName)}
+            className="flex items-center justify-between py-2 px-3 hover:bg-zinc-100 dark:hover:bg-[#2c2c2e] rounded-lg transition-colors group cursor-pointer"
+          >
+            <span className="text-xs font-bold uppercase tracking-wider text-zinc-700 dark:text-zinc-300 group-hover:text-[#c6a87c] transition-colors text-left flex-1 pr-4">{seriesName}</span>
+            {expandedSeries[seriesName] ? <ChevronUp className="w-4 h-4 text-zinc-400 shrink-0" /> : <ChevronDown className="w-4 h-4 text-zinc-400 shrink-0" />}
+          </button>
+          <AnimatePresence>
+            {expandedSeries[seriesName] && (
+              <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden flex flex-col gap-1 mt-1 pl-2 border-l border-zinc-200 dark:border-zinc-700/50 ml-3">
+                {docs.map(doc => {
+                  const displayTitle = doc.title.startsWith(seriesName + ' - ') ? doc.title.replace(seriesName + ' - ', '') : doc.title;
+                  return (
+                    <button key={doc.id} onClick={() => { setActiveDoc(doc); setIsMobileDrawerOpen(false); }} className={`text-left py-2.5 px-3 rounded-xl transition-all duration-200 cursor-pointer ${activeDoc.id === doc.id ? 'bg-zinc-50 dark:bg-[#1c1c1e] text-[#c6a87c] font-bold shadow-sm border border-zinc-200 dark:border-zinc-700' : 'text-zinc-500 hover:text-zinc-800 dark:text-zinc-400 dark:hover:text-zinc-200 border border-transparent hover:bg-zinc-50 dark:hover:bg-[#2c2c2e]'}`}>
+                      <span className="text-sm leading-snug block">{displayTitle}</span>
+                    </button>
+                  );
+                })}
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+      ))}
+    </div>
+  );
+
   return (
     <div className="w-full min-h-screen pt-24 sm:pt-32 pb-32 flex justify-center font-sans relative overflow-x-hidden">
 
       {/* --- RETURN TO READING BUTTONS --- */}
-      {/* 1. Desktop: Vertical Right Edge */}
+      {/* 1. Desktop: Vertical Right Edge (Reads Top to Bottom) */}
       <AnimatePresence>
         {showReturn && (
           <motion.button
             initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }}
             onClick={jumpBack}
-            className="hidden md:flex fixed top-1/2 right-4 lg:right-6 -translate-y-1/2 z-[100] bg-white dark:bg-[#252528] text-[#c6a87c] border border-zinc-200 dark:border-zinc-800 p-3 rounded-full shadow-2xl flex-col items-center gap-3 cursor-pointer hover:scale-105 transition-transform"
+            className="hidden md:flex fixed top-1/2 right-4 lg:right-6 -translate-y-1/2 z-[100] bg-white dark:bg-[#252528] text-[#c6a87c] border border-zinc-200 dark:border-zinc-800 p-2.5 rounded-full shadow-2xl flex-col items-center gap-3 cursor-pointer hover:scale-105 transition-transform"
           >
-            <ArrowDown className="w-4 h-4 animate-bounce" />
-            <span style={{ writingMode: 'vertical-rl' }} className="text-[10px] font-bold uppercase tracking-widest rotate-180">Return to Reading</span>
+            <span style={{ writingMode: 'vertical-rl' }} className="text-[10px] font-bold uppercase tracking-widest mt-2">Return to Reading</span>
+            <ArrowDown className="w-4 h-4 animate-bounce mb-1" />
           </motion.button>
         )}
       </AnimatePresence>
@@ -534,10 +583,10 @@ const TranscriptLibrary = ({ transcripts }) => {
           <motion.button
             initial={{ opacity: 0, scale: 0.8, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.8, y: 20 }}
             onClick={jumpBack}
-            className="md:hidden fixed bottom-8 right-6 z-[100] w-12 h-12 bg-white dark:bg-[#333336] text-[#c6a87c] border border-zinc-200 dark:border-zinc-700 rounded-full shadow-2xl flex flex-col items-center justify-center cursor-pointer"
+            className="md:hidden fixed bottom-6 right-6 z-[100] w-12 h-12 bg-zinc-900 dark:bg-white text-[#d4b78f] dark:text-[#8b6b45] border border-zinc-700 dark:border-zinc-300 rounded-full shadow-2xl flex flex-col items-center justify-center cursor-pointer"
           >
-            <span className="font-bold text-[14px] leading-none mb-0.5">R</span>
-            <ArrowDown className="w-3 h-3 animate-bounce" />
+            <span className="font-extrabold text-[14px] leading-none mt-1">R</span>
+            <ArrowDown className="w-3.5 h-3.5 animate-bounce mt-0.5" />
           </motion.button>
         )}
       </AnimatePresence>
@@ -580,17 +629,18 @@ const TranscriptLibrary = ({ transcripts }) => {
       <AnimatePresence>
         {isMobileDrawerOpen && (
           <>
-            {/* Clickable dark backdrop */}
+            {/* Clickable dark backdrop (Absolute Inset to block all text) */}
             <motion.div
               initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
               onClick={() => setIsMobileDrawerOpen(false)}
-              className="md:hidden fixed top-0 left-0 w-screen h-[100dvh] bg-black/80 z-[190] cursor-pointer backdrop-blur-md"
+              className="md:hidden fixed inset-0 bg-black/60 z-[190] cursor-pointer backdrop-blur-md"
+              style={{ touchAction: 'none' }}
             />
 
-            {/* Absolute fixed panel */}
+            {/* Absolute fixed panel (Top to Bottom bounds) */}
             <motion.div
               initial={{ x: '-100%' }} animate={{ x: 0 }} exit={{ x: '-100%' }} transition={{ type: "spring", damping: 25, stiffness: 200 }}
-              className="md:hidden fixed top-0 left-0 h-[100dvh] w-[85vw] max-w-[320px] bg-white dark:bg-[#1c1c1e] z-[200] shadow-2xl border-r border-zinc-200 dark:border-zinc-800 flex flex-col overflow-hidden"
+              className="md:hidden fixed top-0 bottom-0 left-0 w-[85vw] max-w-[320px] bg-white dark:bg-[#1c1c1e] z-[200] shadow-2xl border-r border-zinc-200 dark:border-zinc-800 flex flex-col overflow-hidden"
             >
               <div className="p-5 border-b border-zinc-100 dark:border-zinc-800/80 shrink-0 flex justify-between items-center">
                 <h2 className="text-[11px] font-bold text-zinc-500 uppercase tracking-widest flex items-center gap-2"><LibraryIcon className="w-4 h-4 text-[#c6a87c]" /> Library Tools</h2>
@@ -607,12 +657,7 @@ const TranscriptLibrary = ({ transcripts }) => {
               </div>
 
               <div className="p-4 overflow-y-auto smart-scrollbar flex-grow flex flex-col gap-2">
-                <span className="text-[10px] font-bold uppercase tracking-widest text-zinc-400 block ml-1 mb-1">Archive</span>
-                {transcripts.map((doc) => (
-                  <button key={doc.id} onClick={() => { setActiveDoc(doc); setIsMobileDrawerOpen(false); }} className={`text-left py-4 px-4 rounded-xl border ${activeDoc.id === doc.id ? 'bg-zinc-50 dark:bg-[#252528] border-zinc-200 dark:border-zinc-700 text-[#c6a87c] font-bold shadow-sm' : 'border-transparent text-zinc-600 dark:text-zinc-400 hover:bg-zinc-50 dark:hover:bg-[#252528]/50'} text-sm leading-snug`}>
-                    {doc.title}
-                  </button>
-                ))}
+                <ArchiveList />
               </div>
             </motion.div>
           </>
@@ -627,15 +672,11 @@ const TranscriptLibrary = ({ transcripts }) => {
         <motion.div animate={{ width: isArchiveOpen ? 280 : 0, opacity: isArchiveOpen ? 1 : 0 }} className="hidden md:block shrink-0 overflow-visible transition-all duration-500 ease-in-out">
           <div className="w-[280px] bg-white dark:bg-[#252528] border border-zinc-200 dark:border-zinc-800/80 rounded-2xl flex flex-col sticky top-32 shadow-sm max-h-[calc(100vh-160px)]">
             <div className="p-4 border-b border-zinc-100 dark:border-zinc-800/60 shrink-0 flex justify-between items-center">
-              <h2 className="text-[10px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-widest flex items-center gap-2"><LibraryIcon className="w-3.5 h-3.5 text-[#c6a87c]" /> Archive</h2>
+              <h2 className="text-[11px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-widest flex items-center gap-2"><LibraryIcon className="w-3.5 h-3.5 text-[#c6a87c]" /> Archive</h2>
               <button onClick={() => setIsArchiveOpen(false)} className="text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 transition-colors cursor-pointer"><X className="w-4 h-4" /></button>
             </div>
             <div className="p-2 overflow-y-auto smart-scrollbar flex-grow flex flex-col gap-1">
-              {transcripts.map((doc) => (
-                <button key={doc.id} onClick={() => setActiveDoc(doc)} className={`text-left py-3 px-3 rounded-xl transition-all duration-200 border cursor-pointer ${activeDoc.id === doc.id ? 'bg-zinc-50 dark:bg-[#1c1c1e] border-zinc-200 dark:border-zinc-700 text-[#c6a87c] shadow-sm' : 'bg-transparent border-transparent hover:bg-zinc-50 dark:hover:bg-[#2c2c2e] text-zinc-600 dark:text-zinc-400'}`}>
-                  <span className="text-sm font-bold leading-snug block mb-1">{doc.title}</span>
-                </button>
-              ))}
+              <ArchiveList />
             </div>
           </div>
         </motion.div>
@@ -647,13 +688,13 @@ const TranscriptLibrary = ({ transcripts }) => {
             {/* The Structured Editorial Header */}
             <header className="mb-10 sm:mb-12">
               <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-zinc-900 dark:text-white leading-[1.15] mb-6 tracking-tight">{activeDoc.title}</h1>
-              <div className="flex flex-wrap items-center gap-4 text-xs font-bold uppercase tracking-widest pb-6">
+              <div className="flex flex-wrap items-center gap-4 text-[11px] sm:text-xs font-bold uppercase tracking-widest pb-6">
                 <span className="text-zinc-700 dark:text-zinc-300">{activeDoc.speaker}</span>
                 <span className="text-zinc-300 dark:text-zinc-600 hidden sm:inline">|</span>
                 {activeDoc.source_link && (<a href={activeDoc.source_link} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 text-zinc-500 hover:text-red-600 transition-colors group"><Youtube className="w-4 h-4 group-hover:scale-110 transition-transform" /> Watch Original</a>)}
               </div>
-              {/* Solid dividing line */}
-              <hr className="w-full border-t-2 border-zinc-200 dark:border-zinc-700" />
+              {/* Strong Editorial Divider Line */}
+              <hr className="w-full border-t-[2px] border-zinc-300 dark:border-zinc-700" />
             </header>
 
             {/* Main Text Content */}
@@ -669,7 +710,7 @@ const TranscriptLibrary = ({ transcripts }) => {
                 if (block.type === 'quote') return (
                   <blockquote key={idx} className="pl-6 sm:pl-8 py-2 my-10 border-l-[3px] border-[#c6a87c] font-medium text-zinc-900 dark:text-zinc-100 italic font-serif" style={{ fontSize: `${fontSize * 1.15}px`, lineHeight: 1.6 }}>"{parseFormatting(block.text)}"</blockquote>
                 );
-                if (block.type === 'divider') return <div key={idx} className="flex justify-center py-10"><span className="w-12 h-1 rounded-full bg-zinc-200 dark:bg-zinc-700"></span></div>;
+                if (block.type === 'divider') return <div key={idx} className="flex justify-center py-10"><span className="w-12 h-1 rounded-full bg-zinc-300 dark:bg-zinc-700"></span></div>;
                 return <p key={idx} className="mb-6">{parseFormatting(block.text)}</p>;
               })}
             </div>
