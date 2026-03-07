@@ -1,11 +1,9 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Search, Moon, Sun, Sparkles, X, ChevronRight, ChevronLeft, Home, Copy, ChevronDown, ChevronUp, List, Layout, Info, BookOpen, History, HelpCircle, Database, Filter, Share2, Check, Settings2, Menu, Clock, Trash2, LibraryBig } from 'lucide-react';
+import { Search, Moon, Sun, Sparkles, X, ChevronRight, ChevronLeft, Home, Copy, ChevronDown, ChevronUp, List, Layout, Info, BookOpen, History, HelpCircle, Database, Filter, Share2, Check, Settings2, Menu, Clock, Trash2, LibraryBig, Youtube, Library as LibraryIcon } from 'lucide-react';
 import quranData from './quran.json';
 import verseMap from './verse_map.json';
 import transcriptData from './transcripts.json';
-import { Youtube, Library as LibraryIcon, ChevronRight } from 'lucide-react'; // Add these to your existing lucide-react imports
-
 
 const APP_UPDATES = [{ version: "v3.5.3", date: "March 5, 2026", changes: ["Documentation: Completely overhauled the 'Help & Guide' section to detail the comprehensive suite of tools now available in Kisa, including Vector Hopping, Dynamic Map Views, and Reverse Quran Tafsir."] }, { version: "v3.5.2", date: "March 5, 2026", changes: ["Feature Polish: Added a 'Copy Text' button to all 'Anchored Source' views (both List View accordion and Map View modal) allowing you to copy the full reference, Arabic, and translation instantly.", "Map UX Overhaul: Nodes are uniformly sized and mathematically bounded to never overlap the center box or go off-screen."] }];
 const CLUSTER_COLORS = ['#10b981', '#8b5cf6', '#f59e0b', '#f43f5e', '#3b82f6'];
@@ -276,7 +274,7 @@ const QuranReader = ({ activeFontFamily, fontStyle, setFontStyle, handleSurahSel
   const ayahs = ayahsRaw.map((ayah, idx) => {
     let arText = ayah.ar;
     if (idx === 0 && selectedSurah !== 1 && selectedSurah !== 9) {
-      const bismillahEnd = Math.max(arText.indexOf('ٱلرَّحِيمِ'), arText.indexOf('الرَّحِيمِ'), arText.indexOf('الرحيم'));
+      const bismillahEnd = Math.max(arText.indexOf('ٱلرَّحِيمِ'), arText.indexOf('الرَّحِيمِ'), arText.indexOf('الرحيم'));
       if (bismillahEnd !== -1) {
         const splitIndex = arText.indexOf(' ', bismillahEnd);
         if (splitIndex !== -1) { surahBismillah = arText.substring(0, splitIndex).trim(); arText = arText.substring(splitIndex).trim(); }
