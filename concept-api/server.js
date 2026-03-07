@@ -62,13 +62,44 @@ function cosineSimilarity(vecA, vecB) {
     return dotProduct / (Math.sqrt(normA) * Math.sqrt(normB));
 }
 
-let ontology = {};
-try {
-    ontology = JSON.parse(fs.readFileSync(path.join(__dirname, 'ontology_centroids.json'), 'utf8'));
-    console.log(`[ONTOLOGY] Loaded ${Object.keys(ontology).length} Theological Centroids.`);
-} catch (e) {
-    console.log("[ONTOLOGY] No centroids found. Standard vector search active.");
-}
+// ==========================================
+// KISA BRAIN: ONTOLOGY LOADER (NEW)
+// ==========================================
+// ==========================================
+// KISA BRAIN: ONTOLOGY LOADER (UPDATED)
+// ==========================================
+let ontologyDictionary = [];
+
+// We use UNION to grab the Transliterations, the English names, AND the Synonyms all at once!
+const loadOntologyQuery = `
+    SELECT transliteration AS variant, primary_english AS name, vector_embedding, 1.0 AS weight 
+    FROM ontology_concepts WHERE vector_embedding IS NOT NULL
+    UNION
+    SELECT primary_english AS variant, primary_english AS name, vector_embedding, 1.0 AS weight 
+    FROM ontology_concepts WHERE vector_embedding IS NOT NULL
+    UNION
+    SELECT s.variant_text AS variant, c.primary_english AS name, c.vector_embedding, s.weight
+    FROM ontology_synonyms s
+    JOIN ontology_concepts c ON s.concept_id = c.id
+    WHERE c.vector_embedding IS NOT NULL
+`;
+
+db.all(loadOntologyQuery, [], (err, rows) => {
+    if (err) {
+        console.error("[ONTOLOGY] Error loading Kisa Brain from SQLite:", err);
+    } else {
+        ontologyDictionary = rows.map(r => ({
+            variant: r.variant ? r.variant.toLowerCase() : "",
+            name: r.name,
+            vector: JSON.parse(r.vector_embedding),
+            weight: parseFloat(r.weight)
+        })).filter(item => item.variant.length > 0);
+
+        // Sort by length descending so longer phrases match first
+        ontologyDictionary.sort((a, b) => b.variant.length - a.variant.length);
+        console.log(`[ONTOLOGY] 🧠 Loaded ${ontologyDictionary.length} theological triggers from the Kisa Brain.`);
+    }
+});
 
 const pc = new Pinecone({
     apiKey: process.env.PINECONE_API_KEY,
@@ -127,7 +158,6 @@ const generateAllClusterLabelsAI = async (clusters, query) => {
 
 app.post('/api/explore', async (req, res) => {
     try {
-        // ADDED: excludeId support
         const { query, source, searchMode, queryVector, excludeId } = req.body;
         if (!query) {
             return res.status(400).json({ error: "Query is required." });
@@ -248,9 +278,25 @@ app.post('/api/explore', async (req, res) => {
         // =========================================================================
 
         let finalQueryVector = (queryVector && Array.isArray(queryVector) && queryVector.length > 0) ? queryVector : null;
+        let embedQuery = query;
+        let matchedConcept = null;
+
+        // =========================================================================
+        // KISA BRAIN: ONTOLOGY SCANNER
+        // =========================================================================
+        if (ontologyDictionary.length > 0 && activeSearchMode === 'concept') {
+            const lowerQueryForMatch = embedQuery.toLowerCase();
+            for (const item of ontologyDictionary) {
+                const regex = new RegExp(`\\b${item.variant}\\b`, 'i');
+                if (regex.test(lowerQueryForMatch)) {
+                    matchedConcept = item;
+                    console.log(`[KISA BRAIN] 🎯 Detected theological anchor: "${item.name}" (matched via "${item.variant}")`);
+                    break; // We found the anchor, no need to inject confusing text!
+                }
+            }
+        }
 
         if (!finalQueryVector) {
-            let embedQuery = query;
             if (isArabic(query) && activeSearchMode === 'concept') {
                 console.log("Arabic query detected in Concept Mode. Engaging Gemini Bridge for translation...");
                 try {
@@ -303,25 +349,20 @@ app.post('/api/explore', async (req, res) => {
             console.log("⚡ Instant Vector received from frontend! Skipping Hugging Face AI entirely.");
         }
 
-        if (Object.keys(ontology).length > 0 && activeSearchMode === 'concept') {
-            let bestConcept = null;
-            let highestSim = -1;
+        // =========================================================================
+        // KISA BRAIN: VECTOR INTERCEPT (HIGH GRAVITY)
+        // =========================================================================
+        if (matchedConcept && finalQueryVector) {
+            // Your brilliant fix: Crank the gravity to 85% to absolutely crush Fiqh and Cosmology matches
+            const anchorWeight = 0.85 * matchedConcept.weight;
+            const queryWeight = 1.0 - anchorWeight;
 
-            for (const [conceptName, conceptVector] of Object.entries(ontology)) {
-                const sim = cosineSimilarity(finalQueryVector, conceptVector);
-                if (sim > highestSim) {
-                    highestSim = sim;
-                    bestConcept = { name: conceptName, vector: conceptVector };
-                }
-            }
+            let blended = finalQueryVector.map((val, i) => (val * queryWeight) + (matchedConcept.vector[i] * anchorWeight));
 
-            if (bestConcept && highestSim > 0.45) {
-                const blendWeight = 0.25;
-                const queryWeight = 0.75;
-                let blended = finalQueryVector.map((val, i) => (val * queryWeight) + (bestConcept.vector[i] * blendWeight));
-                let mag = Math.sqrt(blended.reduce((sum, val) => sum + val * val, 0));
-                finalQueryVector = blended.map(val => val / mag);
-            }
+            // Re-normalize the vector so Pinecone can read it perfectly
+            let mag = Math.sqrt(blended.reduce((sum, val) => sum + val * val, 0));
+            finalQueryVector = blended.map(val => val / mag);
+            console.log(`[KISA BRAIN] 🧲 CRANKED GRAVITY: Overriding search with 85% "${matchedConcept.name}" theology.`);
         }
 
         console.log("Querying Pinecone index...");
@@ -381,7 +422,7 @@ app.post('/api/explore', async (req, res) => {
                         }
 
                         fetchedHadiths.push({
-                            id: match.id, // This is the Pinecone ID (e.g. hadith_1234)
+                            id: match.id,
                             arabic_text: foundArabic,
                             english_text: foundEnglish,
                             book: hData.book || hData.book_number || "al-Kafi",
@@ -400,7 +441,6 @@ app.post('/api/explore', async (req, res) => {
             }
         }
 
-        // ADDED: Filter out the Anchor Hadith if excludeId is provided!
         if (excludeId) {
             fetchedHadiths = fetchedHadiths.filter(h => h.id !== excludeId);
         }
