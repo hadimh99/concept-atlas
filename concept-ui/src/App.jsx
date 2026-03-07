@@ -473,10 +473,11 @@ const TranscriptLibrary = ({ transcripts }) => {
   const [isMobileDrawerOpen, setIsMobileDrawerOpen] = useState(true);
   const [fontSize, setFontSize] = useState(18);
 
-  // Direct DOM Refs for High-Performance Scrolling (Zero Re-renders)
+  // Direct DOM Refs for High-Performance Scrolling
   const maxScrollYRef = useRef(0);
   const returnDesktopRef = useRef(null);
   const returnMobileRef = useRef(null);
+  const isShowingReturnRef = useRef(false); // PERFORMANCE FIX: Prevents layout thrashing
 
   // Group transcripts by Series dynamically
   const groupedTranscripts = useMemo(() => {
@@ -507,7 +508,7 @@ const TranscriptLibrary = ({ transcripts }) => {
     mainTitle = activeDoc.title.replace(seriesTitle + ' - ', '');
   }
 
-  // HIGH-PERFORMANCE SCROLL TRACKER
+  // HIGH-PERFORMANCE SCROLL TRACKER (Fixes the abrupt iOS stopping)
   useEffect(() => {
     let ticking = false;
     const handleScroll = () => {
@@ -516,20 +517,14 @@ const TranscriptLibrary = ({ transcripts }) => {
           const y = window.scrollY;
 
           if (y >= maxScrollYRef.current - 50) {
-            // User is at the bottom of their read - update max and HIDE buttons
             maxScrollYRef.current = Math.max(y, maxScrollYRef.current);
-            if (returnDesktopRef.current) {
-              returnDesktopRef.current.style.opacity = '0';
-              returnDesktopRef.current.style.pointerEvents = 'none';
-              returnDesktopRef.current.style.transform = 'translateY(-50%) translateX(20px)';
-            }
-            if (returnMobileRef.current) {
-              returnMobileRef.current.style.opacity = '0';
-              returnMobileRef.current.style.pointerEvents = 'none';
-              returnMobileRef.current.style.transform = 'translateY(20px) scale(0.8)';
-            }
-          } else if (maxScrollYRef.current - y > 1500) {
-            // User scrolled UP significantly - SHOW buttons
+          }
+
+          const shouldShow = (maxScrollYRef.current - y > 1500);
+
+          // ONLY update the DOM if the visibility state actually changes
+          if (shouldShow && !isShowingReturnRef.current) {
+            isShowingReturnRef.current = true;
             if (returnDesktopRef.current) {
               returnDesktopRef.current.style.opacity = '1';
               returnDesktopRef.current.style.pointerEvents = 'auto';
@@ -540,8 +535,8 @@ const TranscriptLibrary = ({ transcripts }) => {
               returnMobileRef.current.style.pointerEvents = 'auto';
               returnMobileRef.current.style.transform = 'translateY(0px) scale(1)';
             }
-          } else {
-            // User is within standard reading threshold - HIDE buttons
+          } else if (!shouldShow && isShowingReturnRef.current) {
+            isShowingReturnRef.current = false;
             if (returnDesktopRef.current) {
               returnDesktopRef.current.style.opacity = '0';
               returnDesktopRef.current.style.pointerEvents = 'none';
@@ -586,7 +581,8 @@ const TranscriptLibrary = ({ transcripts }) => {
             onClick={() => toggleSeries(groupSeriesName)}
             className="flex items-center justify-between py-2 px-3 hover:bg-zinc-100 dark:hover:bg-[#2c2c2e] rounded-lg transition-colors group cursor-pointer"
           >
-            <span className="text-[11px] font-mono font-bold uppercase tracking-widest text-[#c6a87c] dark:text-[#d4b78f] group-hover:text-[#b09265] transition-colors text-left flex-1 pr-4 leading-relaxed">
+            {/* LARGER, MORE PROMINENT SERIES TITLE */}
+            <span className="text-sm sm:text-[15px] font-sans font-extrabold uppercase tracking-widest text-[#c6a87c] dark:text-[#d4b78f] group-hover:text-[#b09265] transition-colors text-left flex-1 pr-4 leading-relaxed">
               {groupSeriesName}
             </span>
             {expandedSeries[groupSeriesName] ? <ChevronUp className="w-4 h-4 text-[#c6a87c] shrink-0" /> : <ChevronDown className="w-4 h-4 text-zinc-500 shrink-0" />}
@@ -622,25 +618,24 @@ const TranscriptLibrary = ({ transcripts }) => {
         )}
       </div>
 
-      {/* TEXT RESIZER STRETCHED FULL WIDTH */}
+      {/* SHORTER TEXT RESIZER, SAME WIDTH */}
       <div className="p-4 sm:p-5 border-b border-zinc-100 dark:border-zinc-800/80 shrink-0">
-        <span className="text-[10px] font-bold uppercase tracking-widest text-zinc-400 block mb-3">Text Size</span>
-        <div className="flex items-center justify-between bg-zinc-50 dark:bg-[#252528] rounded-xl p-1.5 sm:p-2 border border-zinc-200 dark:border-zinc-700 w-full">
-          <button onClick={() => setFontSize(Math.max(14, fontSize - 1))} className="w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center rounded-lg bg-white dark:bg-[#1c1c1e] text-zinc-600 dark:text-zinc-300 font-bold shadow-sm text-xl cursor-pointer hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors">-</button>
-          <span className="text-lg font-mono font-bold text-zinc-700 dark:text-zinc-300 flex-grow text-center">{fontSize}px</span>
-          <button onClick={() => setFontSize(Math.min(28, fontSize + 1))} className="w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center rounded-lg bg-white dark:bg-[#1c1c1e] text-zinc-600 dark:text-zinc-300 font-bold shadow-sm text-xl cursor-pointer hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors">+</button>
+        <span className="text-[10px] font-bold uppercase tracking-widest text-zinc-400 block mb-2">Text Size</span>
+        <div className="flex items-center justify-between bg-zinc-50 dark:bg-[#252528] rounded-xl p-1 sm:p-1.5 border border-zinc-200 dark:border-zinc-700 w-full">
+          <button onClick={() => setFontSize(Math.max(14, fontSize - 1))} className="w-10 h-8 sm:w-12 sm:h-9 flex items-center justify-center rounded-lg bg-white dark:bg-[#1c1c1e] text-zinc-600 dark:text-zinc-300 font-bold shadow-sm text-lg cursor-pointer hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors">-</button>
+          <span className="text-sm font-mono font-bold text-zinc-700 dark:text-zinc-300 flex-grow text-center">{fontSize}px</span>
+          <button onClick={() => setFontSize(Math.min(28, fontSize + 1))} className="w-10 h-8 sm:w-12 sm:h-9 flex items-center justify-center rounded-lg bg-white dark:bg-[#1c1c1e] text-zinc-600 dark:text-zinc-300 font-bold shadow-sm text-lg cursor-pointer hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors">+</button>
         </div>
       </div>
 
       <div className="p-3 sm:p-4 overflow-y-auto smart-scrollbar flex-grow flex flex-col gap-2">
-        <span className="text-[10px] font-bold uppercase tracking-widest text-zinc-400 block ml-1 mb-1">Archive</span>
+        <span className="text-[10px] font-bold uppercase tracking-widest text-zinc-400 block ml-1 mb-2">Archive</span>
         <ArchiveList />
       </div>
     </div>
   );
 
   return (
-    // Note: px-0 on mobile forces edge-to-edge. Desktop keeps px-6 lg:px-8.
     <div className="w-full min-h-screen pt-20 sm:pt-32 pb-32 flex justify-center font-sans relative px-0 sm:px-6 lg:px-8">
 
       {/* --- DESKTOP RETURN TO READING BUTTON --- */}
@@ -699,7 +694,6 @@ const TranscriptLibrary = ({ transcripts }) => {
               className="md:hidden fixed inset-0 bg-black/40 z-[190] cursor-pointer backdrop-blur-sm"
               style={{ touchAction: 'none' }}
             />
-
             <motion.div
               initial={{ x: '-100%' }} animate={{ x: 0 }} exit={{ x: '-100%' }} transition={{ type: "spring", damping: 25, stiffness: 200 }}
               className="md:hidden fixed top-0 bottom-0 left-0 w-[85vw] max-w-[340px] bg-white dark:bg-[#1c1c1e] z-[200] shadow-2xl border-r border-zinc-200 dark:border-zinc-800 flex flex-col overflow-hidden"
@@ -723,7 +717,7 @@ const TranscriptLibrary = ({ transcripts }) => {
 
         {/* Center Pillar: Pure Canvas (Edge-to-Edge on Mobile) */}
         <div className="flex-1 min-w-0 w-full flex justify-center transition-all duration-500">
-          <div className="w-full max-w-4xl mx-auto bg-white dark:bg-[#252528] sm:border border-zinc-200 dark:border-zinc-800/80 sm:rounded-2xl px-5 sm:px-12 py-10 sm:py-12 shadow-sm">
+          <div className="w-full max-w-4xl mx-auto bg-white dark:bg-[#252528] sm:border border-zinc-200 dark:border-zinc-800/80 sm:rounded-2xl px-5 py-10 sm:p-12 sm:shadow-sm">
 
             {/* The Structured Editorial Header */}
             <header className="mb-10 sm:mb-12">
@@ -740,7 +734,7 @@ const TranscriptLibrary = ({ transcripts }) => {
                 <span className="text-zinc-300 dark:text-zinc-600 hidden sm:inline">|</span>
                 {activeDoc.source_link && (<a href={activeDoc.source_link} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 text-zinc-500 hover:text-red-600 transition-colors group"><Youtube className="w-4 h-4 group-hover:scale-110 transition-transform" /> Watch Original</a>)}
               </div>
-              <hr className="w-full border-t-[2px] border-zinc-300 dark:border-zinc-700" />
+              <hr className="w-full border-t-[2px] border-zinc-200 dark:border-zinc-700" />
             </header>
 
             {/* Main Text Content */}
@@ -757,7 +751,7 @@ const TranscriptLibrary = ({ transcripts }) => {
                   <blockquote key={idx} className="pl-6 sm:pl-8 py-2 my-10 border-l-[3px] border-[#c6a87c] font-medium text-zinc-900 dark:text-zinc-100 italic font-serif" style={{ fontSize: `${fontSize * 1.15}px`, lineHeight: 1.6 }}>"{parseFormatting(block.text)}"</blockquote>
                 );
                 if (block.type === 'divider') return <div key={idx} className="flex justify-center py-10"><span className="w-12 h-1 rounded-full bg-zinc-300 dark:bg-zinc-700"></span></div>;
-                return <p key={idx} className="mb-6 text-left">{parseFormatting(block.text)}</p>;
+                return <p key={idx} className="mb-6">{parseFormatting(block.text)}</p>;
               })}
             </div>
           </div>
