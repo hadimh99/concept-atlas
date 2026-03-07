@@ -492,6 +492,17 @@ const TranscriptLibrary = ({ transcripts }) => {
     setExpandedSeries(prev => ({ ...prev, [seriesName]: !prev[seriesName] }));
   };
 
+  // Dynamically split Active Title for Editorial Header
+  let seriesTitle = activeDoc.series;
+  let mainTitle = activeDoc.title;
+  if (!seriesTitle && activeDoc.title.includes(' - ')) {
+    const parts = activeDoc.title.split(' - ');
+    seriesTitle = parts[0];
+    mainTitle = parts.slice(1).join(' - ');
+  } else if (seriesTitle && activeDoc.title.startsWith(seriesTitle + ' - ')) {
+    mainTitle = activeDoc.title.replace(seriesTitle + ' - ', '');
+  }
+
   // Deep-Scroll Return to Reading Logic
   const [maxScrollY, setMaxScrollY] = useState(0);
   const [showReturn, setShowReturn] = useState(false);
@@ -531,20 +542,22 @@ const TranscriptLibrary = ({ transcripts }) => {
   // Shared Archive List Component
   const ArchiveList = () => (
     <div className="flex flex-col gap-2">
-      {Object.entries(groupedTranscripts).map(([seriesName, docs]) => (
-        <div key={seriesName} className="flex flex-col mb-1">
+      {Object.entries(groupedTranscripts).map(([groupSeriesName, docs]) => (
+        <div key={groupSeriesName} className="flex flex-col mb-1">
           <button
-            onClick={() => toggleSeries(seriesName)}
+            onClick={() => toggleSeries(groupSeriesName)}
             className="flex items-center justify-between py-2 px-3 hover:bg-zinc-100 dark:hover:bg-[#2c2c2e] rounded-lg transition-colors group cursor-pointer"
           >
-            <span className="text-xs font-bold uppercase tracking-wider text-zinc-700 dark:text-zinc-300 group-hover:text-[#c6a87c] transition-colors text-left flex-1 pr-4">{seriesName}</span>
-            {expandedSeries[seriesName] ? <ChevronUp className="w-4 h-4 text-zinc-400 shrink-0" /> : <ChevronDown className="w-4 h-4 text-zinc-400 shrink-0" />}
+            <span className="text-[11px] font-mono font-bold uppercase tracking-widest text-[#c6a87c] dark:text-[#d4b78f] group-hover:text-[#b09265] transition-colors text-left flex-1 pr-4 leading-relaxed">
+              {groupSeriesName}
+            </span>
+            {expandedSeries[groupSeriesName] ? <ChevronUp className="w-4 h-4 text-[#c6a87c] shrink-0" /> : <ChevronDown className="w-4 h-4 text-zinc-500 shrink-0" />}
           </button>
           <AnimatePresence>
-            {expandedSeries[seriesName] && (
+            {expandedSeries[groupSeriesName] && (
               <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden flex flex-col gap-1 mt-1 pl-2 border-l border-zinc-200 dark:border-zinc-700/50 ml-3">
                 {docs.map(doc => {
-                  const displayTitle = doc.title.startsWith(seriesName + ' - ') ? doc.title.replace(seriesName + ' - ', '') : doc.title;
+                  const displayTitle = doc.title.startsWith(groupSeriesName + ' - ') ? doc.title.replace(groupSeriesName + ' - ', '') : doc.title;
                   return (
                     <button key={doc.id} onClick={() => { setActiveDoc(doc); setIsMobileDrawerOpen(false); }} className={`text-left py-2.5 px-3 rounded-xl transition-all duration-200 cursor-pointer ${activeDoc.id === doc.id ? 'bg-zinc-50 dark:bg-[#1c1c1e] text-[#c6a87c] font-bold shadow-sm border border-zinc-200 dark:border-zinc-700' : 'text-zinc-500 hover:text-zinc-800 dark:text-zinc-400 dark:hover:text-zinc-200 border border-transparent hover:bg-zinc-50 dark:hover:bg-[#2c2c2e]'}`}>
                       <span className="text-sm leading-snug block">{displayTitle}</span>
@@ -560,10 +573,10 @@ const TranscriptLibrary = ({ transcripts }) => {
   );
 
   return (
-    <div className="w-full min-h-screen pt-24 sm:pt-32 pb-32 flex justify-center font-sans relative overflow-x-hidden">
+    // Note: Removed 'overflow-x-hidden' to instantly restore iOS smooth momentum scrolling
+    <div className="w-full min-h-screen pt-24 sm:pt-32 pb-32 flex justify-center font-sans relative" style={{ WebkitOverflowScrolling: 'touch' }}>
 
       {/* --- RETURN TO READING BUTTONS --- */}
-      {/* 1. Desktop: Vertical Right Edge (Reads Top to Bottom) */}
       <AnimatePresence>
         {showReturn && (
           <motion.button
@@ -577,7 +590,6 @@ const TranscriptLibrary = ({ transcripts }) => {
         )}
       </AnimatePresence>
 
-      {/* 2. Mobile: Unobtrusive Bottom-Right 'R' Module */}
       <AnimatePresence>
         {showReturn && (
           <motion.button
@@ -592,7 +604,7 @@ const TranscriptLibrary = ({ transcripts }) => {
       </AnimatePresence>
 
 
-      {/* --- DESKTOP FLOATING TOGGLES (When Pillars are closed) --- */}
+      {/* --- DESKTOP FLOATING TOGGLES --- */}
       <div className="hidden md:block">
         <AnimatePresence>
           {!isArchiveOpen && (
@@ -612,7 +624,6 @@ const TranscriptLibrary = ({ transcripts }) => {
 
 
       {/* --- MOBILE UNIFIED DRAWER --- */}
-      {/* The tiny tab that juts out on the left */}
       <AnimatePresence>
         {!isMobileDrawerOpen && (
           <motion.button
@@ -625,19 +636,16 @@ const TranscriptLibrary = ({ transcripts }) => {
         )}
       </AnimatePresence>
 
-      {/* The True Full-Height Drawer */}
       <AnimatePresence>
         {isMobileDrawerOpen && (
           <>
-            {/* Clickable dark backdrop (Absolute Inset to block all text) */}
             <motion.div
               initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
               onClick={() => setIsMobileDrawerOpen(false)}
-              className="md:hidden fixed inset-0 bg-black/60 z-[190] cursor-pointer backdrop-blur-md"
+              className="md:hidden fixed inset-0 bg-black/80 z-[190] cursor-pointer backdrop-blur-md"
               style={{ touchAction: 'none' }}
             />
 
-            {/* Absolute fixed panel (Top to Bottom bounds) */}
             <motion.div
               initial={{ x: '-100%' }} animate={{ x: 0 }} exit={{ x: '-100%' }} transition={{ type: "spring", damping: 25, stiffness: 200 }}
               className="md:hidden fixed top-0 bottom-0 left-0 w-[85vw] max-w-[320px] bg-white dark:bg-[#1c1c1e] z-[200] shadow-2xl border-r border-zinc-200 dark:border-zinc-800 flex flex-col overflow-hidden"
@@ -687,7 +695,14 @@ const TranscriptLibrary = ({ transcripts }) => {
 
             {/* The Structured Editorial Header */}
             <header className="mb-10 sm:mb-12">
-              <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-zinc-900 dark:text-white leading-[1.15] mb-6 tracking-tight">{activeDoc.title}</h1>
+              {seriesTitle && (
+                <span className="block font-mono text-[#c6a87c] dark:text-[#d4b78f] font-bold tracking-widest uppercase text-xs sm:text-sm mb-3">
+                  {seriesTitle}
+                </span>
+              )}
+              <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-zinc-900 dark:text-white leading-[1.15] mb-6 tracking-tight">
+                {mainTitle}
+              </h1>
               <div className="flex flex-wrap items-center gap-4 text-[11px] sm:text-xs font-bold uppercase tracking-widest pb-6">
                 <span className="text-zinc-700 dark:text-zinc-300">{activeDoc.speaker}</span>
                 <span className="text-zinc-300 dark:text-zinc-600 hidden sm:inline">|</span>
