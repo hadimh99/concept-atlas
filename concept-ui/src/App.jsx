@@ -484,128 +484,155 @@ const TranscriptLibrary = ({ transcripts }) => {
   };
 
   return (
-    <div className="w-full max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 pt-24 sm:pt-28 pb-32 flex flex-col pointer-events-auto font-sans">
+    <div className="w-full max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 pt-24 sm:pt-32 pb-32 flex relative items-start font-sans">
 
-      {/* Top Control Bar (Provides structure and holds the Font Resizer) */}
-      <div className="flex flex-col sm:flex-row justify-between items-center bg-white dark:bg-[#252528] border border-zinc-200 dark:border-zinc-800/80 rounded-xl p-3 sm:px-5 sm:py-3 mb-8 shadow-sm">
-        <button
-          onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-          className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-zinc-500 dark:text-zinc-400 hover:text-[#c6a87c] dark:hover:text-[#d4b78f] transition-colors cursor-pointer"
-        >
-          <LibraryIcon className="w-4 h-4" /> {isSidebarOpen ? 'Hide Archive' : 'Show Archive'}
-        </button>
+      {/* Premium Floating Toggle (Appears ONLY when sidebar is closed) */}
+      <AnimatePresence>
+        {!isSidebarOpen && (
+          <motion.button
+            initial={{ opacity: 0, scale: 0.8, x: -20 }}
+            animate={{ opacity: 1, scale: 1, x: 0 }}
+            exit={{ opacity: 0, scale: 0.8, x: -20 }}
+            transition={{ duration: 0.3 }}
+            onClick={() => setIsSidebarOpen(true)}
+            className="fixed top-28 left-4 sm:left-8 z-50 p-3 bg-white/90 dark:bg-[#252528]/90 backdrop-blur-md border border-zinc-200 dark:border-zinc-800/80 rounded-full shadow-xl text-zinc-500 hover:text-[#c6a87c] dark:hover:text-[#d4b78f] transition-all cursor-pointer hover:scale-105"
+            title="Open Library Archive"
+          >
+            <LibraryIcon className="w-5 h-5" />
+          </motion.button>
+        )}
+      </AnimatePresence>
 
-        {/* The Font Resizer */}
-        <div className="flex items-center gap-3 mt-3 sm:mt-0">
-          <span className="text-[10px] font-bold uppercase tracking-widest text-zinc-400 dark:text-zinc-500">Text Size</span>
-          <div className="flex items-center gap-1 bg-zinc-100 dark:bg-[#1c1c1e] rounded-lg p-1 border border-zinc-200 dark:border-zinc-800/60 shadow-inner">
-            <button onClick={() => setFontSize(Math.max(14, fontSize - 1))} className="w-7 h-7 flex items-center justify-center rounded hover:bg-white dark:hover:bg-[#2c2c2e] text-zinc-600 dark:text-zinc-300 transition-colors font-bold shadow-sm cursor-pointer">-</button>
-            <span className="text-xs font-mono font-bold w-10 text-center text-zinc-700 dark:text-zinc-300">{fontSize}px</span>
-            <button onClick={() => setFontSize(Math.min(28, fontSize + 1))} className="w-7 h-7 flex items-center justify-center rounded hover:bg-white dark:hover:bg-[#2c2c2e] text-zinc-600 dark:text-zinc-300 transition-colors font-bold shadow-sm cursor-pointer">+</button>
-          </div>
-        </div>
-      </div>
-
-      {/* Main Layout Area */}
-      <div className="flex gap-8 relative items-start">
-
-        {/* Sidebar (Structured Card) */}
-        <AnimatePresence initial={false}>
-          {isSidebarOpen && (
-            <motion.div
-              initial={{ width: 0, opacity: 0 }}
-              animate={{ width: "320px", opacity: 1 }}
-              exit={{ width: 0, opacity: 0 }}
-              transition={{ duration: 0.4, ease: "easeInOut" }}
-              className="shrink-0 overflow-hidden hidden md:block"
-            >
-              <div className="bg-white dark:bg-[#252528] border border-zinc-200 dark:border-zinc-800/80 rounded-2xl flex flex-col sticky top-28 shadow-sm w-[320px] max-h-[calc(100vh-160px)]">
-                <div className="p-5 border-b border-zinc-100 dark:border-zinc-800/60 shrink-0">
-                  <h2 className="text-[11px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-widest flex items-center gap-2">
-                    <LibraryIcon className="w-4 h-4 text-[#c6a87c] dark:text-[#d4b78f]" /> Library Archive
-                  </h2>
-                </div>
-                <div className="p-3 overflow-y-auto smart-scrollbar flex-grow flex flex-col gap-1">
-                  {transcripts.map((doc) => (
-                    <button
-                      key={doc.id}
-                      onClick={() => setActiveDoc(doc)}
-                      className={`text-left py-3 px-4 rounded-xl transition-all duration-200 border cursor-pointer ${activeDoc.id === doc.id
-                          ? 'bg-zinc-50 dark:bg-[#1c1c1e] border-zinc-200 dark:border-zinc-700 text-[#c6a87c] dark:text-[#d4b78f] shadow-sm'
-                          : 'bg-transparent border-transparent hover:bg-zinc-50 dark:hover:bg-[#2c2c2e] text-zinc-600 dark:text-zinc-400'
-                        }`}
-                    >
-                      <span className="text-sm font-bold leading-snug block mb-1">{doc.title}</span>
-                      <span className="text-[10px] uppercase tracking-widest opacity-60 font-mono block">{doc.speaker}</span>
-                    </button>
-                  ))}
-                </div>
+      {/* Structured Sidebar (The Archive) */}
+      <AnimatePresence initial={false}>
+        {isSidebarOpen && (
+          <motion.div
+            initial={{ width: 0, opacity: 0, marginRight: 0 }}
+            animate={{ width: "320px", opacity: 1, marginRight: "2rem" }}
+            exit={{ width: 0, opacity: 0, marginRight: 0 }}
+            transition={{ duration: 0.4, ease: "easeInOut" }}
+            className="shrink-0 overflow-hidden hidden md:block"
+          >
+            <div className="bg-white dark:bg-[#252528] border border-zinc-200 dark:border-zinc-800/80 rounded-2xl flex flex-col sticky top-28 shadow-sm w-[320px] max-h-[calc(100vh-160px)]">
+              <div className="p-4 sm:p-5 border-b border-zinc-100 dark:border-zinc-800/60 shrink-0 flex justify-between items-center">
+                <h2 className="text-[11px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-widest flex items-center gap-2">
+                  <LibraryIcon className="w-4 h-4 text-[#c6a87c] dark:text-[#d4b78f]" /> Library Archive
+                </h2>
+                {/* Reintegrated Hide Button */}
+                <button onClick={() => setIsSidebarOpen(false)} className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-widest text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 transition-colors cursor-pointer group">
+                  Hide <X className="w-3.5 h-3.5 group-hover:scale-110 transition-transform" />
+                </button>
               </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
+              <div className="p-3 overflow-y-auto smart-scrollbar flex-grow flex flex-col gap-1">
+                {transcripts.map((doc) => (
+                  <button
+                    key={doc.id}
+                    onClick={() => setActiveDoc(doc)}
+                    className={`text-left py-3 px-4 rounded-xl transition-all duration-200 border cursor-pointer ${activeDoc.id === doc.id
+                      ? 'bg-zinc-50 dark:bg-[#1c1c1e] border-zinc-200 dark:border-zinc-700 text-[#c6a87c] dark:text-[#d4b78f] shadow-sm'
+                      : 'bg-transparent border-transparent hover:bg-zinc-50 dark:hover:bg-[#2c2c2e] text-zinc-600 dark:text-zinc-400'
+                      }`}
+                  >
+                    <span className="text-sm font-bold leading-snug block mb-1">{doc.title}</span>
+                    <span className="text-[10px] uppercase tracking-widest opacity-60 font-mono block">{doc.speaker}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
-        {/* Reading Canvas (Automatically centers when sidebar width hits 0) */}
-        <motion.div
-          layout
-          transition={{ duration: 0.4, ease: "easeInOut" }}
-          className="flex-grow w-full flex justify-center"
-        >
-          <div className="bg-white dark:bg-[#252528] border border-zinc-200 dark:border-zinc-800/80 rounded-2xl p-6 sm:p-12 shadow-sm w-full max-w-4xl">
+      {/* Reading Canvas (Mathematically centers when sidebar margin drops to 0) */}
+      <motion.div
+        layout
+        transition={{ duration: 0.4, ease: "easeInOut" }}
+        className="flex-grow w-full flex justify-center"
+      >
+        <div className="bg-white dark:bg-[#252528] border border-zinc-200 dark:border-zinc-800/80 rounded-2xl p-6 sm:p-12 shadow-sm w-full max-w-4xl">
 
-            {/* Document Header */}
-            <header className="mb-12 border-b border-zinc-100 dark:border-zinc-800/60 pb-8">
-              <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-zinc-900 dark:text-white leading-[1.15] mb-6 tracking-tight">
+          {/* Mobile Toggle (Visible only on phones) */}
+          <div className="md:hidden flex items-center justify-between mb-8 border-b border-zinc-100 dark:border-zinc-800/60 pb-4">
+            <button className="flex items-center gap-2 text-[#c6a87c] dark:text-[#d4b78f] font-bold text-sm cursor-pointer" onClick={() => setIsSidebarOpen(!isSidebarOpen)}>
+              <LibraryIcon className="w-4 h-4" /> {isSidebarOpen ? 'Close Archive' : 'View Archive'}
+            </button>
+          </div>
+          <AnimatePresence>
+            {isSidebarOpen && (
+              <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="md:hidden mb-8 overflow-hidden flex flex-col gap-2 border-b border-zinc-200 dark:border-zinc-800 pb-6">
+                {transcripts.map((doc) => (
+                  <button key={doc.id} onClick={() => { setActiveDoc(doc); setIsSidebarOpen(false); }} className={`text-left py-3 px-4 rounded-xl w-full transition-all border ${activeDoc.id === doc.id ? 'bg-zinc-50 dark:bg-[#1c1c1e] border-zinc-200 dark:border-zinc-700 text-[#c6a87c] dark:text-[#d4b78f] font-bold' : 'border-transparent hover:bg-zinc-50 dark:hover:bg-[#2c2c2e] text-zinc-600 dark:text-zinc-400'}`}>
+                    <span className="text-sm">{doc.title}</span>
+                  </button>
+                ))}
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {/* Structured Document Header */}
+          <header className="mb-12 border-b border-zinc-100 dark:border-zinc-800/60 pb-8">
+            <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-6 mb-6">
+              <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-zinc-900 dark:text-white leading-[1.15] tracking-tight">
                 {activeDoc.title}
               </h1>
-              <div className="flex flex-wrap items-center gap-4 text-xs font-bold uppercase tracking-widest">
-                <span className="text-zinc-700 dark:text-zinc-300">
-                  {activeDoc.speaker}
-                </span>
-                <span className="text-zinc-300 dark:text-zinc-600 hidden sm:inline">|</span>
-                {activeDoc.source_link && (
-                  <a href={activeDoc.source_link} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 text-zinc-500 hover:text-red-600 dark:text-zinc-400 dark:hover:text-red-500 transition-colors group">
-                    <Youtube className="w-4 h-4 group-hover:scale-110 transition-transform" /> Watch Original
-                  </a>
-                )}
+
+              {/* Reintegrated Font Resizer */}
+              <div className="flex flex-col items-center sm:items-end gap-1.5 shrink-0">
+                <span className="text-[9px] font-bold uppercase tracking-widest text-zinc-400 dark:text-zinc-500 hidden sm:block">Text Size</span>
+                <div className="flex items-center gap-1 bg-zinc-50 dark:bg-[#1c1c1e] rounded-lg p-1 border border-zinc-200 dark:border-zinc-800/60 shadow-inner">
+                  <button onClick={() => setFontSize(Math.max(14, fontSize - 1))} className="w-8 h-8 flex items-center justify-center rounded hover:bg-white dark:hover:bg-[#2c2c2e] text-zinc-600 dark:text-zinc-300 transition-colors font-bold shadow-sm cursor-pointer">-</button>
+                  <span className="text-xs font-mono font-bold w-10 text-center text-zinc-700 dark:text-zinc-300">{fontSize}px</span>
+                  <button onClick={() => setFontSize(Math.min(28, fontSize + 1))} className="w-8 h-8 flex items-center justify-center rounded hover:bg-white dark:hover:bg-[#2c2c2e] text-zinc-600 dark:text-zinc-300 transition-colors font-bold shadow-sm cursor-pointer">+</button>
+                </div>
               </div>
-            </header>
-
-            {/* Dynamic Content Renderer */}
-            <div className="text-zinc-800 dark:text-zinc-300 font-sans antialiased" style={{ fontSize: `${fontSize}px`, lineHeight: 1.85 }}>
-              {activeDoc.content.map((block, idx) => {
-
-                if (block.type === 'h2') return <h2 key={idx} className="font-bold text-zinc-900 dark:text-white mt-14 mb-6 tracking-tight" style={{ fontSize: `${fontSize * 1.3}px`, lineHeight: 1.3 }}>{block.text}</h2>;
-
-                if (block.type === 'summary') return (
-                  <div key={idx} className="bg-zinc-50 dark:bg-[#1c1c1e] border-l-4 border-[#c6a87c] dark:border-[#d4b78f] p-6 sm:p-8 my-10 rounded-r-xl shadow-sm">
-                    <span className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-[#c6a87c] dark:text-[#d4b78f] mb-3">
-                      <Sparkles className="w-3.5 h-3.5" /> Segment Summary
-                    </span>
-                    <p className="text-zinc-700 dark:text-zinc-300 font-medium" style={{ fontSize: `${Math.max(15, fontSize - 2)}px`, lineHeight: 1.7 }}>{parseFormatting(block.text)}</p>
-                  </div>
-                );
-
-                if (block.type === 'quote') return (
-                  <blockquote key={idx} className="pl-6 sm:pl-8 py-2 my-10 border-l-[3px] border-[#c6a87c] dark:border-[#d4b78f] font-medium text-zinc-900 dark:text-zinc-100 italic font-serif" style={{ fontSize: `${fontSize * 1.15}px`, lineHeight: 1.6 }}>
-                    "{parseFormatting(block.text)}"
-                  </blockquote>
-                );
-
-                if (block.type === 'divider') return (
-                  <div key={idx} className="flex justify-center py-10">
-                    <span className="w-12 h-1 rounded-full bg-zinc-200 dark:bg-zinc-700"></span>
-                  </div>
-                );
-
-                // Default Paragraph
-                return <p key={idx} className="mb-6">{parseFormatting(block.text)}</p>;
-              })}
             </div>
 
+            <div className="flex flex-wrap items-center gap-4 text-xs font-bold uppercase tracking-widest">
+              <span className="text-zinc-700 dark:text-zinc-300">
+                {activeDoc.speaker}
+              </span>
+              <span className="text-zinc-300 dark:text-zinc-600 hidden sm:inline">|</span>
+              {activeDoc.source_link && (
+                <a href={activeDoc.source_link} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 text-zinc-500 hover:text-red-600 dark:text-zinc-400 dark:hover:text-red-500 transition-colors group">
+                  <Youtube className="w-4 h-4 group-hover:scale-110 transition-transform" /> Watch Original
+                </a>
+              )}
+            </div>
+          </header>
+
+          {/* Dynamic Content Renderer */}
+          <div className="text-zinc-800 dark:text-zinc-300 font-sans antialiased" style={{ fontSize: `${fontSize}px`, lineHeight: 1.85 }}>
+            {activeDoc.content.map((block, idx) => {
+              if (block.type === 'h2') return <h2 key={idx} className="font-bold text-zinc-900 dark:text-white mt-14 mb-6 tracking-tight" style={{ fontSize: `${fontSize * 1.3}px`, lineHeight: 1.3 }}>{block.text}</h2>;
+
+              if (block.type === 'summary') return (
+                <div key={idx} className="bg-zinc-50 dark:bg-[#1c1c1e] border-l-4 border-[#c6a87c] dark:border-[#d4b78f] p-6 sm:p-8 my-10 rounded-r-xl shadow-sm">
+                  <span className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-[#c6a87c] dark:text-[#d4b78f] mb-3">
+                    <Sparkles className="w-3.5 h-3.5" /> Segment Summary
+                  </span>
+                  <p className="text-zinc-700 dark:text-zinc-300 font-medium" style={{ fontSize: `${Math.max(15, fontSize - 2)}px`, lineHeight: 1.7 }}>{parseFormatting(block.text)}</p>
+                </div>
+              );
+
+              if (block.type === 'quote') return (
+                <blockquote key={idx} className="pl-6 sm:pl-8 py-2 my-10 border-l-[3px] border-[#c6a87c] dark:border-[#d4b78f] font-medium text-zinc-900 dark:text-zinc-100 italic font-serif" style={{ fontSize: `${fontSize * 1.15}px`, lineHeight: 1.6 }}>
+                  "{parseFormatting(block.text)}"
+                </blockquote>
+              );
+
+              if (block.type === 'divider') return (
+                <div key={idx} className="flex justify-center py-10">
+                  <span className="w-12 h-1 rounded-full bg-zinc-200 dark:bg-zinc-700"></span>
+                </div>
+              );
+
+              return <p key={idx} className="mb-6">{parseFormatting(block.text)}</p>;
+            })}
           </div>
-        </motion.div>
-      </div>
+
+        </div>
+      </motion.div>
+
     </div>
   );
 };
@@ -958,12 +985,10 @@ export default function App() {
 
         <div className="flex items-center gap-2 sm:gap-4 relative z-[75] pointer-events-auto">
 
-          <div className={`flex items-center rounded-full p-1 mr-1 sm:mr-2 ${(activeTab === 'quran' || activeTab === 'library') ? 'bg-white/40 dark:bg-slate-800/50 backdrop-blur-md shadow-sm border border-slate-300/30 dark:border-slate-700' : 'glass-panel border-white/20'}`}>
+          <div className={`flex items-center rounded-full p-1 mr-1 sm:mr-2 ${(activeTab === 'quran' || activeTab === 'library') ? 'bg-white/40 dark:bg-[#252528]/80 backdrop-blur-md shadow-sm border border-slate-300/30 dark:border-zinc-700/50' : 'glass-panel border-white/20'}`}>
             <button onClick={() => setActiveTab('search')} className={`p-2 rounded-full transition-all duration-300 cursor-pointer ${activeTab === 'search' ? 'bg-indigo-500/20 text-indigo-500 dark:text-indigo-400' : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}`} title="Search Engine"><Search className="w-4 h-4" /></button>
             <button onClick={() => setActiveTab('quran')} className={`p-2 rounded-full transition-all duration-300 cursor-pointer ${activeTab === 'quran' ? 'bg-amber-600/20 text-amber-800 dark:text-amber-500' : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}`} title="Quran Reader"><BookOpen className="w-4 h-4" /></button>
-
-            {/* NEW LIBRARY BUTTON */}
-            <button onClick={() => setActiveTab('library')} className={`p-2 rounded-full transition-all duration-300 cursor-pointer ${activeTab === 'library' ? 'bg-indigo-600/20 text-indigo-800 dark:text-indigo-400' : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}`} title="Transcript Library"><LibraryIcon className="w-4 h-4" /></button>
+            <button onClick={() => setActiveTab('library')} className={`p-2 rounded-full transition-all duration-300 cursor-pointer ${activeTab === 'library' ? 'bg-amber-600/20 text-[#c6a87c] dark:text-[#d4b78f]' : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}`} title="Transcript Library"><LibraryIcon className="w-4 h-4" /></button>
           </div>
 
           <div className="hidden md:flex items-center gap-2 sm:gap-4">
