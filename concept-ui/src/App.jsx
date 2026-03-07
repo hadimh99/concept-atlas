@@ -471,7 +471,7 @@ const TranscriptLibrary = ({ transcripts }) => {
   const [activeDoc, setActiveDoc] = useState(transcripts[0]);
   const [isArchiveOpen, setIsArchiveOpen] = useState(true);
   const [isCustomiseOpen, setIsCustomiseOpen] = useState(true);
-  const [isMobileDrawerOpen, setIsMobileDrawerOpen] = useState(true); // Pops up initially on mobile
+  const [isMobileDrawerOpen, setIsMobileDrawerOpen] = useState(true);
   const [fontSize, setFontSize] = useState(18);
 
   // Deep-Scroll Return to Reading Logic
@@ -484,7 +484,7 @@ const TranscriptLibrary = ({ transcripts }) => {
       if (y >= maxScrollY - 20) {
         setMaxScrollY(Math.max(y, maxScrollY));
         setShowReturn(false);
-      } else if (maxScrollY - y > 1500) { // Require a MASSIVE scroll (1500px) to trigger
+      } else if (maxScrollY - y > 1500) {
         setShowReturn(true);
       } else {
         setShowReturn(false);
@@ -528,15 +528,16 @@ const TranscriptLibrary = ({ transcripts }) => {
         )}
       </AnimatePresence>
 
-      {/* 2. Mobile: Small Top Pill */}
+      {/* 2. Mobile: Unobtrusive Bottom-Right 'R' Module */}
       <AnimatePresence>
         {showReturn && (
           <motion.button
-            initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }}
+            initial={{ opacity: 0, scale: 0.8, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.8, y: 20 }}
             onClick={jumpBack}
-            className="md:hidden fixed top-24 left-1/2 -translate-x-1/2 z-[100] bg-white dark:bg-[#252528] text-[#c6a87c] border border-zinc-200 dark:border-zinc-800 px-5 py-2 rounded-full shadow-2xl flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest cursor-pointer"
+            className="md:hidden fixed bottom-8 right-6 z-[100] w-12 h-12 bg-white dark:bg-[#333336] text-[#c6a87c] border border-zinc-200 dark:border-zinc-700 rounded-full shadow-2xl flex flex-col items-center justify-center cursor-pointer"
           >
-            Return <ArrowDown className="w-3 h-3 animate-bounce" />
+            <span className="font-bold text-[14px] leading-none mb-0.5">R</span>
+            <ArrowDown className="w-3 h-3 animate-bounce" />
           </motion.button>
         )}
       </AnimatePresence>
@@ -562,7 +563,7 @@ const TranscriptLibrary = ({ transcripts }) => {
 
 
       {/* --- MOBILE UNIFIED DRAWER --- */}
-      {/* The "Little Arrow" that juts out when drawer is closed */}
+      {/* The tiny tab that juts out on the left */}
       <AnimatePresence>
         {!isMobileDrawerOpen && (
           <motion.button
@@ -575,27 +576,27 @@ const TranscriptLibrary = ({ transcripts }) => {
         )}
       </AnimatePresence>
 
-      {/* The Unified Drawer Overlay & Panel */}
+      {/* The True Full-Height Drawer */}
       <AnimatePresence>
         {isMobileDrawerOpen && (
           <>
-            {/* Clickable dark backdrop to close */}
+            {/* Clickable dark backdrop */}
             <motion.div
               initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
               onClick={() => setIsMobileDrawerOpen(false)}
-              className="md:hidden fixed inset-0 bg-black/60 z-[190] cursor-pointer backdrop-blur-sm"
+              className="md:hidden fixed top-0 left-0 w-screen h-[100dvh] bg-black/80 z-[190] cursor-pointer backdrop-blur-md"
             />
-            {/* The actual sliding drawer */}
+
+            {/* Absolute fixed panel */}
             <motion.div
               initial={{ x: '-100%' }} animate={{ x: 0 }} exit={{ x: '-100%' }} transition={{ type: "spring", damping: 25, stiffness: 200 }}
-              className="md:hidden fixed inset-y-0 left-0 w-[85vw] max-w-[320px] bg-white dark:bg-[#1c1c1e] z-[200] shadow-2xl border-r border-zinc-200 dark:border-zinc-800 flex flex-col"
+              className="md:hidden fixed top-0 left-0 h-[100dvh] w-[85vw] max-w-[320px] bg-white dark:bg-[#1c1c1e] z-[200] shadow-2xl border-r border-zinc-200 dark:border-zinc-800 flex flex-col overflow-hidden"
             >
               <div className="p-5 border-b border-zinc-100 dark:border-zinc-800/80 shrink-0 flex justify-between items-center">
                 <h2 className="text-[11px] font-bold text-zinc-500 uppercase tracking-widest flex items-center gap-2"><LibraryIcon className="w-4 h-4 text-[#c6a87c]" /> Library Tools</h2>
                 <button onClick={() => setIsMobileDrawerOpen(false)} className="p-1"><X className="w-5 h-5 text-zinc-500" /></button>
               </div>
 
-              {/* Font Resizer Block */}
               <div className="p-5 border-b border-zinc-100 dark:border-zinc-800/80 shrink-0">
                 <span className="text-[10px] font-bold uppercase tracking-widest text-zinc-400 block mb-3">Text Size</span>
                 <div className="flex items-center gap-4 bg-zinc-50 dark:bg-[#252528] rounded-xl p-2 border border-zinc-200 dark:border-zinc-700">
@@ -605,7 +606,6 @@ const TranscriptLibrary = ({ transcripts }) => {
                 </div>
               </div>
 
-              {/* Archive Block */}
               <div className="p-4 overflow-y-auto smart-scrollbar flex-grow flex flex-col gap-2">
                 <span className="text-[10px] font-bold uppercase tracking-widest text-zinc-400 block ml-1 mb-1">Archive</span>
                 {transcripts.map((doc) => (
@@ -640,18 +640,23 @@ const TranscriptLibrary = ({ transcripts }) => {
           </div>
         </motion.div>
 
-        {/* Center Pillar: Pure Canvas (Mathematically Centers!) */}
+        {/* Center Pillar: Pure Canvas */}
         <div className="flex-grow w-full flex justify-center max-w-4xl mx-auto transition-all duration-500">
           <div className="w-full bg-white dark:bg-[#252528] border border-zinc-200 dark:border-zinc-800/80 rounded-2xl p-6 sm:p-12 shadow-sm">
-            <header className="mb-12 border-b border-zinc-100 dark:border-zinc-800/60 pb-8">
+
+            {/* The Structured Editorial Header */}
+            <header className="mb-10 sm:mb-12">
               <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-zinc-900 dark:text-white leading-[1.15] mb-6 tracking-tight">{activeDoc.title}</h1>
-              <div className="flex flex-wrap items-center gap-4 text-xs font-bold uppercase tracking-widest">
+              <div className="flex flex-wrap items-center gap-4 text-xs font-bold uppercase tracking-widest pb-6">
                 <span className="text-zinc-700 dark:text-zinc-300">{activeDoc.speaker}</span>
                 <span className="text-zinc-300 dark:text-zinc-600 hidden sm:inline">|</span>
                 {activeDoc.source_link && (<a href={activeDoc.source_link} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 text-zinc-500 hover:text-red-600 transition-colors group"><Youtube className="w-4 h-4 group-hover:scale-110 transition-transform" /> Watch Original</a>)}
               </div>
+              {/* Solid dividing line */}
+              <hr className="w-full border-t-2 border-zinc-200 dark:border-zinc-700" />
             </header>
 
+            {/* Main Text Content */}
             <div className="text-zinc-800 dark:text-zinc-300 font-sans antialiased" style={{ fontSize: `${fontSize}px`, lineHeight: 1.85 }}>
               {activeDoc.content.map((block, idx) => {
                 if (block.type === 'h2') return <h2 key={idx} className="font-bold text-zinc-900 dark:text-white mt-14 mb-6 tracking-tight" style={{ fontSize: `${fontSize * 1.3}px`, lineHeight: 1.3 }}>{block.text}</h2>;
