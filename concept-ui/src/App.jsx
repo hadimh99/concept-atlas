@@ -476,6 +476,7 @@ const TranscriptLibrary = ({ transcripts }) => {
   const [isArchiveOpen, setIsArchiveOpen] = useState(true);
   const [isMobileDrawerOpen, setIsMobileDrawerOpen] = useState(true);
   const [fontSize, setFontSize] = useState(18);
+  const [isTocOpen, setIsTocOpen] = useState(false);
 
   const maxScrollYRef = useRef(0);
   const returnDesktopRef = useRef(null);
@@ -498,6 +499,11 @@ const TranscriptLibrary = ({ transcripts }) => {
     setExpandedSeries(prev => ({ ...prev, [seriesName]: !prev[seriesName] }));
   };
 
+  // Close TOC whenever a new document is selected
+  useEffect(() => {
+    setIsTocOpen(false);
+  }, [activeDoc]);
+
   let seriesTitle = activeDoc.series;
   let mainTitle = activeDoc.title;
   if (!seriesTitle && activeDoc.title.includes(' - ')) {
@@ -507,6 +513,19 @@ const TranscriptLibrary = ({ transcripts }) => {
   } else if (seriesTitle && activeDoc.title.startsWith(seriesTitle + ' - ')) {
     mainTitle = activeDoc.title.replace(seriesTitle + ' - ', '');
   }
+
+  // Extract Table of Contents items dynamically
+  const tocItems = activeDoc.content
+    .map((block, index) => ({ ...block, index }))
+    .filter(block => block.type === 'h2');
+
+  const scrollToSegment = (idx) => {
+    const el = document.getElementById(`segment-${idx}`);
+    if (el) {
+      const y = el.getBoundingClientRect().top + window.scrollY - 120; // 120px offset for breathing room
+      window.scrollTo({ top: y, behavior: 'smooth' });
+    }
+  };
 
   useEffect(() => {
     let ticking = false;
@@ -578,7 +597,6 @@ const TranscriptLibrary = ({ transcripts }) => {
             onClick={() => toggleSeries(groupSeriesName)}
             className="flex items-center justify-between py-2 px-3 hover:bg-zinc-100 dark:hover:bg-[#2c2c2e] rounded-lg transition-colors group cursor-pointer"
           >
-            {/* CHANGED: Text is now much larger (text-base sm:text-lg) and thicker (font-black) */}
             <span className="text-base sm:text-lg font-sans font-black uppercase tracking-widest text-[#c6a87c] dark:text-[#d4b78f] group-hover:text-[#b09265] transition-colors text-left flex-1 pr-4 leading-tight">
               {groupSeriesName}
             </span>
@@ -590,7 +608,7 @@ const TranscriptLibrary = ({ transcripts }) => {
                 {docs.map(doc => {
                   const displayTitle = doc.title.startsWith(groupSeriesName + ' - ') ? doc.title.replace(groupSeriesName + ' - ', '') : doc.title;
                   return (
-                    <button key={doc.id} onClick={() => { setActiveDoc(doc); setIsMobileDrawerOpen(false); }} className={`text-left py-2.5 px-3 rounded-xl transition-all duration-200 cursor-pointer ${activeDoc.id === doc.id ? 'bg-zinc-50 dark:bg-[#1c1c1e] text-zinc-900 dark:text-white font-bold shadow-sm border border-zinc-200 dark:border-zinc-700' : 'text-zinc-500 hover:text-zinc-800 dark:text-zinc-400 dark:hover:text-zinc-200 border border-transparent hover:bg-zinc-50 dark:hover:bg-[#2c2c2e]'}`}>
+                    <button key={doc.id} onClick={() => { setActiveDoc(doc); setIsMobileDrawerOpen(false); window.scrollTo(0, 0); }} className={`text-left py-2.5 px-3 rounded-xl transition-all duration-200 cursor-pointer ${activeDoc.id === doc.id ? 'bg-zinc-50 dark:bg-[#1c1c1e] text-zinc-900 dark:text-white font-bold shadow-sm border border-zinc-200 dark:border-zinc-700' : 'text-zinc-500 hover:text-zinc-800 dark:text-zinc-400 dark:hover:text-zinc-200 border border-transparent hover:bg-zinc-50 dark:hover:bg-[#2c2c2e]'}`}>
                       <span className="text-sm leading-snug block">{displayTitle}</span>
                     </button>
                   );
@@ -614,7 +632,6 @@ const TranscriptLibrary = ({ transcripts }) => {
         )}
       </div>
 
-      {/* CHANGED: Thinner height (h-6/h-7) and smaller interior font (text-xs), but full width retained */}
       <div className="p-4 sm:p-5 border-b border-zinc-100 dark:border-zinc-800/80 shrink-0">
         <span className="text-[10px] font-bold uppercase tracking-widest text-zinc-400 block mb-2">Text Size</span>
         <div className="flex items-center justify-between bg-zinc-50 dark:bg-[#252528] rounded-lg p-1 border border-zinc-200 dark:border-zinc-700 w-full">
@@ -644,7 +661,6 @@ const TranscriptLibrary = ({ transcripts }) => {
         <ArrowDown className="w-4 h-4 animate-bounce mb-1" />
       </button>
 
-      {/* --- MOBILE RETURN TO READING BUTTON ('R' Module) --- */}
       <button
         ref={returnMobileRef}
         onClick={jumpBack}
@@ -663,7 +679,6 @@ const TranscriptLibrary = ({ transcripts }) => {
         )}
       </AnimatePresence>
 
-      {/* --- DYNAMIC MOBILE FAB (Right Side) --- */}
       <button
         onClick={() => setIsMobileDrawerOpen(!isMobileDrawerOpen)}
         className="md:hidden fixed bottom-6 right-3 z-[210] w-12 h-12 bg-white dark:bg-[#252528] text-[#c6a87c] border border-zinc-200 dark:border-zinc-800 rounded-full shadow-2xl flex flex-col items-center justify-center cursor-pointer"
@@ -711,7 +726,7 @@ const TranscriptLibrary = ({ transcripts }) => {
         <div className="flex-1 min-w-0 w-full flex justify-center transition-all duration-500">
           <div className="w-full max-w-4xl mx-auto bg-white dark:bg-[#252528] sm:border border-zinc-200 dark:border-zinc-800/80 sm:rounded-2xl px-5 py-10 sm:p-12 sm:shadow-sm">
 
-            <header className="mb-10 sm:mb-12">
+            <header className="mb-8 sm:mb-10">
               {seriesTitle && (
                 <span className="block font-mono text-[#c6a87c] dark:text-[#d4b78f] font-bold tracking-widest uppercase text-xs sm:text-sm mb-3">
                   {seriesTitle}
@@ -728,9 +743,48 @@ const TranscriptLibrary = ({ transcripts }) => {
               <hr className="w-full border-t-[2px] border-zinc-200 dark:border-zinc-700" />
             </header>
 
+            {/* --- TABLE OF CONTENTS --- */}
+            {tocItems.length > 0 && (
+              <div className="mb-10 sm:mb-12 bg-zinc-50 dark:bg-[#1a1a1c] border border-zinc-200 dark:border-zinc-800/80 rounded-xl overflow-hidden shadow-sm">
+                <button
+                  onClick={() => setIsTocOpen(!isTocOpen)}
+                  className="w-full flex items-center justify-between px-5 sm:px-6 py-4 cursor-pointer hover:bg-zinc-100 dark:hover:bg-[#252528] transition-colors"
+                >
+                  <div className="flex items-center gap-3">
+                    <List className="w-5 h-5 text-[#c6a87c]" />
+                    <span className="text-xs sm:text-sm font-bold uppercase tracking-widest text-zinc-700 dark:text-zinc-300">Table of Contents</span>
+                  </div>
+                  {isTocOpen ? <ChevronUp className="w-4 h-4 text-zinc-500" /> : <ChevronDown className="w-4 h-4 text-zinc-500" />}
+                </button>
+                <AnimatePresence>
+                  {isTocOpen && (
+                    <motion.div
+                      initial={{ height: 0, opacity: 0 }}
+                      animate={{ height: 'auto', opacity: 1 }}
+                      exit={{ height: 0, opacity: 0 }}
+                      className="overflow-hidden"
+                    >
+                      <div className="px-5 sm:px-6 pb-5 pt-2 flex flex-col gap-3 border-t border-zinc-200 dark:border-zinc-800/80 mx-2">
+                        {tocItems.map((item) => (
+                          <button
+                            key={item.index}
+                            onClick={() => scrollToSegment(item.index)}
+                            className="text-left text-sm sm:text-base font-medium text-zinc-600 dark:text-zinc-400 hover:text-[#c6a87c] dark:hover:text-[#d4b78f] transition-colors flex items-start gap-3 group cursor-pointer"
+                          >
+                            <span className="text-[#c6a87c] opacity-50 group-hover:opacity-100 mt-1 sm:mt-0.5 text-[10px]">■</span>
+                            {item.text}
+                          </button>
+                        ))}
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+            )}
+
             <div className="text-zinc-800 dark:text-zinc-300 font-sans antialiased" style={{ fontSize: `${fontSize}px`, lineHeight: 1.85 }}>
               {activeDoc.content.map((block, idx) => {
-                if (block.type === 'h2') return <h2 key={idx} className="font-bold text-zinc-900 dark:text-white mt-14 mb-6 tracking-tight" style={{ fontSize: `${fontSize * 1.3}px`, lineHeight: 1.3 }}>{block.text}</h2>;
+                if (block.type === 'h2') return <h2 id={`segment-${idx}`} key={idx} className="font-bold text-zinc-900 dark:text-white mt-14 mb-6 tracking-tight scroll-mt-24" style={{ fontSize: `${fontSize * 1.3}px`, lineHeight: 1.3 }}>{block.text}</h2>;
                 if (block.type === 'summary') return (
                   <div key={idx} className="bg-zinc-50 dark:bg-[#1c1c1e] border-l-4 border-[#c6a87c] p-6 sm:p-8 my-10 rounded-r-xl shadow-sm">
                     <span className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-[#c6a87c] mb-3"><Sparkles className="w-3.5 h-3.5" /> Segment Summary</span>
