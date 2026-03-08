@@ -648,7 +648,7 @@ const TranscriptLibrary = ({ transcripts }) => {
         ref={returnMobileRef}
         onClick={jumpBack}
         style={{ opacity: 0, pointerEvents: 'none', transform: 'translateY(20px) scale(0.8)' }}
-        className="md:hidden fixed bottom-6 right-6 z-[100] w-12 h-12 bg-zinc-900 dark:bg-[#e4d3ba] text-[#d4b78f] dark:text-[#5c4a30] border border-zinc-700 dark:border-zinc-300 rounded-full shadow-2xl flex flex-col items-center justify-center cursor-pointer transition-all duration-300"
+        className="md:hidden fixed bottom-[88px] right-6 z-[100] w-12 h-12 bg-zinc-900 dark:bg-[#e4d3ba] text-[#d4b78f] dark:text-[#5c4a30] border border-zinc-700 dark:border-zinc-300 rounded-full shadow-2xl flex flex-col items-center justify-center cursor-pointer transition-all duration-300"
       >
         <span className="font-extrabold text-[14px] leading-none mt-1">R</span>
         <ArrowDown className="w-3.5 h-3.5 animate-bounce mt-0.5" />
@@ -662,17 +662,23 @@ const TranscriptLibrary = ({ transcripts }) => {
         )}
       </AnimatePresence>
 
-      <AnimatePresence>
-        {!isMobileDrawerOpen && (
-          <motion.button
-            initial={{ opacity: 0, scale: 0.8, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.8, y: 20 }}
-            onClick={() => setIsMobileDrawerOpen(true)}
-            className="md:hidden fixed bottom-6 left-6 z-[50] w-12 h-12 bg-white dark:bg-[#252528] text-[#c6a87c] border border-zinc-200 dark:border-zinc-800 rounded-full shadow-2xl flex flex-col items-center justify-center cursor-pointer"
-          >
-            <LibraryIcon className="w-5 h-5" />
-          </motion.button>
-        )}
-      </AnimatePresence>
+      {/* --- DYNAMIC MOBILE FAB (Right Side) --- */}
+      <button
+        onClick={() => setIsMobileDrawerOpen(!isMobileDrawerOpen)}
+        className="md:hidden fixed bottom-6 right-6 z-[210] w-12 h-12 bg-white dark:bg-[#252528] text-[#c6a87c] border border-zinc-200 dark:border-zinc-800 rounded-full shadow-2xl flex flex-col items-center justify-center cursor-pointer"
+      >
+        <AnimatePresence mode="wait">
+          {isMobileDrawerOpen ? (
+            <motion.div key="close" initial={{ rotate: -90, opacity: 0 }} animate={{ rotate: 0, opacity: 1 }} exit={{ rotate: 90, opacity: 0 }} transition={{ duration: 0.15 }}>
+              <X className="w-5 h-5 text-zinc-500" />
+            </motion.div>
+          ) : (
+            <motion.div key="open" initial={{ rotate: 90, opacity: 0 }} animate={{ rotate: 0, opacity: 1 }} exit={{ rotate: -90, opacity: 0 }} transition={{ duration: 0.15 }}>
+              <LibraryIcon className="w-5 h-5" />
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </button>
 
       <AnimatePresence>
         {isMobileDrawerOpen && (
