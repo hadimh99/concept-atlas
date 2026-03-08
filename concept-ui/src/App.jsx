@@ -5,7 +5,11 @@ import quranData from './quran.json';
 import verseMap from './verse_map.json';
 import transcriptData from './transcripts.json';
 
-const APP_UPDATES = [{ version: "v3.5.3", date: "March 5, 2026", changes: ["Documentation: Completely overhauled the 'Help & Guide' section to detail the comprehensive suite of tools now available in Kisa, including Vector Hopping, Dynamic Map Views, and Reverse Quran Tafsir."] }, { version: "v3.5.2", date: "March 5, 2026", changes: ["Feature Polish: Added a 'Copy Text' button to all 'Anchored Source' views (both List View accordion and Map View modal) allowing you to copy the full reference, Arabic, and translation instantly.", "Map UX Overhaul: Nodes are uniformly sized and mathematically bounded to never overlap the center box or go off-screen."] }];
+const APP_UPDATES = [
+  { version: "v4.0.0", date: "March 8, 2026", changes: ["Introduced the Digital Archive (Transcript Library): A premium reading environment for translated scholarly series, starting with 'The File of Fatima'.", "UI Polish: Added custom text parser for bold highlights, unified mobile drawer, and high-performance native scrolling for transcripts."] },
+  { version: "v3.5.3", date: "March 5, 2026", changes: ["Documentation: Completely overhauled the 'Help & Guide' section to detail the comprehensive suite of tools now available in Kisa, including Vector Hopping, Dynamic Map Views, and Reverse Quran Tafsir."] },
+  { version: "v3.5.2", date: "March 5, 2026", changes: ["Feature Polish: Added a 'Copy Text' button to all 'Anchored Source' views (both List View accordion and Map View modal) allowing you to copy the full reference, Arabic, and translation instantly.", "Map UX Overhaul: Nodes are uniformly sized and mathematically bounded to never overlap the center box or go off-screen."] }
+];
 const CLUSTER_COLORS = ['#10b981', '#8b5cf6', '#f59e0b', '#f43f5e', '#3b82f6'];
 const SOURCES = ["All Twelver Sources", "al-Kafi", "Bihar al-Anwar", "Basa'ir al-Darajat"];
 
@@ -1126,7 +1130,6 @@ export default function App() {
             <button onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')} className="w-10 h-10 sm:w-11 sm:h-11 rounded-full flex items-center justify-center group transition-all duration-300 hover:scale-110 cursor-pointer">{theme === 'dark' ? <Sun className="w-5 h-5 text-slate-500 group-hover:text-yellow-400" /> : <Moon className="w-5 h-5 text-slate-400 group-hover:text-slate-900" />}</button>
           </div>
 
-          {/* RESTORED MOBILE MENU BLOCK */}
           <div className="md:hidden flex items-center gap-1 sm:gap-2 relative">
             <button onClick={() => setShowHistoryDrawer(true)} className={`w-10 h-10 rounded-full flex items-center justify-center transition-all duration-300 cursor-pointer ${activeTab === 'library' ? 'bg-[#c6a87c]/10 text-[#c6a87c] border border-zinc-700/50' : (activeTab === 'quran' ? 'bg-white/40 dark:bg-slate-800/50 backdrop-blur-md shadow-sm border border-slate-300/30 dark:border-slate-700 text-slate-600 dark:text-slate-300' : 'glass-panel border-white/20 text-slate-500 dark:text-slate-400')}`}>
               <Clock className="w-5 h-5" />
@@ -1156,7 +1159,7 @@ export default function App() {
       <main ref={containerRef} className={`relative w-full flex-grow flex flex-col ${lockMainScreen ? 'items-center justify-center h-screen overflow-hidden' : 'min-h-screen'}`}>
 
         {activeTab === 'quran' && <QuranReader activeFontFamily={activeFontFamily} fontStyle={fontStyle} setFontStyle={setFontStyle} handleSurahSelectHook={(id, name) => saveToHistory({ type: 'quran', surahId: id, surahName: name, timestamp: Date.now() })} externalSurahTarget={quranTarget} onTafsirClick={handleTafsirClick} />}
-        {/* NEW LIBRARY TAB PLACEMENT */}
+
         {activeTab === 'library' && <TranscriptLibrary transcripts={transcriptData} />}
 
         <AnimatePresence>
@@ -1606,16 +1609,19 @@ export default function App() {
                   <hr className="border-slate-200 dark:border-slate-700" />
 
                   <div>
-                    <h3 className="font-bold text-base sm:text-lg flex items-center gap-2 mb-3 text-slate-900 dark:text-white"><Search className="w-4 h-4 text-indigo-500" /> Core Search Engine</h3>
+                    <h3 className="font-bold text-base sm:text-lg flex items-center gap-2 mb-3 text-slate-900 dark:text-white"><LibraryIcon className="w-4 h-4 text-emerald-500" /> Features</h3>
+
                     <div className="mb-4">
-                      <h4 className="font-semibold text-sm sm:text-base flex items-center gap-1.5 mb-1"><Sparkles className="w-3.5 h-3.5 text-indigo-500" /> Concept Mode</h4>
-                      <p className="leading-relaxed text-xs sm:text-sm mb-2">Uses AI vector math to find underlying themes, even if exact words aren't used. Returns interactive thematic clusters.</p>
-                      <div className="bg-orange-50 dark:bg-orange-500/10 border-l-4 border-orange-500 p-2 sm:p-3 rounded-r-md"><p className="text-[10px] sm:text-xs font-semibold text-orange-800 dark:text-orange-300">⚠️ The Historical Fact Trap: Concept Mode finds themes, not historical facts (e.g., searching "How was Imam Sadiq martyred?" returns thematic narrations about grief/martyrdom, not a Wikipedia summary).</p></div>
+                      <h4 className="font-semibold text-sm sm:text-base flex items-center gap-1.5 mb-1"><Search className="w-3.5 h-3.5 text-indigo-500" /> Dual Search Engine</h4>
+                      <ul className="flex flex-col gap-2 text-xs sm:text-sm pl-5 list-disc mb-2">
+                        <li><b>Concept Mode:</b> Uses AI vector math to find underlying themes, even if exact words aren't used. Returns interactive thematic clusters.</li>
+                        <li><b>Keyword Mode:</b> Strictly searches the exact English or Arabic text you type, functioning like a traditional database index.</li>
+                      </ul>
                     </div>
+
                     <div>
-                      <h4 className="font-semibold text-sm sm:text-base flex items-center gap-1.5 mb-1"><Database className="w-3.5 h-3.5 text-blue-500" /> Keyword Mode</h4>
-                      <p className="leading-relaxed text-xs sm:text-sm mb-2">Strictly searches the exact English or Arabic text you type, functioning like a traditional database index.</p>
-                      <div className="bg-blue-50 dark:bg-blue-500/10 border-l-4 border-blue-500 p-2 sm:p-3 rounded-r-md"><p className="text-[10px] sm:text-xs font-semibold text-blue-800 dark:text-blue-300">⚠️ The Translation Trap: English translations vary widely. If you remember a Hadith, search a single undeniable word or switch to Concept Mode to let the AI find the meaning regardless of vocabulary.</p></div>
+                      <h4 className="font-semibold text-sm sm:text-base flex items-center gap-1.5 mb-1"><LibraryBig className="w-3.5 h-3.5 text-[#c6a87c]" /> Digital Archive (Transcript Library)</h4>
+                      <p className="leading-relaxed text-xs sm:text-sm mb-2">Read meticulously structured and translated transcripts of foundational scholarly series (e.g., The File of Fatima). Features a premium editorial UI with automatic section summaries, bold emphasis, and a persistent reading state.</p>
                     </div>
                   </div>
                   <hr className="border-slate-200 dark:border-slate-700" />
