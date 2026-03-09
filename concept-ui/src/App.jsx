@@ -478,11 +478,19 @@ const TranscriptLibrary = ({ transcripts }) => {
   const [fontSize, setFontSize] = useState(18);
   const [isTocOpen, setIsTocOpen] = useState(false);
 
+  // NEW: Reading Progress State & Toast
+  const [readingProgress, setReadingProgress] = useState(() => {
+    const saved = localStorage.getItem('kisa_progress');
+    return saved ? JSON.parse(saved) : {};
+  });
+  const [resumeToast, setResumeToast] = useState(false);
+
   const maxScrollYRef = useRef(0);
   const returnDesktopRef = useRef(null);
   const returnMobileRef = useRef(null);
   const isShowingReturnRef = useRef(false);
-  const progressBarRef = useRef(null); // <-- NEW REF
+  const progressBarRef = useRef(null);
+  const lastSaveTimeRef = useRef(0); // For zero-cost local storage saving
 
   const readingTime = useMemo(() => {
     const textString = activeDoc.content.map(b => b.text).join(' ');
@@ -506,8 +514,23 @@ const TranscriptLibrary = ({ transcripts }) => {
     setExpandedSeries(prev => ({ ...prev, [seriesName]: !prev[seriesName] }));
   };
 
+  // NEW: Smart Resume - Restores scroll position on load/change
   useEffect(() => {
     setIsTocOpen(false);
+
+    const savedData = JSON.parse(localStorage.getItem('kisa_progress') || '{}');
+    const docData = savedData[activeDoc.id];
+
+    if (docData && docData.position > 300) {
+      // Instant jump to saved position
+      setTimeout(() => {
+        window.scrollTo({ top: docData.position, behavior: 'auto' });
+        setResumeToast(true);
+        setTimeout(() => setResumeToast(false), 3000);
+      }, 100);
+    } else {
+      window.scrollTo(0, 0);
+    }
   }, [activeDoc]);
 
   let seriesTitle = activeDoc.series;
@@ -532,6 +555,7 @@ const TranscriptLibrary = ({ transcripts }) => {
     }
   };
 
+  // UPDATED: Scroll Listener with Auto-Save Logic
   useEffect(() => {
     let ticking = false;
     const handleScroll = () => {
@@ -543,11 +567,38 @@ const TranscriptLibrary = ({ transcripts }) => {
             maxScrollYRef.current = Math.max(y, maxScrollYRef.current);
           }
 
-          // FIX: Direct DOM update via Ref (zero-cost, no re-renders)
+          const height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+          const scrolled = height > 0 ? (y / height) * 100 : 0;
+
           if (progressBarRef.current) {
-            const height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
-            const scrolled = height > 0 ? (y / height) * 100 : 0;
             progressBarRef.current.style.width = `${scrolled}%`;
+          }
+
+          // NEW: Save to LocalStorage (throttled to 1 second for performance)
+          const now = Date.now();
+          if (now - lastSaveTimeRef.current > 1000) {
+            const savedData = JSON.parse(localStorage.getItem('kisa_progress') || '{}');
+            const currentStatus = savedData[activeDoc.id]?.status;
+
+            // Status logic: Completed if scrolled past 95%
+            const newStatus = (scrolled > 95 || currentStatus === 'completed')
+              ? 'completed'
+              : (scrolled > 2 ? 'in-progress' : 'unread');
+
+            savedData[activeDoc.id] = {
+              position: y,
+              percentage: scrolled,
+              status: newStatus
+            };
+
+            localStorage.setItem('kisa_progress', JSON.stringify(savedData));
+
+            // Only update React state if status category changes
+            if (currentStatus !== newStatus) {
+              setReadingProgress(savedData);
+            }
+
+            lastSaveTimeRef.current = now;
           }
 
           const shouldShow = (maxScrollYRef.current - y > 1500);
@@ -584,7 +635,7 @@ const TranscriptLibrary = ({ transcripts }) => {
     };
     window.addEventListener('scroll', handleScroll, { passive: true });
     return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
+  }, [activeDoc]); // Active doc dependency ensures correct ID is saved
 
   const jumpBack = () => {
     window.scrollTo({ top: maxScrollYRef.current, behavior: 'smooth' });
@@ -601,6 +652,7 @@ const TranscriptLibrary = ({ transcripts }) => {
     });
   };
 
+  // UPDATED: ArchiveList with Status Indicators
   const ArchiveList = () => (
     <div className="flex flex-col gap-2">
       {Object.entries(groupedTranscripts).map(([groupSeriesName, docs]) => (
@@ -619,9 +671,20 @@ const TranscriptLibrary = ({ transcripts }) => {
               <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden flex flex-col gap-1 mt-2 pl-2 border-l-2 border-zinc-200 dark:border-zinc-700/50 ml-3">
                 {docs.map(doc => {
                   const displayTitle = doc.title.startsWith(groupSeriesName + ' - ') ? doc.title.replace(groupSeriesName + ' - ', '') : doc.title;
+                  const status = readingProgress[doc.id]?.status || 'unread';
+
                   return (
-                    <button key={doc.id} onClick={() => { setActiveDoc(doc); setIsMobileDrawerOpen(false); window.scrollTo(0, 0); }} className={`text-left py-2.5 px-3 rounded-xl transition-all duration-200 cursor-pointer ${activeDoc.id === doc.id ? 'bg-zinc-50 dark:bg-[#1c1c1e] text-zinc-900 dark:text-white font-bold shadow-sm border border-zinc-200 dark:border-zinc-700' : 'text-zinc-500 hover:text-zinc-800 dark:text-zinc-400 dark:hover:text-zinc-200 border border-transparent hover:bg-zinc-50 dark:hover:bg-[#2c2c2e]'}`}>
-                      <span className="text-sm leading-snug block">{displayTitle}</span>
+                    <button
+                      key={doc.id}
+                      onClick={() => { setActiveDoc(doc); setIsMobileDrawerOpen(false); }}
+                      className={`text-left py-2.5 px-3 rounded-xl transition-all duration-200 cursor-pointer flex items-center justify-between gap-3 ${activeDoc.id === doc.id ? 'bg-zinc-50 dark:bg-[#1c1c1e] text-zinc-900 dark:text-white font-bold shadow-sm border border-zinc-200 dark:border-zinc-700' : 'text-zinc-500 hover:text-zinc-800 dark:text-zinc-400 dark:hover:text-zinc-200 border border-transparent hover:bg-zinc-50 dark:hover:bg-[#2c2c2e]'}`}
+                    >
+                      <span className="text-sm leading-snug block flex-1">{displayTitle}</span>
+
+                      {/* Visual Status Indicator */}
+                      {status === 'completed' && <div className="w-2 h-2 rounded-full bg-emerald-500 shrink-0 shadow-[0_0_8px_rgba(16,185,129,0.5)]" title="Completed" />}
+                      {status === 'in-progress' && <div className="w-2 h-2 rounded-full bg-[#c6a87c] shrink-0 shadow-[0_0_8px_rgba(198,168,124,0.6)]" title="In Progress" />}
+                      {status === 'unread' && <div className="w-2 h-2 rounded-full border-[1.5px] border-zinc-300 dark:border-zinc-600 shrink-0" title="Unread" />}
                     </button>
                   );
                 })}
@@ -667,6 +730,20 @@ const TranscriptLibrary = ({ transcripts }) => {
       <div className="fixed top-0 left-0 w-full h-1 z-[300] bg-zinc-200/50 dark:bg-zinc-800/50">
         <div ref={progressBarRef} className="h-full bg-[#c6a87c] will-change-[width]" style={{ width: '0%' }} />
       </div>
+
+      <AnimatePresence>
+        {resumeToast && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            className="fixed top-24 left-1/2 -translate-x-1/2 z-[400] bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 px-4 py-2.5 rounded-full shadow-2xl text-[10px] sm:text-xs font-bold uppercase tracking-widest flex items-center gap-2"
+          >
+            <Sparkles className="w-3.5 h-3.5 text-[#c6a87c]" />
+            Resumed where you left off
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       <button
         ref={returnDesktopRef}
