@@ -756,8 +756,10 @@ const TranscriptLibrary = ({ transcripts }) => {
 
   const LibraryTools = ({ isMobile }) => (
     <div className="flex flex-col h-full">
-      <div className="p-4 sm:p-5 border-b border-zinc-100 dark:border-zinc-800/80 shrink-0 flex justify-between items-center">
-        <h2 className="text-[11px] font-bold text-zinc-500 uppercase tracking-widest flex items-center gap-2"><LibraryIcon className="w-4 h-4 text-[#c6a87c]" /> Library Tools</h2>
+      {/* Spacer to prevent Segment Anchor from covering the header on mobile */}
+      <div className="h-10 md:hidden shrink-0" />
+
+      <div className="p-4 sm:p-5 border-b border-zinc-100 dark:border-zinc-800/80 shrink-0 flex justify-between items-center">        <h2 className="text-[11px] font-bold text-zinc-500 uppercase tracking-widest flex items-center gap-2"><LibraryIcon className="w-4 h-4 text-[#c6a87c]" /> Library Tools</h2>
         {isMobile ? (
           <button onClick={() => setIsMobileDrawerOpen(false)} className="p-1"><X className="w-5 h-5 text-zinc-500" /></button>
         ) : (
