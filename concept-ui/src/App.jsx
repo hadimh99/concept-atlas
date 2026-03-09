@@ -624,10 +624,10 @@ const TranscriptLibrary = ({ transcripts }) => {
                 stickySegmentRef.current.innerText = currentSegment;
               }
               stickySegmentRef.current.style.opacity = '1';
-              stickySegmentRef.current.style.transform = 'translate(-50%, 0)';
+              stickySegmentRef.current.style.transform = 'translateY(0)';
             } else {
               stickySegmentRef.current.style.opacity = '0';
-              stickySegmentRef.current.style.transform = 'translate(-50%, -15px)';
+              stickySegmentRef.current.style.transform = 'translateY(-20px)';
             }
           }
 
@@ -797,10 +797,11 @@ const TranscriptLibrary = ({ transcripts }) => {
         <div ref={progressBarRef} className="h-full bg-[#c6a87c] will-change-[width]" style={{ width: '0%' }} />
       </div>
 
-      {/* FIX: Elegant Floating Pill Segment Anchor */}
+      {/* FIX: Full-Width Rectangle Anchor flush with the Golden Line */}
       <div
         ref={stickySegmentRef}
-        className="fixed top-2.5 left-1/2 z-[250] px-4 py-1.5 rounded-full text-[9px] sm:text-[10px] font-bold uppercase tracking-widest text-zinc-600 dark:text-zinc-300 bg-white/95 dark:bg-[#1c1c1e]/95 backdrop-blur-md shadow-md border border-zinc-200/80 dark:border-zinc-800/80 transition-all duration-300 pointer-events-none max-w-[85vw] overflow-hidden text-ellipsis whitespace-nowrap" style={{ opacity: 0, transform: 'translate(-50%, -15px)' }}
+        className="fixed top-1 left-0 w-full z-[250] py-1.5 px-4 text-center text-[10px] sm:text-[11px] font-bold uppercase tracking-widest text-zinc-600 dark:text-zinc-400 bg-[#fbfbfb]/95 dark:bg-[#1c1c1e]/95 backdrop-blur-md border-b border-zinc-200/80 dark:border-zinc-800/80 shadow-sm transition-all duration-300 pointer-events-none will-change-transform truncate"
+        style={{ opacity: 0, transform: 'translateY(-20px)' }}
       />
 
       <AnimatePresence>
