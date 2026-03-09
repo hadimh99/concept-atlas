@@ -719,7 +719,8 @@ const TranscriptLibrary = ({ transcripts }) => {
 
         <motion.div
           animate={{ width: isArchiveOpen ? 320 : 0, opacity: isArchiveOpen ? 1 : 0 }}
-          className="hidden md:block shrink-0 overflow-hidden transition-all duration-400 ease-in-out sticky top-32 self-start h-[calc(100vh-140px)]"
+          transition={{ duration: 0.4, ease: "easeInOut" }}
+          className="hidden md:block shrink-0 overflow-hidden sticky top-32 self-start h-[calc(100vh-140px)]"
         >
           <div className="w-[320px] h-full bg-white dark:bg-[#252528] border border-zinc-200 dark:border-zinc-800/80 rounded-2xl flex flex-col shadow-sm">
             <LibraryTools isMobile={false} />
