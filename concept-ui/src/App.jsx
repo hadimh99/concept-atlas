@@ -793,7 +793,7 @@ const TranscriptLibrary = ({ transcripts }) => {
     <div className="w-full min-h-screen pt-20 sm:pt-32 pb-32 flex justify-center font-sans relative px-0 sm:px-6 lg:px-8">
 
       {/* FIX: Sticky Progress Bar (Ref-driven) */}
-      <div className="fixed top-0 left-0 w-full h-1 z-[300] bg-zinc-200/50 dark:bg-zinc-800/50">
+      <div className="fixed top-16 left-0 w-full h-1 z-[300] bg-zinc-200/50 dark:bg-zinc-800/50">
         <div ref={progressBarRef} className="h-full bg-[#c6a87c] will-change-[width]" style={{ width: '0%' }} />
       </div>
 
