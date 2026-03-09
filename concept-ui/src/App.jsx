@@ -797,10 +797,10 @@ const TranscriptLibrary = ({ transcripts }) => {
         <div ref={progressBarRef} className="h-full bg-[#c6a87c] will-change-[width]" style={{ width: '0%' }} />
       </div>
 
-      {/* NEW: Sticky Segment Anchor */}
+      {/* FIX: Sticky Segment Anchor (Moved below the top navigation icons) */}
       <div
         ref={stickySegmentRef}
-        className="fixed top-1 left-0 w-full z-[250] py-1.5 px-4 text-center text-[10px] sm:text-xs font-bold uppercase tracking-widest text-zinc-600 dark:text-zinc-400 bg-white/90 dark:bg-[#1c1c1e]/90 backdrop-blur-md border-b border-zinc-200/50 dark:border-zinc-800/50 shadow-sm transition-all duration-300 pointer-events-none will-change-transform"
+        className="fixed top-16 sm:top-20 left-0 w-full z-[250] py-1.5 px-4 text-center text-[10px] sm:text-xs font-bold uppercase tracking-widest text-zinc-600 dark:text-zinc-400 bg-white/90 dark:bg-[#1c1c1e]/90 backdrop-blur-md border-y border-zinc-200/50 dark:border-zinc-800/50 shadow-sm transition-all duration-300 pointer-events-none will-change-transform"
         style={{ opacity: 0, transform: 'translateY(-10px)' }}
       />
 
