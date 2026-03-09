@@ -491,8 +491,14 @@ const TranscriptLibrary = ({ transcripts }) => {
   const returnMobileRef = useRef(null);
   const isShowingReturnRef = useRef(false);
   const progressBarRef = useRef(null);
-  const stickySegmentRef = useRef(null); // NEW: Sticky Anchor Ref
-  const lastSaveTimeRef = useRef(0); // For zero-cost local storage saving
+  const stickySegmentRef = useRef(null);
+  const lastSaveTimeRef = useRef(0);
+
+  // NEW: Zen Mode Refs
+  const lastScrollYRef = useRef(0);
+  const isZenModeRef = useRef(false);
+  const mobileFabRef = useRef(null);
+  const desktopFabRef = useRef(null);
 
   const readingTime = useMemo(() => {
     const textString = activeDoc.content.map(b => b.text).join(' ');
@@ -576,7 +582,33 @@ const TranscriptLibrary = ({ transcripts }) => {
             progressBarRef.current.style.width = `${scrolled}%`;
           }
 
-          // NEW: Zero-cost Sticky Segment Tracker
+          // NEW: Zen Mode Scroll Direction Logic
+          if (y < 100) {
+            isZenModeRef.current = false;
+          } else if (y > lastScrollYRef.current + 12) {
+            isZenModeRef.current = true; // Scrolling Down (Hide UI)
+          } else if (y < lastScrollYRef.current - 12) {
+            isZenModeRef.current = false; // Scrolling Up (Show UI)
+          }
+          lastScrollYRef.current = y;
+
+          // Apply Zen Mode Styles to Floating Buttons
+          const fabOpacity = isZenModeRef.current ? '0' : '1';
+          const fabPointer = isZenModeRef.current ? 'none' : 'auto';
+
+          if (mobileFabRef.current) {
+            mobileFabRef.current.style.opacity = fabOpacity;
+            mobileFabRef.current.style.pointerEvents = fabPointer;
+            mobileFabRef.current.style.transform = isZenModeRef.current ? 'translateY(20px) scale(0.8)' : 'translateY(0) scale(1)';
+          }
+
+          if (desktopFabRef.current) {
+            desktopFabRef.current.style.opacity = fabOpacity;
+            desktopFabRef.current.style.pointerEvents = fabPointer;
+            desktopFabRef.current.style.transform = isZenModeRef.current ? 'translateX(-20px)' : 'translateX(0)';
+          }
+
+          // Zero-cost Sticky Segment Tracker (with Zen Mode integration)
           const headers = document.querySelectorAll('.segment-header');
           let currentSegment = '';
           for (let i = headers.length - 1; i >= 0; i--) {
@@ -587,7 +619,7 @@ const TranscriptLibrary = ({ transcripts }) => {
             }
           }
           if (stickySegmentRef.current) {
-            if (currentSegment) {
+            if (currentSegment && !isZenModeRef.current) {
               if (stickySegmentRef.current.innerText !== currentSegment) {
                 stickySegmentRef.current.innerText = currentSegment;
               }
@@ -598,6 +630,7 @@ const TranscriptLibrary = ({ transcripts }) => {
               stickySegmentRef.current.style.transform = 'translateY(-10px)';
             }
           }
+
 
           // NEW: Save to LocalStorage (throttled to 1 second for performance)
           const now = Date.now();
@@ -805,17 +838,20 @@ const TranscriptLibrary = ({ transcripts }) => {
         <ArrowDown className="w-3.5 h-3.5 animate-bounce mt-0.5" />
       </button>
 
-      <AnimatePresence>
-        {!isArchiveOpen && (
-          <motion.button initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} onClick={() => setIsArchiveOpen(true)} className="hidden md:block fixed top-32 left-8 z-50 p-3 bg-white dark:bg-[#252528] border border-zinc-200 dark:border-zinc-800 shadow-xl rounded-full text-zinc-500 hover:text-[#c6a87c] transition-colors cursor-pointer group" title="Open Archive">
-            <LibraryIcon className="w-5 h-5 group-hover:scale-110 transition-transform" />
-          </motion.button>
-        )}
-      </AnimatePresence>
+      <div ref={desktopFabRef} className="hidden md:block fixed top-32 left-8 z-50 transition-all duration-300 will-change-transform pointer-events-auto">
+        <AnimatePresence>
+          {!isArchiveOpen && (
+            <motion.button initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} onClick={() => setIsArchiveOpen(true)} className="p-3 bg-white dark:bg-[#252528] border border-zinc-200 dark:border-zinc-800 shadow-xl rounded-full text-zinc-500 hover:text-[#c6a87c] transition-colors cursor-pointer group" title="Open Archive">
+              <LibraryIcon className="w-5 h-5 group-hover:scale-110 transition-transform" />
+            </motion.button>
+          )}
+        </AnimatePresence>
+      </div>
 
       <button
+        ref={mobileFabRef}
         onClick={() => setIsMobileDrawerOpen(!isMobileDrawerOpen)}
-        className="md:hidden fixed bottom-6 right-3 z-[210] w-12 h-12 bg-white dark:bg-[#252528] text-[#c6a87c] border border-zinc-200 dark:border-zinc-800 rounded-full shadow-2xl flex flex-col items-center justify-center cursor-pointer"
+        className="md:hidden fixed bottom-6 right-3 z-[210] w-12 h-12 bg-white dark:bg-[#252528] text-[#c6a87c] border border-zinc-200 dark:border-zinc-800 rounded-full shadow-2xl flex flex-col items-center justify-center cursor-pointer transition-all duration-300 will-change-transform"
       >
         <AnimatePresence mode="wait">
           {isMobileDrawerOpen ? (
