@@ -476,6 +476,7 @@ const TranscriptLibrary = ({ transcripts }) => {
   const [isArchiveOpen, setIsArchiveOpen] = useState(true);
   const [isMobileDrawerOpen, setIsMobileDrawerOpen] = useState(true);
   const [fontSize, setFontSize] = useState(18);
+  const [fontFamily, setFontFamily] = useState('sans'); // NEW: Font Toggle
   const [isTocOpen, setIsTocOpen] = useState(false);
 
   // NEW: Reading Progress State & Toast
@@ -490,6 +491,7 @@ const TranscriptLibrary = ({ transcripts }) => {
   const returnMobileRef = useRef(null);
   const isShowingReturnRef = useRef(false);
   const progressBarRef = useRef(null);
+  const stickySegmentRef = useRef(null); // NEW: Sticky Anchor Ref
   const lastSaveTimeRef = useRef(0); // For zero-cost local storage saving
 
   const readingTime = useMemo(() => {
@@ -572,6 +574,29 @@ const TranscriptLibrary = ({ transcripts }) => {
 
           if (progressBarRef.current) {
             progressBarRef.current.style.width = `${scrolled}%`;
+          }
+
+          // NEW: Zero-cost Sticky Segment Tracker
+          const headers = document.querySelectorAll('.segment-header');
+          let currentSegment = '';
+          for (let i = headers.length - 1; i >= 0; i--) {
+            const rect = headers[i].getBoundingClientRect();
+            if (rect.top < 150) {
+              currentSegment = headers[i].innerText;
+              break;
+            }
+          }
+          if (stickySegmentRef.current) {
+            if (currentSegment) {
+              if (stickySegmentRef.current.innerText !== currentSegment) {
+                stickySegmentRef.current.innerText = currentSegment;
+              }
+              stickySegmentRef.current.style.opacity = '1';
+              stickySegmentRef.current.style.transform = 'translateY(0)';
+            } else {
+              stickySegmentRef.current.style.opacity = '0';
+              stickySegmentRef.current.style.transform = 'translateY(-10px)';
+            }
           }
 
           // NEW: Save to LocalStorage (throttled to 1 second for performance)
@@ -708,8 +733,16 @@ const TranscriptLibrary = ({ transcripts }) => {
       </div>
 
       <div className="p-4 sm:p-5 border-b border-zinc-100 dark:border-zinc-800/80 shrink-0">
+        <div className="flex items-center justify-between mb-4">
+          <span className="text-[10px] font-bold uppercase tracking-widest text-zinc-400 block">Font Style</span>
+          <div className="flex items-center gap-1 bg-zinc-50 dark:bg-[#252528] rounded-lg p-0.5 border border-zinc-200 dark:border-zinc-700">
+            <button onClick={() => setFontFamily('sans')} className={`px-3 py-1 text-xs font-bold rounded-md transition-colors cursor-pointer ${fontFamily === 'sans' ? 'bg-white dark:bg-[#1c1c1e] text-[#c6a87c] shadow-sm' : 'text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300'}`}>Sans</button>
+            <button onClick={() => setFontFamily('serif')} className={`px-3 py-1 text-xs font-bold rounded-md transition-colors font-serif cursor-pointer ${fontFamily === 'serif' ? 'bg-white dark:bg-[#1c1c1e] text-[#c6a87c] shadow-sm' : 'text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300'}`}>Serif</button>
+          </div>
+        </div>
         <span className="text-[10px] font-bold uppercase tracking-widest text-zinc-400 block mb-2">Text Size</span>
         <div className="flex items-center justify-between bg-zinc-50 dark:bg-[#252528] rounded-lg p-1 border border-zinc-200 dark:border-zinc-700 w-full">
+
           <button onClick={() => setFontSize(Math.max(14, fontSize - 1))} className="w-10 h-6 sm:w-12 sm:h-7 flex items-center justify-center rounded bg-white dark:bg-[#1c1c1e] text-zinc-600 dark:text-zinc-300 font-bold shadow-sm text-sm cursor-pointer hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors">-</button>
           <span className="text-xs font-mono font-bold text-zinc-700 dark:text-zinc-300 flex-grow text-center">{fontSize}px</span>
           <button onClick={() => setFontSize(Math.min(28, fontSize + 1))} className="w-10 h-6 sm:w-12 sm:h-7 flex items-center justify-center rounded bg-white dark:bg-[#1c1c1e] text-zinc-600 dark:text-zinc-300 font-bold shadow-sm text-sm cursor-pointer hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors">+</button>
@@ -730,6 +763,13 @@ const TranscriptLibrary = ({ transcripts }) => {
       <div className="fixed top-0 left-0 w-full h-1 z-[300] bg-zinc-200/50 dark:bg-zinc-800/50">
         <div ref={progressBarRef} className="h-full bg-[#c6a87c] will-change-[width]" style={{ width: '0%' }} />
       </div>
+
+      {/* NEW: Sticky Segment Anchor */}
+      <div
+        ref={stickySegmentRef}
+        className="fixed top-1 left-0 w-full z-[250] py-1.5 px-4 text-center text-[10px] sm:text-xs font-bold uppercase tracking-widest text-zinc-600 dark:text-zinc-400 bg-white/90 dark:bg-[#1c1c1e]/90 backdrop-blur-md border-b border-zinc-200/50 dark:border-zinc-800/50 shadow-sm transition-all duration-300 pointer-events-none will-change-transform"
+        style={{ opacity: 0, transform: 'translateY(-10px)' }}
+      />
 
       <AnimatePresence>
         {resumeToast && (
@@ -885,10 +925,9 @@ const TranscriptLibrary = ({ transcripts }) => {
               </div>
             )}
 
-            <div className="text-zinc-800 dark:text-zinc-300 font-sans antialiased" style={{ fontSize: `${fontSize}px`, lineHeight: 1.85 }}>
+            <div className={`text-zinc-800 dark:text-zinc-300 antialiased ${fontFamily === 'serif' ? 'font-serif' : 'font-sans'}`} style={{ fontSize: `${fontSize}px`, lineHeight: 1.85 }}>
               {activeDoc.content.map((block, idx) => {
-                if (block.type === 'h2') return <h2 id={`segment-${idx}`} key={idx} className="font-bold text-zinc-900 dark:text-white mt-14 mb-6 tracking-tight scroll-mt-24" style={{ fontSize: `${fontSize * 1.3}px`, lineHeight: 1.3 }}>{block.text}</h2>;
-                if (block.type === 'summary') return (
+                if (block.type === 'h2') return <h2 id={`segment-${idx}`} key={idx} className="segment-header font-bold text-zinc-900 dark:text-white mt-14 mb-6 tracking-tight scroll-mt-24 font-sans" style={{ fontSize: `${fontSize * 1.3}px`, lineHeight: 1.3 }}>{block.text}</h2>; if (block.type === 'summary') return (
                   <div key={idx} className="bg-zinc-50 dark:bg-[#1c1c1e] border-l-4 border-[#c6a87c] p-6 sm:p-8 my-10 rounded-r-xl shadow-sm">
                     <span className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-[#c6a87c] mb-3"><Sparkles className="w-3.5 h-3.5" /> Segment Summary</span>
                     <p className="text-zinc-700 dark:text-zinc-300 font-medium" style={{ fontSize: `${Math.max(15, fontSize - 2)}px`, lineHeight: 1.7 }}>{parseFormatting(block.text)}</p>
