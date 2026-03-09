@@ -800,8 +800,7 @@ const TranscriptLibrary = ({ transcripts }) => {
       {/* FIX: Elegant Floating Pill Segment Anchor */}
       <div
         ref={stickySegmentRef}
-        className="fixed top-4 left-1/2 z-[250] px-4 py-1.5 rounded-full text-[9px] sm:text-[10px] font-bold uppercase tracking-widest text-zinc-600 dark:text-zinc-300 bg-white/95 dark:bg-[#1c1c1e]/95 backdrop-blur-md shadow-md border border-zinc-200/80 dark:border-zinc-800/80 transition-all duration-300 pointer-events-none max-w-[85vw] overflow-hidden text-ellipsis whitespace-nowrap"
-        style={{ opacity: 0, transform: 'translate(-50%, -15px)' }}
+        className="fixed top-2.5 left-1/2 z-[250] px-4 py-1.5 rounded-full text-[9px] sm:text-[10px] font-bold uppercase tracking-widest text-zinc-600 dark:text-zinc-300 bg-white/95 dark:bg-[#1c1c1e]/95 backdrop-blur-md shadow-md border border-zinc-200/80 dark:border-zinc-800/80 transition-all duration-300 pointer-events-none max-w-[85vw] overflow-hidden text-ellipsis whitespace-nowrap" style={{ opacity: 0, transform: 'translate(-50%, -15px)' }}
       />
 
       <AnimatePresence>
