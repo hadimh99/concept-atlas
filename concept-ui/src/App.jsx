@@ -1338,7 +1338,7 @@ export default function App() {
 
       {showMobileMenu && <div className="fixed inset-0 z-[70] pointer-events-auto" onClick={() => setShowMobileMenu(false)} />}
 
-      <header ref={headerRef} className="fixed top-5 sm:top-4 w-full z-[75] p-4 sm:p-6 flex justify-between items-center pointer-events-none transition-all duration-500 ease-in-out">        <div onClick={handleHomeClick} className="flex items-center gap-3 pointer-events-auto cursor-pointer group">
+      <header ref={headerRef} className="fixed top-4 sm:top-4 w-full z-[75] p-4 sm:p-6 flex justify-between items-center pointer-events-none transition-all duration-500 ease-in-out">        <div onClick={handleHomeClick} className="flex items-center gap-3 pointer-events-auto cursor-pointer group">
         <div className={`w-10 h-10 rounded-full flex items-center justify-center transition-all duration-500 group-hover:scale-105 ${activeTab === 'quran' ? 'bg-amber-500/10 border border-amber-500/20' : (activeTab === 'library' ? 'bg-[#c6a87c]/10 border border-[#c6a87c]/20' : (isKeyword ? 'bg-blue-500/10 border border-blue-500/20 shadow-sm' : 'bg-indigo-500/10 border border-indigo-500/20'))}`}>
           <KisaLogo className={`w-5 h-5 ${activeTab === 'library' ? 'text-[#c6a87c]' : 'text-amber-600 dark:text-amber-500'}`} />
         </div>
