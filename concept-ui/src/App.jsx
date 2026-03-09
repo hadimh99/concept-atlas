@@ -717,8 +717,11 @@ const TranscriptLibrary = ({ transcripts }) => {
 
       <div className="w-full max-w-[1400px] mx-auto flex items-start gap-0 md:gap-8 lg:gap-12">
 
-        <motion.div animate={{ width: isArchiveOpen ? 320 : 0, opacity: isArchiveOpen ? 1 : 0 }} className="hidden md:block shrink-0 overflow-hidden transition-all duration-400 ease-in-out">
-          <div className="w-[320px] bg-white dark:bg-[#252528] border border-zinc-200 dark:border-zinc-800/80 rounded-2xl flex flex-col sticky top-32 shadow-sm max-h-[calc(100vh-160px)]">
+        <motion.div
+          animate={{ width: isArchiveOpen ? 320 : 0, opacity: isArchiveOpen ? 1 : 0 }}
+          className="hidden md:block shrink-0 overflow-hidden transition-all duration-400 ease-in-out sticky top-32 self-start h-[calc(100vh-140px)]"
+        >
+          <div className="w-[320px] h-full bg-white dark:bg-[#252528] border border-zinc-200 dark:border-zinc-800/80 rounded-2xl flex flex-col shadow-sm">
             <LibraryTools isMobile={false} />
           </div>
         </motion.div>
