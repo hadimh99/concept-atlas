@@ -477,12 +477,12 @@ const TranscriptLibrary = ({ transcripts }) => {
   const [isMobileDrawerOpen, setIsMobileDrawerOpen] = useState(true);
   const [fontSize, setFontSize] = useState(18);
   const [isTocOpen, setIsTocOpen] = useState(false);
-  const [scrollProgress, setScrollProgress] = useState(0);
 
   const maxScrollYRef = useRef(0);
   const returnDesktopRef = useRef(null);
   const returnMobileRef = useRef(null);
   const isShowingReturnRef = useRef(false);
+  const progressBarRef = useRef(null); // <-- NEW REF
 
   const readingTime = useMemo(() => {
     const textString = activeDoc.content.map(b => b.text).join(' ');
@@ -543,9 +543,12 @@ const TranscriptLibrary = ({ transcripts }) => {
             maxScrollYRef.current = Math.max(y, maxScrollYRef.current);
           }
 
-          const height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
-          const scrolled = height > 0 ? (y / height) * 100 : 0;
-          setScrollProgress(scrolled);
+          // FIX: Direct DOM update via Ref (zero-cost, no re-renders)
+          if (progressBarRef.current) {
+            const height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+            const scrolled = height > 0 ? (y / height) * 100 : 0;
+            progressBarRef.current.style.width = `${scrolled}%`;
+          }
 
           const shouldShow = (maxScrollYRef.current - y > 1500);
 
@@ -660,9 +663,9 @@ const TranscriptLibrary = ({ transcripts }) => {
   return (
     <div className="w-full min-h-screen pt-20 sm:pt-32 pb-32 flex justify-center font-sans relative px-0 sm:px-6 lg:px-8">
 
-      {/* NEW: Sticky Progress Bar */}
+      {/* FIX: Sticky Progress Bar (Ref-driven) */}
       <div className="fixed top-0 left-0 w-full h-1 z-[300] bg-zinc-200/50 dark:bg-zinc-800/50">
-        <div className="h-full bg-[#c6a87c] transition-all duration-150 ease-out" style={{ width: `${scrollProgress}%` }} />
+        <div ref={progressBarRef} className="h-full bg-[#c6a87c] will-change-[width]" style={{ width: '0%' }} />
       </div>
 
       <button
