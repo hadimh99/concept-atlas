@@ -866,26 +866,49 @@ const TranscriptLibrary = ({ transcripts }) => {
           <p className="text-zinc-500 dark:text-zinc-400 text-lg">Explore translated scholarly series and foundational lectures.</p>
         </div>
 
-        {!searchQuery.trim() && resumeDoc && (
-          <div
-            onClick={() => openReader(resumeDoc)}
-            className="w-full bg-gradient-to-r from-[#c6a87c]/10 to-transparent border border-[#c6a87c]/30 rounded-2xl p-6 sm:p-8 mb-12 cursor-pointer hover:bg-[#c6a87c]/20 transition-all duration-300 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6 shadow-sm group"
-          >
-            <div>
-              <div className="flex items-center gap-2 mb-2">
-                <Clock className="w-4 h-4 text-[#c6a87c]" />
-                <span className="text-[#c6a87c] font-bold text-xs uppercase tracking-widest">Continue Reading</span>
+        {/* Show Resume Card ONLY if not actively searching */}
+        {!searchQuery.trim() && resumeDoc && (() => {
+          let resumeSeries = resumeDoc.series;
+          let resumeDisplayTitle = resumeDoc.title;
+
+          if (!resumeSeries && resumeDoc.title.includes(' - ')) {
+            resumeSeries = resumeDoc.title.split(' - ')[0];
+            resumeDisplayTitle = resumeDoc.title.split(' - ').slice(1).join(' - ');
+          } else if (resumeSeries && resumeDoc.title.startsWith(resumeSeries + ' - ')) {
+            resumeDisplayTitle = resumeDoc.title.replace(resumeSeries + ' - ', '');
+          }
+
+          return (
+            <div
+              onClick={() => openReader(resumeDoc)}
+              className="w-full bg-gradient-to-r from-[#c6a87c]/10 to-transparent border border-[#c6a87c]/30 rounded-2xl p-6 sm:p-8 mb-12 cursor-pointer hover:bg-[#c6a87c]/20 transition-all duration-300 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6 shadow-sm group"
+            >
+              <div>
+                <div className="flex items-center flex-wrap gap-2 mb-3">
+                  <div className="flex items-center gap-1.5">
+                    <Clock className="w-4 h-4 text-[#c6a87c]" />
+                    <span className="text-[#c6a87c] font-bold text-[10px] sm:text-xs uppercase tracking-widest">Continue Reading</span>
+                  </div>
+                  {resumeSeries && (
+                    <>
+                      <span className="text-zinc-300 dark:text-zinc-700 hidden sm:inline">•</span>
+                      <span className="text-zinc-500 dark:text-zinc-400 font-bold text-[10px] sm:text-xs uppercase tracking-widest bg-white/50 dark:bg-black/20 px-2 py-0.5 rounded-md border border-zinc-200/50 dark:border-zinc-700/50">
+                        {resumeSeries}
+                      </span>
+                    </>
+                  )}
+                </div>
+                <h2 className="text-xl sm:text-2xl font-bold text-zinc-900 dark:text-white group-hover:text-[#c6a87c] transition-colors">{resumeDisplayTitle}</h2>
+                <div className="w-48 h-1.5 bg-zinc-200 dark:bg-zinc-800 rounded-full mt-4 overflow-hidden">
+                  <div className="h-full bg-[#c6a87c]" style={{ width: `${readingProgress[resumeDoc.id]?.percentage || 0}%` }} />
+                </div>
               </div>
-              <h2 className="text-xl sm:text-2xl font-bold text-zinc-900 dark:text-white group-hover:text-[#c6a87c] transition-colors">{resumeDoc.title}</h2>
-              <div className="w-48 h-1.5 bg-zinc-200 dark:bg-zinc-800 rounded-full mt-4 overflow-hidden">
-                <div className="h-full bg-[#c6a87c]" style={{ width: `${readingProgress[resumeDoc.id]?.percentage || 0}%` }} />
+              <div className="w-12 h-12 rounded-full bg-white dark:bg-[#1c1c1e] shadow-md border border-[#c6a87c]/30 flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
+                <ChevronRight className="w-6 h-6 text-[#c6a87c]" />
               </div>
             </div>
-            <div className="w-12 h-12 rounded-full bg-white dark:bg-[#1c1c1e] shadow-md border border-[#c6a87c]/30 flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
-              <ChevronRight className="w-6 h-6 text-[#c6a87c]" />
-            </div>
-          </div>
-        )}
+          );
+        })()}
 
         <form onSubmit={(e) => { e.preventDefault(); document.activeElement?.blur(); }} className="relative mb-12">
           <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
