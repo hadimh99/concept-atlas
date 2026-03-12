@@ -475,7 +475,6 @@ const QuranReader = ({ activeFontFamily, fontStyle, setFontStyle, handleSurahSel
 };
 
 const TranscriptLibrary = ({ transcripts }) => {
-  // NEW: View State (Dashboard vs Reader)
   const [currentView, setCurrentView] = useState('home');
   const [activeDoc, setActiveDoc] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
@@ -504,17 +503,11 @@ const TranscriptLibrary = ({ transcripts }) => {
   const mobileFabRef = useRef(null);
   const desktopFabRef = useRef(null);
 
-  // --- NEW: Dashboard Logic ---
-
-  // 1. Find the last read document for the Resume Card
   const resumeDocId = useMemo(() => {
     const progressEntries = Object.entries(readingProgress);
     if (progressEntries.length === 0) return null;
-
-    // Find the one with the highest percentage that isn't 100%, or just the most recent
     const inProgress = progressEntries.filter(([id, data]) => data.status === 'in-progress');
     if (inProgress.length > 0) {
-      // Sort by percentage (or we could add timestamps later)
       inProgress.sort((a, b) => b[1].percentage - a[1].percentage);
       return inProgress[0][0];
     }
@@ -523,7 +516,6 @@ const TranscriptLibrary = ({ transcripts }) => {
 
   const resumeDoc = transcripts.find(t => t.id === resumeDocId) || null;
 
-  // 2. Deep Search Filter
   const filteredTranscripts = useMemo(() => {
     if (!searchQuery.trim()) return transcripts;
     const query = searchQuery.toLowerCase();
@@ -535,7 +527,6 @@ const TranscriptLibrary = ({ transcripts }) => {
     });
   }, [transcripts, searchQuery]);
 
-  // 3. Group the filtered results
   const groupedTranscripts = useMemo(() => {
     return filteredTranscripts.reduce((acc, doc) => {
       const seriesName = doc.series || (doc.title.includes(' - ') ? doc.title.split(' - ')[0] : 'General Transcripts');
@@ -547,7 +538,6 @@ const TranscriptLibrary = ({ transcripts }) => {
 
   const [expandedSeries, setExpandedSeries] = useState({});
 
-  // Auto-expand series if searching
   useEffect(() => {
     if (searchQuery.trim()) {
       const allOpen = Object.keys(groupedTranscripts).reduce((acc, key) => ({ ...acc, [key]: true }), {});
@@ -567,10 +557,8 @@ const TranscriptLibrary = ({ transcripts }) => {
   const closeReader = () => {
     setCurrentView('home');
     setActiveDoc(null);
-    setSearchQuery(''); // Clear search when returning
+    setSearchQuery('');
   };
-
-  // --- End Dashboard Logic ---
 
   const readingTime = useMemo(() => {
     if (!activeDoc) return 0;
@@ -601,7 +589,6 @@ const TranscriptLibrary = ({ transcripts }) => {
     }
   };
 
-  // Smart Resume & Scroll setup (ONLY active in 'reader' view)
   useEffect(() => {
     if (currentView !== 'reader' || !activeDoc) return;
 
@@ -830,20 +817,14 @@ const TranscriptLibrary = ({ transcripts }) => {
     </div>
   );
 
-  // ==========================================
-  // RENDER: DASHBOARD VIEW
-  // ==========================================
   if (currentView === 'home') {
     return (
       <div className="w-full min-h-screen pt-24 sm:pt-32 pb-32 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto flex flex-col pointer-events-auto">
-
-        {/* Header */}
         <div className="mb-10 text-center sm:text-left">
           <h1 className="text-4xl sm:text-5xl font-serif font-bold text-zinc-900 dark:text-white mb-3">Digital Archive</h1>
           <p className="text-zinc-500 dark:text-zinc-400 text-lg">Explore translated scholarly series and foundational lectures.</p>
         </div>
 
-        {/* Resume Card */}
         {resumeDoc && (
           <div
             onClick={() => openReader(resumeDoc)}
@@ -856,10 +837,7 @@ const TranscriptLibrary = ({ transcripts }) => {
               </div>
               <h2 className="text-xl sm:text-2xl font-bold text-zinc-900 dark:text-white group-hover:text-[#c6a87c] transition-colors">{resumeDoc.title}</h2>
               <div className="w-48 h-1.5 bg-zinc-200 dark:bg-zinc-800 rounded-full mt-4 overflow-hidden">
-                <div
-                  className="h-full bg-[#c6a87c]"
-                  style={{ width: `${readingProgress[resumeDoc.id]?.percentage || 0}%` }}
-                />
+                <div className="h-full bg-[#c6a87c]" style={{ width: `${readingProgress[resumeDoc.id]?.percentage || 0}%` }} />
               </div>
             </div>
             <div className="w-12 h-12 rounded-full bg-white dark:bg-[#1c1c1e] shadow-md border border-[#c6a87c]/30 flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
@@ -868,7 +846,6 @@ const TranscriptLibrary = ({ transcripts }) => {
           </div>
         )}
 
-        {/* Deep Search */}
         <div className="relative mb-12">
           <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
             <Search className="h-5 w-5 text-zinc-400" />
@@ -887,7 +864,6 @@ const TranscriptLibrary = ({ transcripts }) => {
           )}
         </div>
 
-        {/* Series Grid */}
         <div className="flex flex-col gap-10">
           {Object.entries(groupedTranscripts).length === 0 ? (
             <div className="text-center py-20">
@@ -914,15 +890,12 @@ const TranscriptLibrary = ({ transcripts }) => {
                         onClick={() => openReader(doc)}
                         className="bg-white dark:bg-[#1c1c1e] border border-zinc-200 dark:border-zinc-800 rounded-2xl p-5 sm:p-6 cursor-pointer hover:shadow-lg hover:border-[#c6a87c]/50 transition-all duration-300 flex flex-col justify-between group h-full relative overflow-hidden"
                       >
-                        {/* Status Bar Top */}
                         {status === 'in-progress' && (
                           <div className="absolute top-0 left-0 w-full h-1 bg-zinc-100 dark:bg-zinc-800">
                             <div className="h-full bg-[#c6a87c]" style={{ width: `${progress}%` }} />
                           </div>
                         )}
-                        {status === 'completed' && (
-                          <div className="absolute top-0 left-0 w-full h-1 bg-emerald-500" />
-                        )}
+                        {status === 'completed' && <div className="absolute top-0 left-0 w-full h-1 bg-emerald-500" />}
 
                         <div>
                           <div className="flex justify-between items-start mb-4">
@@ -956,13 +929,9 @@ const TranscriptLibrary = ({ transcripts }) => {
     );
   }
 
-  // ==========================================
-  // RENDER: PREMIUM READER VIEW
-  // ==========================================
   return (
     <div className="w-full min-h-screen pt-20 sm:pt-32 pb-32 flex flex-col items-center font-sans relative px-0 sm:px-6 lg:px-8">
 
-      {/* Return to Dashboard Header */}
       <div className="w-full max-w-[1400px] mx-auto mb-6 px-4 sm:px-0 flex justify-start pointer-events-auto">
         <button
           onClick={closeReader}
