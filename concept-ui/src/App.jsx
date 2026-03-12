@@ -503,6 +503,8 @@ const TranscriptLibrary = ({ transcripts }) => {
   const mobileFabRef = useRef(null);
   const desktopFabRef = useRef(null);
 
+  // --- DASHBOARD LOGIC ---
+
   const resumeDocId = useMemo(() => {
     const progressEntries = Object.entries(readingProgress);
     if (progressEntries.length === 0) return null;
@@ -516,37 +518,76 @@ const TranscriptLibrary = ({ transcripts }) => {
 
   const resumeDoc = transcripts.find(t => t.id === resumeDocId) || null;
 
-  const filteredTranscripts = useMemo(() => {
-    if (!searchQuery.trim()) return transcripts;
-    const query = searchQuery.toLowerCase();
-    return transcripts.filter(doc => {
-      const titleMatch = doc.title.toLowerCase().includes(query);
-      const seriesMatch = (doc.series || '').toLowerCase().includes(query);
-      const contentMatch = doc.content.some(block => block.text && block.text.toLowerCase().includes(query));
-      return titleMatch || seriesMatch || contentMatch;
-    });
-  }, [transcripts, searchQuery]);
+  // NEW: Sidebar Collapsible State
+  const [expandedSeries, setExpandedSeries] = useState({});
+  // NEW: Dashboard Collapsible State (Loads collapsed by default)
+  const [dashExpanded, setDashExpanded] = useState({});
 
+  const toggleSeries = (seriesName) => setExpandedSeries(prev => ({ ...prev, [seriesName]: !prev[seriesName] }));
+  const toggleDashSeries = (seriesName) => setDashExpanded(prev => ({ ...prev, [seriesName]: !prev[seriesName] }));
+
+  // Group all transcripts for the normal Grid/Sidebar view
   const groupedTranscripts = useMemo(() => {
-    return filteredTranscripts.reduce((acc, doc) => {
+    return transcripts.reduce((acc, doc) => {
       const seriesName = doc.series || (doc.title.includes(' - ') ? doc.title.split(' - ')[0] : 'General Transcripts');
       if (!acc[seriesName]) acc[seriesName] = [];
       acc[seriesName].push(doc);
       return acc;
     }, {});
-  }, [filteredTranscripts]);
+  }, [transcripts]);
 
-  const [expandedSeries, setExpandedSeries] = useState({});
+  // NEW: Deep "Google-Style" Instant Search Results
+  const searchResults = useMemo(() => {
+    if (!searchQuery.trim()) return [];
+    const query = searchQuery.toLowerCase();
+    const results = [];
 
-  useEffect(() => {
-    if (searchQuery.trim()) {
-      const allOpen = Object.keys(groupedTranscripts).reduce((acc, key) => ({ ...acc, [key]: true }), {});
-      setExpandedSeries(allOpen);
-    }
-  }, [searchQuery, groupedTranscripts]);
+    transcripts.forEach(doc => {
+      const matches = [];
 
-  const toggleSeries = (seriesName) => {
-    setExpandedSeries(prev => ({ ...prev, [seriesName]: !prev[seriesName] }));
+      // Dig into every block of content for the phrase
+      doc.content.forEach(block => {
+        if (block.text && block.text.toLowerCase().includes(query)) {
+          matches.push(block.text);
+        }
+      });
+
+      const titleMatch = doc.title.toLowerCase().includes(query);
+      const seriesMatch = (doc.series || '').toLowerCase().includes(query);
+
+      // If we found it in the text, title, or series, add it to results
+      if (matches.length > 0 || titleMatch || seriesMatch) {
+        results.push({ doc, matches });
+      }
+    });
+    return results;
+  }, [searchQuery, transcripts]);
+
+  // Helper functions to generate context snippets and highlight keywords
+  const getSnippet = (text, q) => {
+    const qLower = q.toLowerCase();
+    const textLower = text.toLowerCase();
+    const index = textLower.indexOf(qLower);
+    if (index === -1) return text.substring(0, 150) + "...";
+
+    // Extract 80 characters before and after the match for context
+    const start = Math.max(0, index - 80);
+    const end = Math.min(text.length, index + q.length + 80);
+
+    let snippet = text.substring(start, end);
+    if (start > 0) snippet = "..." + snippet;
+    if (end < text.length) snippet = snippet + "...";
+    return snippet;
+  };
+
+  const highlightMatch = (text, q) => {
+    if (!q) return text;
+    const parts = text.split(new RegExp(`(${q})`, 'gi'));
+    return parts.map((part, i) =>
+      part.toLowerCase() === q.toLowerCase()
+        ? <strong key={i} className="bg-amber-200 dark:bg-amber-900/60 text-amber-900 dark:text-amber-100 font-bold px-0.5 rounded">{part}</strong>
+        : part
+    );
   };
 
   const openReader = (doc) => {
@@ -559,6 +600,8 @@ const TranscriptLibrary = ({ transcripts }) => {
     setActiveDoc(null);
     setSearchQuery('');
   };
+
+  // --- END DASHBOARD LOGIC ---
 
   const readingTime = useMemo(() => {
     if (!activeDoc) return 0;
@@ -611,23 +654,16 @@ const TranscriptLibrary = ({ transcripts }) => {
       if (!ticking) {
         window.requestAnimationFrame(() => {
           const y = window.scrollY;
-
-          if (y >= maxScrollYRef.current - 50) {
-            maxScrollYRef.current = Math.max(y, maxScrollYRef.current);
-          }
+          if (y >= maxScrollYRef.current - 50) maxScrollYRef.current = Math.max(y, maxScrollYRef.current);
 
           const height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
           const scrolled = height > 0 ? (y / height) * 100 : 0;
 
           if (progressBarRef.current) progressBarRef.current.style.width = `${scrolled}%`;
 
-          if (y < 100) {
-            isZenModeRef.current = false;
-          } else if (y > lastScrollYRef.current + 12) {
-            isZenModeRef.current = true;
-          } else if (y < lastScrollYRef.current - 12) {
-            isZenModeRef.current = false;
-          }
+          if (y < 100) isZenModeRef.current = false;
+          else if (y > lastScrollYRef.current + 12) isZenModeRef.current = true;
+          else if (y < lastScrollYRef.current - 12) isZenModeRef.current = false;
           lastScrollYRef.current = y;
 
           const fabOpacity = isZenModeRef.current ? '0' : '1';
@@ -672,26 +708,16 @@ const TranscriptLibrary = ({ transcripts }) => {
             const currentSavedData = JSON.parse(localStorage.getItem('kisa_progress') || '{}');
             const currentStatus = currentSavedData[activeDoc.id]?.status;
 
-            const newStatus = (scrolled > 95 || currentStatus === 'completed')
-              ? 'completed'
-              : (scrolled > 2 ? 'in-progress' : 'unread');
+            const newStatus = (scrolled > 95 || currentStatus === 'completed') ? 'completed' : (scrolled > 2 ? 'in-progress' : 'unread');
 
-            currentSavedData[activeDoc.id] = {
-              position: y,
-              percentage: scrolled,
-              status: newStatus
-            };
-
+            currentSavedData[activeDoc.id] = { position: y, percentage: scrolled, status: newStatus };
             localStorage.setItem('kisa_progress', JSON.stringify(currentSavedData));
 
-            if (currentStatus !== newStatus) {
-              setReadingProgress(currentSavedData);
-            }
+            if (currentStatus !== newStatus) setReadingProgress(currentSavedData);
             lastSaveTimeRef.current = now;
           }
 
           const shouldShow = (maxScrollYRef.current - y > 1500);
-
           if (shouldShow && !isShowingReturnRef.current) {
             isShowingReturnRef.current = true;
             if (returnDesktopRef.current) {
@@ -726,9 +752,7 @@ const TranscriptLibrary = ({ transcripts }) => {
     return () => window.removeEventListener('scroll', handleScroll);
   }, [currentView, activeDoc]);
 
-  const jumpBack = () => {
-    window.scrollTo({ top: maxScrollYRef.current, behavior: 'smooth' });
-  };
+  const jumpBack = () => window.scrollTo({ top: maxScrollYRef.current, behavior: 'smooth' });
 
   const parseFormatting = (text) => {
     if (!text) return null;
@@ -817,15 +841,20 @@ const TranscriptLibrary = ({ transcripts }) => {
     </div>
   );
 
+  // ==========================================
+  // RENDER: DASHBOARD VIEW
+  // ==========================================
   if (currentView === 'home') {
     return (
       <div className="w-full min-h-screen pt-24 sm:pt-32 pb-32 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto flex flex-col pointer-events-auto">
+
         <div className="mb-10 text-center sm:text-left">
           <h1 className="text-4xl sm:text-5xl font-serif font-bold text-zinc-900 dark:text-white mb-3">Digital Archive</h1>
           <p className="text-zinc-500 dark:text-zinc-400 text-lg">Explore translated scholarly series and foundational lectures.</p>
         </div>
 
-        {resumeDoc && (
+        {/* Show Resume Card ONLY if not actively searching */}
+        {!searchQuery.trim() && resumeDoc && (
           <div
             onClick={() => openReader(resumeDoc)}
             className="w-full bg-gradient-to-r from-[#c6a87c]/10 to-transparent border border-[#c6a87c]/30 rounded-2xl p-6 sm:p-8 mb-12 cursor-pointer hover:bg-[#c6a87c]/20 transition-all duration-300 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6 shadow-sm group"
@@ -846,7 +875,8 @@ const TranscriptLibrary = ({ transcripts }) => {
           </div>
         )}
 
-        <div className="relative mb-12">
+        {/* Form Wrap to dismiss iPhone Keyboard on Return */}
+        <form onSubmit={(e) => { e.preventDefault(); document.activeElement?.blur(); }} className="relative mb-12">
           <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
             <Search className="h-5 w-5 text-zinc-400" />
           </div>
@@ -855,80 +885,133 @@ const TranscriptLibrary = ({ transcripts }) => {
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="block w-full pl-12 pr-4 py-4 sm:py-5 border border-zinc-200 dark:border-zinc-800 rounded-2xl bg-white dark:bg-[#1c1c1e] shadow-sm text-zinc-900 dark:text-white placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-[#c6a87c] focus:border-transparent transition-all"
-            placeholder="Search transcripts by title, series, or specific words..."
+            placeholder="Search all transcripts by specific words or phrases..."
           />
-          {searchQuery && (
-            <div className="absolute inset-y-0 right-0 pr-4 flex items-center">
-              <span className="text-xs font-bold text-zinc-400 bg-zinc-100 dark:bg-zinc-800 px-2 py-1 rounded">{filteredTranscripts.length} found</span>
+          {searchQuery.trim() && (
+            <div className="absolute inset-y-0 right-0 pr-4 flex items-center gap-2">
+              <span className="text-xs font-bold text-zinc-400 bg-zinc-100 dark:bg-zinc-800 px-2 py-1 rounded">
+                {searchResults.length} {searchResults.length === 1 ? 'doc' : 'docs'}
+              </span>
+              <button type="button" onClick={() => setSearchQuery('')} className="p-1 bg-zinc-100 dark:bg-zinc-800 rounded-full text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300 transition-colors">
+                <X className="w-4 h-4" />
+              </button>
             </div>
           )}
-        </div>
+        </form>
 
-        <div className="flex flex-col gap-10">
-          {Object.entries(groupedTranscripts).length === 0 ? (
-            <div className="text-center py-20">
-              <BookOpen className="w-12 h-12 text-zinc-300 dark:text-zinc-700 mx-auto mb-4" />
-              <h3 className="text-lg font-bold text-zinc-600 dark:text-zinc-400">No transcripts found</h3>
-              <p className="text-zinc-500">Try adjusting your search terms.</p>
-            </div>
-          ) : (
-            Object.entries(groupedTranscripts).map(([groupSeriesName, docs]) => (
-              <div key={groupSeriesName}>
-                <h2 className="text-xl sm:text-2xl font-sans font-black uppercase tracking-widest text-zinc-800 dark:text-zinc-200 mb-6 flex items-center gap-3">
-                  <LibraryIcon className="w-6 h-6 text-[#c6a87c]" />
-                  {groupSeriesName}
-                </h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-                  {docs.map(doc => {
-                    const displayTitle = doc.title.startsWith(groupSeriesName + ' - ') ? doc.title.replace(groupSeriesName + ' - ', '') : doc.title;
-                    const status = readingProgress[doc.id]?.status || 'unread';
-                    const progress = readingProgress[doc.id]?.percentage || 0;
+        {/* View Switch: Search Results vs Grid */}
+        {searchQuery.trim() ? (
 
-                    return (
-                      <div
-                        key={doc.id}
-                        onClick={() => openReader(doc)}
-                        className="bg-white dark:bg-[#1c1c1e] border border-zinc-200 dark:border-zinc-800 rounded-2xl p-5 sm:p-6 cursor-pointer hover:shadow-lg hover:border-[#c6a87c]/50 transition-all duration-300 flex flex-col justify-between group h-full relative overflow-hidden"
-                      >
-                        {status === 'in-progress' && (
-                          <div className="absolute top-0 left-0 w-full h-1 bg-zinc-100 dark:bg-zinc-800">
-                            <div className="h-full bg-[#c6a87c]" style={{ width: `${progress}%` }} />
-                          </div>
-                        )}
-                        {status === 'completed' && <div className="absolute top-0 left-0 w-full h-1 bg-emerald-500" />}
+          <div className="flex flex-col gap-5">
+            {searchResults.length === 0 ? (
+              <div className="text-center py-20 text-zinc-500 italic">No matches found for "{searchQuery}"</div>
+            ) : (
+              searchResults.map((res, idx) => (
+                <div
+                  key={idx}
+                  onClick={() => openReader(res.doc)}
+                  className="bg-white dark:bg-[#1c1c1e] border border-zinc-200 dark:border-zinc-800 rounded-2xl p-5 sm:p-6 cursor-pointer hover:shadow-lg hover:border-[#c6a87c]/50 transition-all duration-300 group"
+                >
+                  <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">{res.doc.series}</span>
+                  <h3 className="text-lg sm:text-xl font-bold text-zinc-900 dark:text-white mt-1 mb-4 group-hover:text-[#c6a87c] transition-colors">{res.doc.title.replace(res.doc.series + ' - ', '')}</h3>
 
-                        <div>
-                          <div className="flex justify-between items-start mb-4">
-                            <span className="text-[10px] font-bold uppercase tracking-widest bg-zinc-100 dark:bg-zinc-800 text-zinc-500 px-2 py-1 rounded">
-                              {doc.speaker}
-                            </span>
-                            {status === 'completed' ? (
-                              <Check className="w-4 h-4 text-emerald-500" />
-                            ) : (
-                              <BookOpen className="w-4 h-4 text-zinc-300 dark:text-zinc-600 group-hover:text-[#c6a87c] transition-colors" />
-                            )}
-                          </div>
-                          <h3 className="text-lg font-bold text-zinc-900 dark:text-white leading-snug mb-2 group-hover:text-[#c6a87c] transition-colors line-clamp-3">
-                            {displayTitle}
-                          </h3>
-                        </div>
-
-                        <div className="mt-6 flex items-center justify-between text-zinc-400">
-                          <span className="text-xs font-semibold uppercase tracking-wider">Read Transcript</span>
-                          <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-                        </div>
-                      </div>
-                    );
-                  })}
+                  {res.matches.length > 0 && (
+                    <div className="flex flex-col gap-3">
+                      {res.matches.slice(0, 3).map((match, mIdx) => (
+                        <p key={mIdx} className="text-sm sm:text-base text-zinc-600 dark:text-zinc-400 font-serif leading-relaxed border-l-2 border-[#c6a87c]/30 pl-4 py-1">
+                          {highlightMatch(getSnippet(match, searchQuery), searchQuery)}
+                        </p>
+                      ))}
+                      {res.matches.length > 3 && (
+                        <span className="text-xs text-zinc-400 italic pl-4">+ {res.matches.length - 3} more matches inside</span>
+                      )}
+                    </div>
+                  )}
                 </div>
+              ))
+            )}
+          </div>
+
+        ) : (
+
+          <div className="flex flex-col gap-8">
+            {Object.entries(groupedTranscripts).map(([groupSeriesName, docs]) => (
+              <div key={groupSeriesName} className="bg-white dark:bg-[#1c1c1e] border border-zinc-200 dark:border-zinc-800 rounded-2xl shadow-sm overflow-hidden transition-all">
+
+                <button
+                  onClick={() => toggleDashSeries(groupSeriesName)}
+                  className="flex items-center justify-between w-full p-5 sm:p-6 cursor-pointer hover:bg-zinc-50 dark:hover:bg-[#252528] transition-colors group"
+                >
+                  <h2 className="text-xl sm:text-2xl font-sans font-black uppercase tracking-widest text-zinc-800 dark:text-zinc-200 flex items-center gap-3">
+                    <LibraryIcon className="w-6 h-6 text-[#c6a87c]" />
+                    {groupSeriesName}
+                  </h2>
+                  <div className={`p-2 rounded-full transition-colors ${dashExpanded[groupSeriesName] ? 'bg-[#c6a87c]/10 text-[#c6a87c]' : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-400 group-hover:text-[#c6a87c]'}`}>
+                    {dashExpanded[groupSeriesName] ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
+                  </div>
+                </button>
+
+                <AnimatePresence>
+                  {dashExpanded[groupSeriesName] && (
+                    <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden border-t border-zinc-200 dark:border-zinc-800">
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 p-5 sm:p-6 bg-zinc-50/50 dark:bg-[#161618]">
+                        {docs.map(doc => {
+                          const displayTitle = doc.title.startsWith(groupSeriesName + ' - ') ? doc.title.replace(groupSeriesName + ' - ', '') : doc.title;
+                          const status = readingProgress[doc.id]?.status || 'unread';
+                          const progress = readingProgress[doc.id]?.percentage || 0;
+
+                          return (
+                            <div
+                              key={doc.id}
+                              onClick={() => openReader(doc)}
+                              className="bg-white dark:bg-[#1c1c1e] border border-zinc-200 dark:border-zinc-800 rounded-xl p-5 cursor-pointer hover:shadow-lg hover:border-[#c6a87c]/50 transition-all duration-300 flex flex-col justify-between group h-full relative overflow-hidden"
+                            >
+                              {status === 'in-progress' && (
+                                <div className="absolute top-0 left-0 w-full h-1 bg-zinc-100 dark:bg-zinc-800">
+                                  <div className="h-full bg-[#c6a87c]" style={{ width: `${progress}%` }} />
+                                </div>
+                              )}
+                              {status === 'completed' && <div className="absolute top-0 left-0 w-full h-1 bg-emerald-500" />}
+
+                              <div>
+                                <div className="flex justify-between items-start mb-4">
+                                  <span className="text-[10px] font-bold uppercase tracking-widest bg-zinc-100 dark:bg-zinc-800 text-zinc-500 px-2 py-1 rounded">
+                                    {doc.speaker}
+                                  </span>
+                                  {status === 'completed' ? (
+                                    <Check className="w-4 h-4 text-emerald-500" />
+                                  ) : (
+                                    <BookOpen className="w-4 h-4 text-zinc-300 dark:text-zinc-600 group-hover:text-[#c6a87c] transition-colors" />
+                                  )}
+                                </div>
+                                <h3 className="text-base sm:text-lg font-bold text-zinc-900 dark:text-white leading-snug mb-2 group-hover:text-[#c6a87c] transition-colors line-clamp-3">
+                                  {displayTitle}
+                                </h3>
+                              </div>
+
+                              <div className="mt-5 flex items-center justify-between text-zinc-400">
+                                <span className="text-xs font-semibold uppercase tracking-wider">Read</span>
+                                <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </div>
-            ))
-          )}
-        </div>
+            ))}
+          </div>
+
+        )}
       </div>
     );
   }
 
+  // ==========================================
+  // RENDER: PREMIUM READER VIEW
+  // ==========================================
   return (
     <div className="w-full min-h-screen pt-20 sm:pt-32 pb-32 flex flex-col items-center font-sans relative px-0 sm:px-6 lg:px-8">
 
