@@ -505,12 +505,18 @@ const TranscriptLibrary = ({ transcripts }) => {
 
   // --- DASHBOARD LOGIC ---
 
+  // FIX: Sort by Most Recent Timestamp instead of Percentage
   const resumeDocId = useMemo(() => {
     const progressEntries = Object.entries(readingProgress);
     if (progressEntries.length === 0) return null;
     const inProgress = progressEntries.filter(([id, data]) => data.status === 'in-progress');
     if (inProgress.length > 0) {
-      inProgress.sort((a, b) => b[1].percentage - a[1].percentage);
+      inProgress.sort((a, b) => {
+        const timeA = a[1].lastAccessed || 0;
+        const timeB = b[1].lastAccessed || 0;
+        if (timeA !== timeB) return timeB - timeA; // Sort newest first
+        return b[1].percentage - a[1].percentage;  // Fallback to percentage for older saves
+      });
       return inProgress[0][0];
     }
     return null;
@@ -518,15 +524,12 @@ const TranscriptLibrary = ({ transcripts }) => {
 
   const resumeDoc = transcripts.find(t => t.id === resumeDocId) || null;
 
-  // NEW: Sidebar Collapsible State
   const [expandedSeries, setExpandedSeries] = useState({});
-  // NEW: Dashboard Collapsible State (Loads collapsed by default)
   const [dashExpanded, setDashExpanded] = useState({});
 
   const toggleSeries = (seriesName) => setExpandedSeries(prev => ({ ...prev, [seriesName]: !prev[seriesName] }));
   const toggleDashSeries = (seriesName) => setDashExpanded(prev => ({ ...prev, [seriesName]: !prev[seriesName] }));
 
-  // Group all transcripts for the normal Grid/Sidebar view
   const groupedTranscripts = useMemo(() => {
     return transcripts.reduce((acc, doc) => {
       const seriesName = doc.series || (doc.title.includes(' - ') ? doc.title.split(' - ')[0] : 'General Transcripts');
@@ -536,7 +539,6 @@ const TranscriptLibrary = ({ transcripts }) => {
     }, {});
   }, [transcripts]);
 
-  // NEW: Deep "Google-Style" Instant Search Results
   const searchResults = useMemo(() => {
     if (!searchQuery.trim()) return [];
     const query = searchQuery.toLowerCase();
@@ -544,18 +546,14 @@ const TranscriptLibrary = ({ transcripts }) => {
 
     transcripts.forEach(doc => {
       const matches = [];
-
-      // Dig into every block of content for the phrase
       doc.content.forEach(block => {
         if (block.text && block.text.toLowerCase().includes(query)) {
           matches.push(block.text);
         }
       });
-
       const titleMatch = doc.title.toLowerCase().includes(query);
       const seriesMatch = (doc.series || '').toLowerCase().includes(query);
 
-      // If we found it in the text, title, or series, add it to results
       if (matches.length > 0 || titleMatch || seriesMatch) {
         results.push({ doc, matches });
       }
@@ -563,14 +561,12 @@ const TranscriptLibrary = ({ transcripts }) => {
     return results;
   }, [searchQuery, transcripts]);
 
-  // Helper functions to generate context snippets and highlight keywords
   const getSnippet = (text, q) => {
     const qLower = q.toLowerCase();
     const textLower = text.toLowerCase();
     const index = textLower.indexOf(qLower);
     if (index === -1) return text.substring(0, 150) + "...";
 
-    // Extract 80 characters before and after the match for context
     const start = Math.max(0, index - 80);
     const end = Math.min(text.length, index + q.length + 80);
 
@@ -590,9 +586,20 @@ const TranscriptLibrary = ({ transcripts }) => {
     );
   };
 
+  // FIX: Instantly stamp the 'lastAccessed' time when a document is opened
   const openReader = (doc) => {
     setActiveDoc(doc);
     setCurrentView('reader');
+
+    const savedData = JSON.parse(localStorage.getItem('kisa_progress') || '{}');
+    const docData = savedData[doc.id] || { position: 0, percentage: 0, status: 'in-progress' };
+
+    docData.lastAccessed = Date.now();
+    if (docData.status !== 'completed') docData.status = 'in-progress';
+
+    savedData[doc.id] = docData;
+    localStorage.setItem('kisa_progress', JSON.stringify(savedData));
+    setReadingProgress(savedData);
   };
 
   const closeReader = () => {
@@ -710,10 +717,16 @@ const TranscriptLibrary = ({ transcripts }) => {
 
             const newStatus = (scrolled > 95 || currentStatus === 'completed') ? 'completed' : (scrolled > 2 ? 'in-progress' : 'unread');
 
-            currentSavedData[activeDoc.id] = { position: y, percentage: scrolled, status: newStatus };
+            // FIX: Add lastAccessed timestamp on scroll saves
+            currentSavedData[activeDoc.id] = {
+              position: y,
+              percentage: scrolled,
+              status: newStatus,
+              lastAccessed: now
+            };
             localStorage.setItem('kisa_progress', JSON.stringify(currentSavedData));
 
-            if (currentStatus !== newStatus) setReadingProgress(currentSavedData);
+            setReadingProgress(currentSavedData);
             lastSaveTimeRef.current = now;
           }
 
@@ -853,7 +866,6 @@ const TranscriptLibrary = ({ transcripts }) => {
           <p className="text-zinc-500 dark:text-zinc-400 text-lg">Explore translated scholarly series and foundational lectures.</p>
         </div>
 
-        {/* Show Resume Card ONLY if not actively searching */}
         {!searchQuery.trim() && resumeDoc && (
           <div
             onClick={() => openReader(resumeDoc)}
@@ -875,7 +887,6 @@ const TranscriptLibrary = ({ transcripts }) => {
           </div>
         )}
 
-        {/* Form Wrap to dismiss iPhone Keyboard on Return */}
         <form onSubmit={(e) => { e.preventDefault(); document.activeElement?.blur(); }} className="relative mb-12">
           <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
             <Search className="h-5 w-5 text-zinc-400" />
@@ -899,9 +910,7 @@ const TranscriptLibrary = ({ transcripts }) => {
           )}
         </form>
 
-        {/* View Switch: Search Results vs Grid */}
         {searchQuery.trim() ? (
-
           <div className="flex flex-col gap-5">
             {searchResults.length === 0 ? (
               <div className="text-center py-20 text-zinc-500 italic">No matches found for "{searchQuery}"</div>
