@@ -475,14 +475,17 @@ const QuranReader = ({ activeFontFamily, fontStyle, setFontStyle, handleSurahSel
 };
 
 const TranscriptLibrary = ({ transcripts }) => {
-  const [activeDoc, setActiveDoc] = useState(transcripts[0]);
+  // NEW: View State (Dashboard vs Reader)
+  const [currentView, setCurrentView] = useState('home');
+  const [activeDoc, setActiveDoc] = useState(null);
+  const [searchQuery, setSearchQuery] = useState('');
+
   const [isArchiveOpen, setIsArchiveOpen] = useState(true);
   const [isMobileDrawerOpen, setIsMobileDrawerOpen] = useState(true);
   const [fontSize, setFontSize] = useState(18);
-  const [fontFamily, setFontFamily] = useState('sans'); // NEW: Font Toggle
+  const [fontFamily, setFontFamily] = useState('sans');
   const [isTocOpen, setIsTocOpen] = useState(false);
 
-  // NEW: Reading Progress State & Toast
   const [readingProgress, setReadingProgress] = useState(() => {
     const saved = localStorage.getItem('kisa_progress');
     return saved ? JSON.parse(saved) : {};
@@ -496,67 +499,99 @@ const TranscriptLibrary = ({ transcripts }) => {
   const progressBarRef = useRef(null);
   const stickySegmentRef = useRef(null);
   const lastSaveTimeRef = useRef(0);
-
-  // NEW: Zen Mode Refs
   const lastScrollYRef = useRef(0);
   const isZenModeRef = useRef(false);
   const mobileFabRef = useRef(null);
   const desktopFabRef = useRef(null);
 
-  const readingTime = useMemo(() => {
-    const textString = activeDoc.content.map(b => b.text).join(' ');
-    const wordCount = textString.trim().split(/\s+/).length;
-    return Math.ceil(wordCount / 200);
-  }, [activeDoc]);
+  // --- NEW: Dashboard Logic ---
 
+  // 1. Find the last read document for the Resume Card
+  const resumeDocId = useMemo(() => {
+    const progressEntries = Object.entries(readingProgress);
+    if (progressEntries.length === 0) return null;
+
+    // Find the one with the highest percentage that isn't 100%, or just the most recent
+    const inProgress = progressEntries.filter(([id, data]) => data.status === 'in-progress');
+    if (inProgress.length > 0) {
+      // Sort by percentage (or we could add timestamps later)
+      inProgress.sort((a, b) => b[1].percentage - a[1].percentage);
+      return inProgress[0][0];
+    }
+    return null;
+  }, [readingProgress]);
+
+  const resumeDoc = transcripts.find(t => t.id === resumeDocId) || null;
+
+  // 2. Deep Search Filter
+  const filteredTranscripts = useMemo(() => {
+    if (!searchQuery.trim()) return transcripts;
+    const query = searchQuery.toLowerCase();
+    return transcripts.filter(doc => {
+      const titleMatch = doc.title.toLowerCase().includes(query);
+      const seriesMatch = (doc.series || '').toLowerCase().includes(query);
+      const contentMatch = doc.content.some(block => block.text && block.text.toLowerCase().includes(query));
+      return titleMatch || seriesMatch || contentMatch;
+    });
+  }, [transcripts, searchQuery]);
+
+  // 3. Group the filtered results
   const groupedTranscripts = useMemo(() => {
-    return transcripts.reduce((acc, doc) => {
+    return filteredTranscripts.reduce((acc, doc) => {
       const seriesName = doc.series || (doc.title.includes(' - ') ? doc.title.split(' - ')[0] : 'General Transcripts');
       if (!acc[seriesName]) acc[seriesName] = [];
       acc[seriesName].push(doc);
       return acc;
     }, {});
-  }, [transcripts]);
+  }, [filteredTranscripts]);
 
-  const initialSeries = activeDoc.series || (activeDoc.title.includes(' - ') ? activeDoc.title.split(' - ')[0] : 'General Transcripts');
-  const [expandedSeries, setExpandedSeries] = useState({ [initialSeries]: true });
+  const [expandedSeries, setExpandedSeries] = useState({});
+
+  // Auto-expand series if searching
+  useEffect(() => {
+    if (searchQuery.trim()) {
+      const allOpen = Object.keys(groupedTranscripts).reduce((acc, key) => ({ ...acc, [key]: true }), {});
+      setExpandedSeries(allOpen);
+    }
+  }, [searchQuery, groupedTranscripts]);
 
   const toggleSeries = (seriesName) => {
     setExpandedSeries(prev => ({ ...prev, [seriesName]: !prev[seriesName] }));
   };
 
-  // NEW: Smart Resume - Restores scroll position on load/change
-  useEffect(() => {
-    setIsTocOpen(false);
+  const openReader = (doc) => {
+    setActiveDoc(doc);
+    setCurrentView('reader');
+  };
 
-    const savedData = JSON.parse(localStorage.getItem('kisa_progress') || '{}');
-    const docData = savedData[activeDoc.id];
+  const closeReader = () => {
+    setCurrentView('home');
+    setActiveDoc(null);
+    setSearchQuery(''); // Clear search when returning
+  };
 
-    if (docData && docData.position > 300) {
-      // Instant jump to saved position
-      setTimeout(() => {
-        window.scrollTo({ top: docData.position, behavior: 'auto' });
-        setResumeToast(true);
-        setTimeout(() => setResumeToast(false), 3000);
-      }, 100);
-    } else {
-      window.scrollTo(0, 0);
-    }
+  // --- End Dashboard Logic ---
+
+  const readingTime = useMemo(() => {
+    if (!activeDoc) return 0;
+    const textString = activeDoc.content.map(b => b.text).join(' ');
+    const wordCount = textString.trim().split(/\s+/).length;
+    return Math.ceil(wordCount / 200);
   }, [activeDoc]);
 
-  let seriesTitle = activeDoc.series;
-  let mainTitle = activeDoc.title;
-  if (!seriesTitle && activeDoc.title.includes(' - ')) {
+  let seriesTitle = activeDoc?.series;
+  let mainTitle = activeDoc?.title;
+  if (activeDoc && !seriesTitle && activeDoc.title.includes(' - ')) {
     const parts = activeDoc.title.split(' - ');
     seriesTitle = parts[0];
     mainTitle = parts.slice(1).join(' - ');
-  } else if (seriesTitle && activeDoc.title.startsWith(seriesTitle + ' - ')) {
+  } else if (activeDoc && seriesTitle && activeDoc.title.startsWith(seriesTitle + ' - ')) {
     mainTitle = activeDoc.title.replace(seriesTitle + ' - ', '');
   }
 
-  const tocItems = activeDoc.content
+  const tocItems = activeDoc ? activeDoc.content
     .map((block, index) => ({ ...block, index }))
-    .filter(block => block.type === 'h2');
+    .filter(block => block.type === 'h2') : [];
 
   const scrollToSegment = (idx) => {
     const el = document.getElementById(`segment-${idx}`);
@@ -566,8 +601,24 @@ const TranscriptLibrary = ({ transcripts }) => {
     }
   };
 
-  // UPDATED: Scroll Listener with Auto-Save Logic
+  // Smart Resume & Scroll setup (ONLY active in 'reader' view)
   useEffect(() => {
+    if (currentView !== 'reader' || !activeDoc) return;
+
+    setIsTocOpen(false);
+    const savedData = JSON.parse(localStorage.getItem('kisa_progress') || '{}');
+    const docData = savedData[activeDoc.id];
+
+    if (docData && docData.position > 300) {
+      setTimeout(() => {
+        window.scrollTo({ top: docData.position, behavior: 'auto' });
+        setResumeToast(true);
+        setTimeout(() => setResumeToast(false), 3000);
+      }, 100);
+    } else {
+      window.scrollTo(0, 0);
+    }
+
     let ticking = false;
     const handleScroll = () => {
       if (!ticking) {
@@ -581,21 +632,17 @@ const TranscriptLibrary = ({ transcripts }) => {
           const height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
           const scrolled = height > 0 ? (y / height) * 100 : 0;
 
-          if (progressBarRef.current) {
-            progressBarRef.current.style.width = `${scrolled}%`;
-          }
+          if (progressBarRef.current) progressBarRef.current.style.width = `${scrolled}%`;
 
-          // NEW: Zen Mode Scroll Direction Logic
           if (y < 100) {
             isZenModeRef.current = false;
           } else if (y > lastScrollYRef.current + 12) {
-            isZenModeRef.current = true; // Scrolling Down (Hide UI)
+            isZenModeRef.current = true;
           } else if (y < lastScrollYRef.current - 12) {
-            isZenModeRef.current = false; // Scrolling Up (Show UI)
+            isZenModeRef.current = false;
           }
           lastScrollYRef.current = y;
 
-          // Apply Zen Mode Styles to Floating Buttons
           const fabOpacity = isZenModeRef.current ? '0' : '1';
           const fabPointer = isZenModeRef.current ? 'none' : 'auto';
 
@@ -611,7 +658,6 @@ const TranscriptLibrary = ({ transcripts }) => {
             desktopFabRef.current.style.transform = isZenModeRef.current ? 'translateX(-20px)' : 'translateX(0)';
           }
 
-          // Zero-cost Sticky Segment Tracker (with Zen Mode integration)
           const headers = document.querySelectorAll('.segment-header');
           let currentSegment = '';
           for (let i = headers.length - 1; i >= 0; i--) {
@@ -634,31 +680,26 @@ const TranscriptLibrary = ({ transcripts }) => {
             }
           }
 
-
-          // NEW: Save to LocalStorage (throttled to 1 second for performance)
           const now = Date.now();
           if (now - lastSaveTimeRef.current > 1000) {
-            const savedData = JSON.parse(localStorage.getItem('kisa_progress') || '{}');
-            const currentStatus = savedData[activeDoc.id]?.status;
+            const currentSavedData = JSON.parse(localStorage.getItem('kisa_progress') || '{}');
+            const currentStatus = currentSavedData[activeDoc.id]?.status;
 
-            // Status logic: Completed if scrolled past 95%
             const newStatus = (scrolled > 95 || currentStatus === 'completed')
               ? 'completed'
               : (scrolled > 2 ? 'in-progress' : 'unread');
 
-            savedData[activeDoc.id] = {
+            currentSavedData[activeDoc.id] = {
               position: y,
               percentage: scrolled,
               status: newStatus
             };
 
-            localStorage.setItem('kisa_progress', JSON.stringify(savedData));
+            localStorage.setItem('kisa_progress', JSON.stringify(currentSavedData));
 
-            // Only update React state if status category changes
             if (currentStatus !== newStatus) {
-              setReadingProgress(savedData);
+              setReadingProgress(currentSavedData);
             }
-
             lastSaveTimeRef.current = now;
           }
 
@@ -696,7 +737,7 @@ const TranscriptLibrary = ({ transcripts }) => {
     };
     window.addEventListener('scroll', handleScroll, { passive: true });
     return () => window.removeEventListener('scroll', handleScroll);
-  }, [activeDoc]); // Active doc dependency ensures correct ID is saved
+  }, [currentView, activeDoc]);
 
   const jumpBack = () => {
     window.scrollTo({ top: maxScrollYRef.current, behavior: 'smooth' });
@@ -713,7 +754,6 @@ const TranscriptLibrary = ({ transcripts }) => {
     });
   };
 
-  // UPDATED: ArchiveList with Status Indicators
   const ArchiveList = () => (
     <div className="flex flex-col gap-2">
       {Object.entries(groupedTranscripts).map(([groupSeriesName, docs]) => (
@@ -737,12 +777,10 @@ const TranscriptLibrary = ({ transcripts }) => {
                   return (
                     <button
                       key={doc.id}
-                      onClick={() => { setActiveDoc(doc); setIsMobileDrawerOpen(false); }}
-                      className={`text-left py-2.5 px-3 rounded-xl transition-all duration-200 cursor-pointer flex items-center justify-between gap-3 ${activeDoc.id === doc.id ? 'bg-zinc-50 dark:bg-[#1c1c1e] text-zinc-900 dark:text-white font-bold shadow-sm border border-zinc-200 dark:border-zinc-700' : 'text-zinc-500 hover:text-zinc-800 dark:text-zinc-400 dark:hover:text-zinc-200 border border-transparent hover:bg-zinc-50 dark:hover:bg-[#2c2c2e]'}`}
+                      onClick={() => { openReader(doc); setIsMobileDrawerOpen(false); }}
+                      className={`text-left py-2.5 px-3 rounded-xl transition-all duration-200 cursor-pointer flex items-center justify-between gap-3 ${activeDoc?.id === doc.id ? 'bg-zinc-50 dark:bg-[#1c1c1e] text-zinc-900 dark:text-white font-bold shadow-sm border border-zinc-200 dark:border-zinc-700' : 'text-zinc-500 hover:text-zinc-800 dark:text-zinc-400 dark:hover:text-zinc-200 border border-transparent hover:bg-zinc-50 dark:hover:bg-[#2c2c2e]'}`}
                     >
                       <span className="text-sm leading-snug block flex-1">{displayTitle}</span>
-
-                      {/* Visual Status Indicator */}
                       {status === 'completed' && <div className="w-2 h-2 rounded-full bg-emerald-500 shrink-0 shadow-[0_0_8px_rgba(16,185,129,0.5)]" title="Completed" />}
                       {status === 'in-progress' && <div className="w-2 h-2 rounded-full bg-[#c6a87c] shrink-0 shadow-[0_0_8px_rgba(198,168,124,0.6)]" title="In Progress" />}
                       {status === 'unread' && <div className="w-2 h-2 rounded-full border-[1.5px] border-zinc-300 dark:border-zinc-600 shrink-0" title="Unread" />}
@@ -759,10 +797,9 @@ const TranscriptLibrary = ({ transcripts }) => {
 
   const LibraryTools = ({ isMobile }) => (
     <div className="flex flex-col h-full">
-      {/* Spacer to prevent Segment Anchor from covering the header on mobile */}
       <div className="h-10 md:hidden shrink-0" />
-
-      <div className="p-4 sm:p-5 border-b border-zinc-100 dark:border-zinc-800/80 shrink-0 flex justify-between items-center">        <h2 className="text-[11px] font-bold text-zinc-500 uppercase tracking-widest flex items-center gap-2"><LibraryIcon className="w-4 h-4 text-[#c6a87c]" /> Library Tools</h2>
+      <div className="p-4 sm:p-5 border-b border-zinc-100 dark:border-zinc-800/80 shrink-0 flex justify-between items-center">
+        <h2 className="text-[11px] font-bold text-zinc-500 uppercase tracking-widest flex items-center gap-2"><LibraryIcon className="w-4 h-4 text-[#c6a87c]" /> Library Tools</h2>
         {isMobile ? (
           <button onClick={() => setIsMobileDrawerOpen(false)} className="p-1"><X className="w-5 h-5 text-zinc-500" /></button>
         ) : (
@@ -780,7 +817,6 @@ const TranscriptLibrary = ({ transcripts }) => {
         </div>
         <span className="text-[10px] font-bold uppercase tracking-widest text-zinc-400 block mb-2">Text Size</span>
         <div className="flex items-center justify-between bg-zinc-50 dark:bg-[#252528] rounded-lg p-1 border border-zinc-200 dark:border-zinc-700 w-full">
-
           <button onClick={() => setFontSize(Math.max(14, fontSize - 1))} className="w-10 h-6 sm:w-12 sm:h-7 flex items-center justify-center rounded bg-white dark:bg-[#1c1c1e] text-zinc-600 dark:text-zinc-300 font-bold shadow-sm text-sm cursor-pointer hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors">-</button>
           <span className="text-xs font-mono font-bold text-zinc-700 dark:text-zinc-300 flex-grow text-center">{fontSize}px</span>
           <button onClick={() => setFontSize(Math.min(28, fontSize + 1))} className="w-10 h-6 sm:w-12 sm:h-7 flex items-center justify-center rounded bg-white dark:bg-[#1c1c1e] text-zinc-600 dark:text-zinc-300 font-bold shadow-sm text-sm cursor-pointer hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors">+</button>
@@ -788,21 +824,158 @@ const TranscriptLibrary = ({ transcripts }) => {
       </div>
 
       <div className="p-3 sm:p-4 overflow-y-auto smart-scrollbar flex-grow flex flex-col gap-2">
-        <span className="text-[10px] font-bold uppercase tracking-widest text-zinc-400 block ml-1 mb-2">Archive</span>
+        <span className="text-[10px] font-bold uppercase tracking-widest text-zinc-400 block ml-1 mb-2">Archive List</span>
         <ArchiveList />
       </div>
     </div>
   );
 
-  return (
-    <div className="w-full min-h-screen pt-20 sm:pt-32 pb-32 flex justify-center font-sans relative px-0 sm:px-6 lg:px-8">
+  // ==========================================
+  // RENDER: DASHBOARD VIEW
+  // ==========================================
+  if (currentView === 'home') {
+    return (
+      <div className="w-full min-h-screen pt-24 sm:pt-32 pb-32 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto flex flex-col pointer-events-auto">
 
-      {/* FIX: Sticky Progress Bar (Ref-driven) */}
+        {/* Header */}
+        <div className="mb-10 text-center sm:text-left">
+          <h1 className="text-4xl sm:text-5xl font-serif font-bold text-zinc-900 dark:text-white mb-3">Digital Archive</h1>
+          <p className="text-zinc-500 dark:text-zinc-400 text-lg">Explore translated scholarly series and foundational lectures.</p>
+        </div>
+
+        {/* Resume Card */}
+        {resumeDoc && (
+          <div
+            onClick={() => openReader(resumeDoc)}
+            className="w-full bg-gradient-to-r from-[#c6a87c]/10 to-transparent border border-[#c6a87c]/30 rounded-2xl p-6 sm:p-8 mb-12 cursor-pointer hover:bg-[#c6a87c]/20 transition-all duration-300 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6 shadow-sm group"
+          >
+            <div>
+              <div className="flex items-center gap-2 mb-2">
+                <Clock className="w-4 h-4 text-[#c6a87c]" />
+                <span className="text-[#c6a87c] font-bold text-xs uppercase tracking-widest">Continue Reading</span>
+              </div>
+              <h2 className="text-xl sm:text-2xl font-bold text-zinc-900 dark:text-white group-hover:text-[#c6a87c] transition-colors">{resumeDoc.title}</h2>
+              <div className="w-48 h-1.5 bg-zinc-200 dark:bg-zinc-800 rounded-full mt-4 overflow-hidden">
+                <div
+                  className="h-full bg-[#c6a87c]"
+                  style={{ width: `${readingProgress[resumeDoc.id]?.percentage || 0}%` }}
+                />
+              </div>
+            </div>
+            <div className="w-12 h-12 rounded-full bg-white dark:bg-[#1c1c1e] shadow-md border border-[#c6a87c]/30 flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
+              <ChevronRight className="w-6 h-6 text-[#c6a87c]" />
+            </div>
+          </div>
+        )}
+
+        {/* Deep Search */}
+        <div className="relative mb-12">
+          <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+            <Search className="h-5 w-5 text-zinc-400" />
+          </div>
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="block w-full pl-12 pr-4 py-4 sm:py-5 border border-zinc-200 dark:border-zinc-800 rounded-2xl bg-white dark:bg-[#1c1c1e] shadow-sm text-zinc-900 dark:text-white placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-[#c6a87c] focus:border-transparent transition-all"
+            placeholder="Search transcripts by title, series, or specific words..."
+          />
+          {searchQuery && (
+            <div className="absolute inset-y-0 right-0 pr-4 flex items-center">
+              <span className="text-xs font-bold text-zinc-400 bg-zinc-100 dark:bg-zinc-800 px-2 py-1 rounded">{filteredTranscripts.length} found</span>
+            </div>
+          )}
+        </div>
+
+        {/* Series Grid */}
+        <div className="flex flex-col gap-10">
+          {Object.entries(groupedTranscripts).length === 0 ? (
+            <div className="text-center py-20">
+              <BookOpen className="w-12 h-12 text-zinc-300 dark:text-zinc-700 mx-auto mb-4" />
+              <h3 className="text-lg font-bold text-zinc-600 dark:text-zinc-400">No transcripts found</h3>
+              <p className="text-zinc-500">Try adjusting your search terms.</p>
+            </div>
+          ) : (
+            Object.entries(groupedTranscripts).map(([groupSeriesName, docs]) => (
+              <div key={groupSeriesName}>
+                <h2 className="text-xl sm:text-2xl font-sans font-black uppercase tracking-widest text-zinc-800 dark:text-zinc-200 mb-6 flex items-center gap-3">
+                  <LibraryIcon className="w-6 h-6 text-[#c6a87c]" />
+                  {groupSeriesName}
+                </h2>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+                  {docs.map(doc => {
+                    const displayTitle = doc.title.startsWith(groupSeriesName + ' - ') ? doc.title.replace(groupSeriesName + ' - ', '') : doc.title;
+                    const status = readingProgress[doc.id]?.status || 'unread';
+                    const progress = readingProgress[doc.id]?.percentage || 0;
+
+                    return (
+                      <div
+                        key={doc.id}
+                        onClick={() => openReader(doc)}
+                        className="bg-white dark:bg-[#1c1c1e] border border-zinc-200 dark:border-zinc-800 rounded-2xl p-5 sm:p-6 cursor-pointer hover:shadow-lg hover:border-[#c6a87c]/50 transition-all duration-300 flex flex-col justify-between group h-full relative overflow-hidden"
+                      >
+                        {/* Status Bar Top */}
+                        {status === 'in-progress' && (
+                          <div className="absolute top-0 left-0 w-full h-1 bg-zinc-100 dark:bg-zinc-800">
+                            <div className="h-full bg-[#c6a87c]" style={{ width: `${progress}%` }} />
+                          </div>
+                        )}
+                        {status === 'completed' && (
+                          <div className="absolute top-0 left-0 w-full h-1 bg-emerald-500" />
+                        )}
+
+                        <div>
+                          <div className="flex justify-between items-start mb-4">
+                            <span className="text-[10px] font-bold uppercase tracking-widest bg-zinc-100 dark:bg-zinc-800 text-zinc-500 px-2 py-1 rounded">
+                              {doc.speaker}
+                            </span>
+                            {status === 'completed' ? (
+                              <Check className="w-4 h-4 text-emerald-500" />
+                            ) : (
+                              <BookOpen className="w-4 h-4 text-zinc-300 dark:text-zinc-600 group-hover:text-[#c6a87c] transition-colors" />
+                            )}
+                          </div>
+                          <h3 className="text-lg font-bold text-zinc-900 dark:text-white leading-snug mb-2 group-hover:text-[#c6a87c] transition-colors line-clamp-3">
+                            {displayTitle}
+                          </h3>
+                        </div>
+
+                        <div className="mt-6 flex items-center justify-between text-zinc-400">
+                          <span className="text-xs font-semibold uppercase tracking-wider">Read Transcript</span>
+                          <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  // ==========================================
+  // RENDER: PREMIUM READER VIEW
+  // ==========================================
+  return (
+    <div className="w-full min-h-screen pt-20 sm:pt-32 pb-32 flex flex-col items-center font-sans relative px-0 sm:px-6 lg:px-8">
+
+      {/* Return to Dashboard Header */}
+      <div className="w-full max-w-[1400px] mx-auto mb-6 px-4 sm:px-0 flex justify-start pointer-events-auto">
+        <button
+          onClick={closeReader}
+          className="flex items-center gap-2 text-zinc-500 hover:text-[#c6a87c] transition-colors text-xs sm:text-sm font-bold uppercase tracking-widest cursor-pointer"
+        >
+          <ChevronLeft className="w-4 h-4" /> Back to Dashboard
+        </button>
+      </div>
+
       <div className="fixed top-0 left-0 w-full h-1 z-[300] bg-zinc-200/50 dark:bg-zinc-800/50">
         <div ref={progressBarRef} className="h-full bg-[#c6a87c] will-change-[width]" style={{ width: '0%' }} />
       </div>
 
-      {/* FIX: Full-Width Rectangle Anchor flush with the Golden Line */}
       <div
         ref={stickySegmentRef}
         className="fixed top-1 left-0 w-full z-[250] py-1.5 px-4 text-center text-[10px] sm:text-[11px] font-bold uppercase tracking-widest text-zinc-600 dark:text-zinc-400 bg-[#fbfbfb]/95 dark:bg-[#1c1c1e]/95 backdrop-blur-md border-b border-zinc-200/80 dark:border-zinc-800/80 shadow-sm transition-all duration-300 pointer-events-none will-change-transform truncate"
@@ -812,20 +985,16 @@ const TranscriptLibrary = ({ transcripts }) => {
       <AnimatePresence>
         {resumeToast && (
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
+            initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }}
             className="fixed top-24 left-1/2 -translate-x-1/2 z-[400] bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 px-4 py-2.5 rounded-full shadow-2xl text-[10px] sm:text-xs font-bold uppercase tracking-widest flex items-center gap-2"
           >
-            <Sparkles className="w-3.5 h-3.5 text-[#c6a87c]" />
-            Resumed where you left off
+            <Sparkles className="w-3.5 h-3.5 text-[#c6a87c]" /> Resumed where you left off
           </motion.div>
         )}
       </AnimatePresence>
 
       <button
-        ref={returnDesktopRef}
-        onClick={jumpBack}
+        ref={returnDesktopRef} onClick={jumpBack}
         style={{ opacity: 0, pointerEvents: 'none', transform: 'translateY(-50%) translateX(20px)' }}
         className="hidden md:flex fixed top-1/2 right-4 lg:right-6 z-[100] bg-white dark:bg-[#252528] text-[#c6a87c] border border-zinc-200 dark:border-zinc-800 p-2.5 rounded-full shadow-2xl flex-col items-center gap-3 cursor-pointer hover:scale-105 transition-all duration-300"
       >
@@ -834,8 +1003,7 @@ const TranscriptLibrary = ({ transcripts }) => {
       </button>
 
       <button
-        ref={returnMobileRef}
-        onClick={jumpBack}
+        ref={returnMobileRef} onClick={jumpBack}
         style={{ opacity: 0, pointerEvents: 'none', transform: 'translateY(20px) scale(0.8)' }}
         className="md:hidden fixed bottom-[88px] right-3 z-[100] w-12 h-12 bg-zinc-900 dark:bg-[#e4d3ba] text-[#d4b78f] dark:text-[#5c4a30] border border-zinc-700 dark:border-zinc-300 rounded-full shadow-2xl flex flex-col items-center justify-center cursor-pointer transition-all duration-300"
       >
@@ -846,27 +1014,22 @@ const TranscriptLibrary = ({ transcripts }) => {
       <div ref={desktopFabRef} className="hidden md:block fixed top-32 left-8 z-50 transition-all duration-300 will-change-transform pointer-events-auto">
         <AnimatePresence>
           {!isArchiveOpen && (
-            <motion.button initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} onClick={() => setIsArchiveOpen(true)} className="p-3 bg-white dark:bg-[#252528] border border-zinc-200 dark:border-zinc-800 shadow-xl rounded-full text-zinc-500 hover:text-[#c6a87c] transition-colors cursor-pointer group" title="Open Archive">
-              <LibraryIcon className="w-5 h-5 group-hover:scale-110 transition-transform" />
+            <motion.button initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} onClick={() => setIsArchiveOpen(true)} className="p-3 bg-white dark:bg-[#252528] border border-zinc-200 dark:border-zinc-800 shadow-xl rounded-full text-zinc-500 hover:text-[#c6a87c] transition-colors cursor-pointer group" title="Open Archive Menu">
+              <List className="w-5 h-5 group-hover:scale-110 transition-transform" />
             </motion.button>
           )}
         </AnimatePresence>
       </div>
 
       <button
-        ref={mobileFabRef}
-        onClick={() => setIsMobileDrawerOpen(!isMobileDrawerOpen)}
+        ref={mobileFabRef} onClick={() => setIsMobileDrawerOpen(!isMobileDrawerOpen)}
         className="md:hidden fixed bottom-6 right-3 z-[210] w-12 h-12 bg-white dark:bg-[#252528] text-[#c6a87c] border border-zinc-200 dark:border-zinc-800 rounded-full shadow-2xl flex flex-col items-center justify-center cursor-pointer transition-all duration-300 will-change-transform"
       >
         <AnimatePresence mode="wait">
           {isMobileDrawerOpen ? (
-            <motion.div key="close" initial={{ rotate: -90, opacity: 0 }} animate={{ rotate: 0, opacity: 1 }} exit={{ rotate: 90, opacity: 0 }} transition={{ duration: 0.15 }}>
-              <X className="w-5 h-5 text-zinc-500" />
-            </motion.div>
+            <motion.div key="close" initial={{ rotate: -90, opacity: 0 }} animate={{ rotate: 0, opacity: 1 }} exit={{ rotate: 90, opacity: 0 }} transition={{ duration: 0.15 }}><X className="w-5 h-5 text-zinc-500" /></motion.div>
           ) : (
-            <motion.div key="open" initial={{ rotate: 90, opacity: 0 }} animate={{ rotate: 0, opacity: 1 }} exit={{ rotate: -90, opacity: 0 }} transition={{ duration: 0.15 }}>
-              <LibraryIcon className="w-5 h-5" />
-            </motion.div>
+            <motion.div key="open" initial={{ rotate: 90, opacity: 0 }} animate={{ rotate: 0, opacity: 1 }} exit={{ rotate: -90, opacity: 0 }} transition={{ duration: 0.15 }}><List className="w-5 h-5" /></motion.div>
           )}
         </AnimatePresence>
       </button>
@@ -874,16 +1037,8 @@ const TranscriptLibrary = ({ transcripts }) => {
       <AnimatePresence>
         {isMobileDrawerOpen && (
           <>
-            <motion.div
-              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-              onClick={() => setIsMobileDrawerOpen(false)}
-              className="md:hidden fixed inset-0 bg-black/40 z-[190] cursor-pointer backdrop-blur-sm"
-              style={{ touchAction: 'none' }}
-            />
-            <motion.div
-              initial={{ x: '-100%' }} animate={{ x: 0 }} exit={{ x: '-100%' }} transition={{ type: "spring", damping: 25, stiffness: 200 }}
-              className="md:hidden fixed top-0 bottom-0 left-0 w-[85vw] max-w-[340px] bg-white dark:bg-[#1c1c1e] z-[200] shadow-2xl border-r border-zinc-200 dark:border-zinc-800 flex flex-col overflow-hidden"
-            >
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setIsMobileDrawerOpen(false)} className="md:hidden fixed inset-0 bg-black/40 z-[190] cursor-pointer backdrop-blur-sm" style={{ touchAction: 'none' }} />
+            <motion.div initial={{ x: '-100%' }} animate={{ x: 0 }} exit={{ x: '-100%' }} transition={{ type: "spring", damping: 25, stiffness: 200 }} className="md:hidden fixed top-0 bottom-0 left-0 w-[85vw] max-w-[340px] bg-white dark:bg-[#1c1c1e] z-[200] shadow-2xl border-r border-zinc-200 dark:border-zinc-800 flex flex-col overflow-hidden">
               <LibraryTools isMobile={true} />
             </motion.div>
           </>
@@ -891,12 +1046,7 @@ const TranscriptLibrary = ({ transcripts }) => {
       </AnimatePresence>
 
       <div className="w-full max-w-[1400px] mx-auto flex items-start gap-0 md:gap-8 lg:gap-12">
-
-        <motion.div
-          animate={{ width: isArchiveOpen ? 320 : 0, opacity: isArchiveOpen ? 1 : 0 }}
-          transition={{ duration: 0.4, ease: "easeInOut" }}
-          className="hidden md:block shrink-0 overflow-hidden sticky top-32 self-start h-[calc(100vh-140px)]"
-        >
+        <motion.div animate={{ width: isArchiveOpen ? 320 : 0, opacity: isArchiveOpen ? 1 : 0 }} transition={{ duration: 0.4, ease: "easeInOut" }} className="hidden md:block shrink-0 overflow-hidden sticky top-32 self-start h-[calc(100vh-140px)]">
           <div className="w-[320px] h-full bg-white dark:bg-[#252528] border border-zinc-200 dark:border-zinc-800/80 rounded-2xl flex flex-col shadow-sm">
             <LibraryTools isMobile={false} />
           </div>
@@ -904,7 +1054,6 @@ const TranscriptLibrary = ({ transcripts }) => {
 
         <div className="flex-1 min-w-0 w-full flex justify-center transition-all duration-500">
           <div className="w-full max-w-4xl mx-auto bg-white dark:bg-[#252528] sm:border border-zinc-200 dark:border-zinc-800/80 sm:rounded-2xl px-5 py-10 sm:p-12 sm:shadow-sm">
-
             <header className="mb-8 sm:mb-10">
               {seriesTitle && (
                 <span className="block font-mono text-[#c6a87c] dark:text-[#d4b78f] font-bold tracking-widest uppercase text-xs sm:text-sm mb-3">
@@ -930,10 +1079,7 @@ const TranscriptLibrary = ({ transcripts }) => {
 
             {tocItems.length > 0 && (
               <div className="mb-10 sm:mb-12 bg-zinc-50 dark:bg-[#1a1a1c] border border-zinc-200 dark:border-zinc-800/80 rounded-xl overflow-hidden shadow-sm">
-                <button
-                  onClick={() => setIsTocOpen(!isTocOpen)}
-                  className="w-full flex items-center justify-between px-5 sm:px-6 py-4 cursor-pointer hover:bg-zinc-100 dark:hover:bg-[#252528] transition-colors"
-                >
+                <button onClick={() => setIsTocOpen(!isTocOpen)} className="w-full flex items-center justify-between px-5 sm:px-6 py-4 cursor-pointer hover:bg-zinc-100 dark:hover:bg-[#252528] transition-colors">
                   <div className="flex items-center gap-3">
                     <List className="w-5 h-5 text-[#c6a87c]" />
                     <span className="text-xs sm:text-sm font-bold uppercase tracking-widest text-zinc-700 dark:text-zinc-300">Table of Contents</span>
@@ -942,19 +1088,10 @@ const TranscriptLibrary = ({ transcripts }) => {
                 </button>
                 <AnimatePresence>
                   {isTocOpen && (
-                    <motion.div
-                      initial={{ height: 0, opacity: 0 }}
-                      animate={{ height: 'auto', opacity: 1 }}
-                      exit={{ height: 0, opacity: 0 }}
-                      className="overflow-hidden"
-                    >
+                    <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden">
                       <div className="px-5 sm:px-6 pb-5 pt-2 flex flex-col gap-3 border-t border-zinc-200 dark:border-zinc-800/80 mx-2">
                         {tocItems.map((item) => (
-                          <button
-                            key={item.index}
-                            onClick={() => scrollToSegment(item.index)}
-                            className="text-left text-sm sm:text-base font-medium text-zinc-600 dark:text-zinc-400 hover:text-[#c6a87c] dark:hover:text-[#d4b78f] transition-colors flex items-start gap-3 group cursor-pointer"
-                          >
+                          <button key={item.index} onClick={() => scrollToSegment(item.index)} className="text-left text-sm sm:text-base font-medium text-zinc-600 dark:text-zinc-400 hover:text-[#c6a87c] dark:hover:text-[#d4b78f] transition-colors flex items-start gap-3 group cursor-pointer">
                             <span className="text-[#c6a87c] opacity-50 group-hover:opacity-100 mt-1 sm:mt-0.5 text-[10px]">■</span>
                             {item.text}
                           </button>
@@ -968,7 +1105,8 @@ const TranscriptLibrary = ({ transcripts }) => {
 
             <div className={`text-zinc-800 dark:text-zinc-300 antialiased ${fontFamily === 'serif' ? 'font-serif' : 'font-sans'}`} style={{ fontSize: `${fontSize}px`, lineHeight: 1.85 }}>
               {activeDoc.content.map((block, idx) => {
-                if (block.type === 'h2') return <h2 id={`segment-${idx}`} key={idx} className="segment-header font-bold text-zinc-900 dark:text-white mt-14 mb-6 tracking-tight scroll-mt-24 font-sans" style={{ fontSize: `${fontSize * 1.3}px`, lineHeight: 1.3 }}>{block.text}</h2>; if (block.type === 'summary') return (
+                if (block.type === 'h2') return <h2 id={`segment-${idx}`} key={idx} className="segment-header font-bold text-zinc-900 dark:text-white mt-14 mb-6 tracking-tight scroll-mt-24 font-sans" style={{ fontSize: `${fontSize * 1.3}px`, lineHeight: 1.3 }}>{block.text}</h2>;
+                if (block.type === 'summary') return (
                   <div key={idx} className="bg-zinc-50 dark:bg-[#1c1c1e] border-l-4 border-[#c6a87c] p-6 sm:p-8 my-10 rounded-r-xl shadow-sm">
                     <span className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-[#c6a87c] mb-3"><Sparkles className="w-3.5 h-3.5" /> Segment Summary</span>
                     <p className="text-zinc-700 dark:text-zinc-300 font-medium" style={{ fontSize: `${Math.max(15, fontSize - 2)}px`, lineHeight: 1.7 }}>{parseFormatting(block.text)}</p>
@@ -983,7 +1121,6 @@ const TranscriptLibrary = ({ transcripts }) => {
             </div>
           </div>
         </div>
-
       </div>
     </div>
   );
