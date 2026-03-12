@@ -6,7 +6,7 @@ import verseMap from './verse_map.json';
 import transcriptData from './transcripts.json';
 
 const KISA_PIN = '4626'; // <-- ADD THIS HERE (Change '1234' to your real PIN)
-
+const REMEMBER_ME_DAYS = 90; // <-- Just change this number whenever you want!
 
 const APP_UPDATES = [
   { version: "v4.0.0", date: "March 8, 2026", changes: ["Introduced the Digital Archive (Transcript Library): A premium reading environment for translated scholarly series, starting with 'The File of Fatima'.", "UI Polish: Added custom text parser for bold highlights, unified mobile drawer, and high-performance native scrolling for transcripts."] },
@@ -1133,8 +1133,9 @@ export default function App() {
         if (savedAuth) {
           const authData = JSON.parse(savedAuth);
 
-          // Check 1: Has it been less than 30 days? (30 days * 24h * 60m * 60s * 1000ms)
-          const isNotExpired = (Date.now() - authData.timestamp) < 2592000000;
+          // Check 1: Has it been less than X days?
+          const expiryMilliseconds = REMEMBER_ME_DAYS * 24 * 60 * 60 * 1000;
+          const isNotExpired = (Date.now() - authData.timestamp) < expiryMilliseconds;
 
           // Check 2: Does the saved token match the current PIN? (Using btoa to lightly obscure it)
           const isSamePin = authData.token === btoa(KISA_PIN);
