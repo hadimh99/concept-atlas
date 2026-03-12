@@ -5,6 +5,9 @@ import quranData from './quran.json';
 import verseMap from './verse_map.json';
 import transcriptData from './transcripts.json';
 
+const KISA_PIN = '4627'; // <-- ADD THIS HERE (Change '1234' to your real PIN)
+
+
 const APP_UPDATES = [
   { version: "v4.0.0", date: "March 8, 2026", changes: ["Introduced the Digital Archive (Transcript Library): A premium reading environment for translated scholarly series, starting with 'The File of Fatima'.", "UI Polish: Added custom text parser for bold highlights, unified mobile drawer, and high-performance native scrolling for transcripts."] },
   { version: "v3.5.3", date: "March 5, 2026", changes: ["Documentation: Completely overhauled the 'Help & Guide' section to detail the comprehensive suite of tools now available in Kisa, including Vector Hopping, Dynamic Map Views, and Reverse Quran Tafsir."] },
@@ -990,7 +993,7 @@ const KisaGateway = ({ onUnlock }) => {
   const [pin, setPin] = useState('');
   const [error, setError] = useState(false);
   const [rememberMe, setRememberMe] = useState(true);
-  const CORRECT_PIN = '4626'; // Replace with your desired 4-digit PIN
+
 
   const handleNumberClick = (num) => {
     if (pin.length < 4) {
@@ -999,9 +1002,15 @@ const KisaGateway = ({ onUnlock }) => {
       setPin(newPin);
 
       if (newPin.length === 4) {
-        if (newPin === CORRECT_PIN) {
+        if (newPin === KISA_PIN) {
           if (rememberMe) {
-            localStorage.setItem('kisa_unlocked', 'true');
+            // Save the timestamp and the obscured PIN validator
+            const authPayload = {
+              unlocked: true,
+              timestamp: Date.now(),
+              token: btoa(KISA_PIN)
+            };
+            localStorage.setItem('kisa_auth', JSON.stringify(authPayload));
           }
           // Slight delay for UX so they see the 4th dot fill before unlocking
           setTimeout(() => {
@@ -1116,10 +1125,27 @@ const KisaGateway = ({ onUnlock }) => {
 };
 
 export default function App() {
-  // NEW: Gateway Lock State
+  // UPGRADED: Gateway Lock State (30-Day Expiry & PIN Change Detection)
   const [isLocked, setIsLocked] = useState(() => {
     if (typeof window !== 'undefined') {
-      return localStorage.getItem('kisa_unlocked') !== 'true';
+      try {
+        const savedAuth = localStorage.getItem('kisa_auth');
+        if (savedAuth) {
+          const authData = JSON.parse(savedAuth);
+
+          // Check 1: Has it been less than 30 days? (30 days * 24h * 60m * 60s * 1000ms)
+          const isNotExpired = (Date.now() - authData.timestamp) < 2592000000;
+
+          // Check 2: Does the saved token match the current PIN? (Using btoa to lightly obscure it)
+          const isSamePin = authData.token === btoa(KISA_PIN);
+
+          if (authData.unlocked && isNotExpired && isSamePin) {
+            return false; // Welcome back
+          }
+        }
+      } catch (e) {
+        return true; // If data is corrupted, keep it locked
+      }
     }
     return true;
   });
