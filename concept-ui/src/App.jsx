@@ -5,7 +5,7 @@ import quranData from './quran.json';
 import verseMap from './verse_map.json';
 import transcriptData from './transcripts.json';
 
-const KISA_PIN = '4627'; // <-- ADD THIS HERE (Change '1234' to your real PIN)
+const KISA_PIN = '4626'; // <-- ADD THIS HERE (Change '1234' to your real PIN)
 
 
 const APP_UPDATES = [
