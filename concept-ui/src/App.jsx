@@ -487,6 +487,13 @@ const TranscriptLibrary = ({ transcripts }) => {
     const saved = localStorage.getItem('kisa_progress');
     return saved ? JSON.parse(saved) : {};
   });
+
+  // NEW: Scholar's Analytics State
+  const [analytics, setAnalytics] = useState(() => {
+    const saved = localStorage.getItem('kisa_analytics');
+    return saved ? JSON.parse(saved) : { totalCompleted: 0, totalMinutes: 0, history: {} };
+  });
+
   const [resumeToast, setResumeToast] = useState(false);
 
   const maxScrollYRef = useRef(0);
@@ -503,24 +510,52 @@ const TranscriptLibrary = ({ transcripts }) => {
 
   // --- DASHBOARD LOGIC ---
 
-  // FIX: Sort by Most Recent Timestamp instead of Percentage
-  const resumeDocId = useMemo(() => {
+  // NEW: Smart Queue Logic (Resume or Up Next)
+  const { resumeDoc, upNextDoc } = useMemo(() => {
     const progressEntries = Object.entries(readingProgress);
-    if (progressEntries.length === 0) return null;
-    const inProgress = progressEntries.filter(([id, data]) => data.status === 'in-progress');
-    if (inProgress.length > 0) {
-      inProgress.sort((a, b) => {
-        const timeA = a[1].lastAccessed || 0;
-        const timeB = b[1].lastAccessed || 0;
-        if (timeA !== timeB) return timeB - timeA; // Sort newest first
-        return b[1].percentage - a[1].percentage;  // Fallback to percentage for older saves
-      });
-      return inProgress[0][0];
-    }
-    return null;
-  }, [readingProgress]);
+    if (progressEntries.length === 0) return { resumeDoc: null, upNextDoc: null };
 
-  const resumeDoc = transcripts.find(t => t.id === resumeDocId) || null;
+    // Sort by last accessed
+    progressEntries.sort((a, b) => (b[1].lastAccessed || 0) - (a[1].lastAccessed || 0));
+    const lastDocId = progressEntries[0][0];
+    const lastDocStatus = progressEntries[0][1].status;
+    const lastDoc = transcripts.find(t => t.id === lastDocId);
+
+    if (!lastDoc) return { resumeDoc: null, upNextDoc: null };
+
+    if (lastDocStatus === 'in-progress') {
+      return { resumeDoc: lastDoc, upNextDoc: null };
+    } else if (lastDocStatus === 'completed') {
+      // Find the next UNREAD episode in the series
+      const seriesDocs = transcripts.filter(t => t.series === lastDoc.series);
+      const currentIndex = seriesDocs.findIndex(t => t.id === lastDoc.id);
+
+      if (currentIndex !== -1 && currentIndex + 1 < seriesDocs.length) {
+        for (let i = currentIndex + 1; i < seriesDocs.length; i++) {
+          const docProgress = readingProgress[seriesDocs[i].id];
+          if (!docProgress || docProgress.status !== 'completed') {
+            return { resumeDoc: null, upNextDoc: seriesDocs[i] };
+          }
+        }
+      }
+    }
+    return { resumeDoc: null, upNextDoc: null };
+  }, [readingProgress, transcripts]);
+
+  // NEW: Heatmap Generation (Last 28 Days)
+  const heatmapDays = useMemo(() => {
+    const days = [];
+    for (let i = 27; i >= 0; i--) {
+      const d = new Date();
+      d.setDate(d.getDate() - i);
+      const dateStr = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+      days.push({
+        date: dateStr,
+        count: analytics.history[dateStr] || 0
+      });
+    }
+    return days;
+  }, [analytics.history]);
 
   const [expandedSeries, setExpandedSeries] = useState({});
   const [dashExpanded, setDashExpanded] = useState({});
@@ -584,7 +619,6 @@ const TranscriptLibrary = ({ transcripts }) => {
     );
   };
 
-  // FIX: Instantly stamp the 'lastAccessed' time when a document is opened
   const openReader = (doc) => {
     setActiveDoc(doc);
     setCurrentView('reader');
@@ -606,14 +640,56 @@ const TranscriptLibrary = ({ transcripts }) => {
     setSearchQuery('');
   };
 
-  // --- END DASHBOARD LOGIC ---
-
   const readingTime = useMemo(() => {
     if (!activeDoc) return 0;
     const textString = activeDoc.content.map(b => b.text).join(' ');
     const wordCount = textString.trim().split(/\s+/).length;
     return Math.ceil(wordCount / 200);
   }, [activeDoc]);
+
+  // NEW: Button Handler for "Mark as Read"
+  const handleMarkAsRead = () => {
+    const now = Date.now();
+    const dateObj = new Date();
+    const today = dateObj.getFullYear() + '-' + String(dateObj.getMonth() + 1).padStart(2, '0') + '-' + String(dateObj.getDate()).padStart(2, '0');
+
+    // 1. Force Progress to Completed
+    const currentSavedData = JSON.parse(localStorage.getItem('kisa_progress') || '{}');
+    currentSavedData[activeDoc.id] = {
+      ...currentSavedData[activeDoc.id],
+      status: 'completed',
+      percentage: 100,
+      lastAccessed: now
+    };
+    localStorage.setItem('kisa_progress', JSON.stringify(currentSavedData));
+    setReadingProgress(currentSavedData);
+
+    // 2. Update Analytics
+    const newAnalytics = { ...analytics };
+    newAnalytics.totalCompleted += 1;
+    newAnalytics.totalMinutes += readingTime;
+    newAnalytics.history[today] = (newAnalytics.history[today] || 0) + 1;
+
+    localStorage.setItem('kisa_analytics', JSON.stringify(newAnalytics));
+    setAnalytics(newAnalytics);
+
+    window.scrollTo({ top: document.documentElement.scrollHeight, behavior: 'smooth' });
+  };
+
+  // Pre-calculate next document for the reader view
+  const nextDocInSeries = useMemo(() => {
+    if (!activeDoc || !activeDoc.series) return null;
+    const seriesDocs = transcripts.filter(t => t.series === activeDoc.series);
+    const currentIndex = seriesDocs.findIndex(t => t.id === activeDoc.id);
+    for (let i = currentIndex + 1; i < seriesDocs.length; i++) {
+      const docProgress = readingProgress[seriesDocs[i].id];
+      if (!docProgress || docProgress.status !== 'completed') {
+        return seriesDocs[i];
+      }
+    }
+    return null;
+  }, [activeDoc, transcripts, readingProgress]);
+
 
   let seriesTitle = activeDoc?.series;
   let mainTitle = activeDoc?.title;
@@ -713,9 +789,9 @@ const TranscriptLibrary = ({ transcripts }) => {
             const currentSavedData = JSON.parse(localStorage.getItem('kisa_progress') || '{}');
             const currentStatus = currentSavedData[activeDoc.id]?.status;
 
-            const newStatus = (scrolled > 95 || currentStatus === 'completed') ? 'completed' : (scrolled > 2 ? 'in-progress' : 'unread');
+            // FIX: Removed the automatic "completed" trigger if they scroll to the bottom
+            const newStatus = currentStatus === 'completed' ? 'completed' : (scrolled > 2 ? 'in-progress' : 'unread');
 
-            // FIX: Add lastAccessed timestamp on scroll saves
             currentSavedData[activeDoc.id] = {
               position: y,
               percentage: scrolled,
@@ -724,7 +800,7 @@ const TranscriptLibrary = ({ transcripts }) => {
             };
             localStorage.setItem('kisa_progress', JSON.stringify(currentSavedData));
 
-            setReadingProgress(currentSavedData);
+            if (currentStatus !== newStatus) setReadingProgress(currentSavedData);
             lastSaveTimeRef.current = now;
           }
 
@@ -864,45 +940,83 @@ const TranscriptLibrary = ({ transcripts }) => {
           <p className="text-zinc-500 dark:text-zinc-400 text-lg">Explore translated scholarly series and foundational lectures.</p>
         </div>
 
-        {/* Show Resume Card ONLY if not actively searching */}
-        {!searchQuery.trim() && resumeDoc && (() => {
-          let resumeSeries = resumeDoc.series;
-          let resumeDisplayTitle = resumeDoc.title;
+        {/* NEW: Scholar's Analytics Heatmap */}
+        <div className="w-full bg-white dark:bg-[#1c1c1e] border border-zinc-200 dark:border-zinc-800 rounded-2xl p-5 sm:p-6 mb-10 shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+          <div className="flex gap-8">
+            <div>
+              <p className="text-[10px] font-bold uppercase tracking-widest text-zinc-400 mb-1">Total Completed</p>
+              <p className="text-3xl font-serif font-bold text-zinc-900 dark:text-white">{analytics.totalCompleted} <span className="text-sm font-sans text-zinc-500 font-normal">transcripts</span></p>
+            </div>
+            <div>
+              <p className="text-[10px] font-bold uppercase tracking-widest text-zinc-400 mb-1">Study Time</p>
+              <p className="text-3xl font-serif font-bold text-zinc-900 dark:text-white">{analytics.totalMinutes} <span className="text-sm font-sans text-zinc-500 font-normal">min</span></p>
+            </div>
+          </div>
 
-          if (!resumeSeries && resumeDoc.title.includes(' - ')) {
-            resumeSeries = resumeDoc.title.split(' - ')[0];
-            resumeDisplayTitle = resumeDoc.title.split(' - ').slice(1).join(' - ');
-          } else if (resumeSeries && resumeDoc.title.startsWith(resumeSeries + ' - ')) {
-            resumeDisplayTitle = resumeDoc.title.replace(resumeSeries + ' - ', '');
+          <div className="flex flex-col items-start md:items-end w-full md:w-auto">
+            <p className="text-[10px] font-bold uppercase tracking-widest text-zinc-400 mb-2 flex items-center gap-1.5"><History className="w-3 h-3" /> 28-Day Activity</p>
+            <div className="flex gap-1 flex-wrap">
+              {heatmapDays.map((day, i) => (
+                <div
+                  key={i}
+                  title={`${day.count} reads on ${day.date}`}
+                  className={`w-3 h-3 sm:w-4 sm:h-4 rounded-sm transition-colors ${day.count > 1 ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.4)]' :
+                      day.count === 1 ? 'bg-[#c6a87c] shadow-[0_0_8px_rgba(198,168,124,0.4)]' :
+                        'bg-zinc-100 dark:bg-zinc-800'
+                    }`}
+                />
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Up Next & Resume Hero Card */}
+        {!searchQuery.trim() && (resumeDoc || upNextDoc) && (() => {
+          const targetDoc = resumeDoc || upNextDoc;
+          const isUpNext = !!upNextDoc;
+
+          let targetSeries = targetDoc.series;
+          let targetDisplayTitle = targetDoc.title;
+
+          if (!targetSeries && targetDoc.title.includes(' - ')) {
+            targetSeries = targetDoc.title.split(' - ')[0];
+            targetDisplayTitle = targetDoc.title.split(' - ').slice(1).join(' - ');
+          } else if (targetSeries && targetDoc.title.startsWith(targetSeries + ' - ')) {
+            targetDisplayTitle = targetDoc.title.replace(targetSeries + ' - ', '');
           }
 
           return (
             <div
-              onClick={() => openReader(resumeDoc)}
-              className="w-full bg-gradient-to-r from-[#c6a87c]/10 to-transparent border border-[#c6a87c]/30 rounded-2xl p-6 sm:p-8 mb-12 cursor-pointer hover:bg-[#c6a87c]/20 transition-all duration-300 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6 shadow-sm group"
+              onClick={() => openReader(targetDoc)}
+              className={`w-full bg-gradient-to-r ${isUpNext ? 'from-emerald-500/10' : 'from-[#c6a87c]/10'} to-transparent border ${isUpNext ? 'border-emerald-500/30 hover:bg-emerald-500/20' : 'border-[#c6a87c]/30 hover:bg-[#c6a87c]/20'} rounded-2xl p-6 sm:p-8 mb-12 cursor-pointer transition-all duration-300 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6 shadow-sm group`}
             >
               <div>
                 <div className="flex items-center flex-wrap gap-2 mb-3">
                   <div className="flex items-center gap-1.5">
-                    <Clock className="w-4 h-4 text-[#c6a87c]" />
-                    <span className="text-[#c6a87c] font-bold text-[10px] sm:text-xs uppercase tracking-widest">Continue Reading</span>
+                    {isUpNext ? <List className="w-4 h-4 text-emerald-500" /> : <Clock className="w-4 h-4 text-[#c6a87c]" />}
+                    <span className={`${isUpNext ? 'text-emerald-500' : 'text-[#c6a87c]'} font-bold text-[10px] sm:text-xs uppercase tracking-widest`}>
+                      {isUpNext ? 'Up Next' : 'Continue Reading'}
+                    </span>
                   </div>
-                  {resumeSeries && (
+                  {targetSeries && (
                     <>
                       <span className="text-zinc-300 dark:text-zinc-700 hidden sm:inline">•</span>
                       <span className="text-zinc-500 dark:text-zinc-400 font-bold text-[10px] sm:text-xs uppercase tracking-widest bg-white/50 dark:bg-black/20 px-2 py-0.5 rounded-md border border-zinc-200/50 dark:border-zinc-700/50">
-                        {resumeSeries}
+                        {targetSeries}
                       </span>
                     </>
                   )}
                 </div>
-                <h2 className="text-xl sm:text-2xl font-bold text-zinc-900 dark:text-white group-hover:text-[#c6a87c] transition-colors">{resumeDisplayTitle}</h2>
-                <div className="w-48 h-1.5 bg-zinc-200 dark:bg-zinc-800 rounded-full mt-4 overflow-hidden">
-                  <div className="h-full bg-[#c6a87c]" style={{ width: `${readingProgress[resumeDoc.id]?.percentage || 0}%` }} />
-                </div>
+                <h2 className={`text-xl sm:text-2xl font-bold text-zinc-900 dark:text-white transition-colors ${isUpNext ? 'group-hover:text-emerald-500' : 'group-hover:text-[#c6a87c]'}`}>{targetDisplayTitle}</h2>
+
+                {!isUpNext && (
+                  <div className="w-48 h-1.5 bg-zinc-200 dark:bg-zinc-800 rounded-full mt-4 overflow-hidden">
+                    <div className="h-full bg-[#c6a87c]" style={{ width: `${readingProgress[targetDoc.id]?.percentage || 0}%` }} />
+                  </div>
+                )}
               </div>
-              <div className="w-12 h-12 rounded-full bg-white dark:bg-[#1c1c1e] shadow-md border border-[#c6a87c]/30 flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
-                <ChevronRight className="w-6 h-6 text-[#c6a87c]" />
+              <div className={`w-12 h-12 rounded-full bg-white dark:bg-[#1c1c1e] shadow-md border ${isUpNext ? 'border-emerald-500/30' : 'border-[#c6a87c]/30'} flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform`}>
+                <ChevronRight className={`w-6 h-6 ${isUpNext ? 'text-emerald-500' : 'text-[#c6a87c]'}`} />
               </div>
             </div>
           );
@@ -1201,6 +1315,40 @@ const TranscriptLibrary = ({ transcripts }) => {
                 return <p key={idx} className="mb-6 text-left">{parseFormatting(block.text)}</p>;
               })}
             </div>
+
+            {/* NEW: MARK AS READ & UP NEXT BUTTON SECTION */}
+            <div className="mt-16 pt-12 border-t-2 border-zinc-100 dark:border-zinc-800/80 flex flex-col items-center">
+              {readingProgress[activeDoc.id]?.status === 'completed' ? (
+                <div className="flex flex-col items-center gap-4">
+                  <div className="flex flex-col items-center gap-2">
+                    <div className="w-12 h-12 rounded-full bg-emerald-50 dark:bg-emerald-500/10 flex items-center justify-center border border-emerald-200 dark:border-emerald-800 shadow-sm">
+                      <Check className="w-6 h-6 text-emerald-600 dark:text-emerald-400" />
+                    </div>
+                    <span className="font-bold text-emerald-600 dark:text-emerald-400 tracking-widest uppercase text-xs">Completed</span>
+                  </div>
+
+                  {nextDocInSeries && (
+                    <button
+                      onClick={() => openReader(nextDocInSeries)}
+                      className="mt-6 px-8 py-4 bg-emerald-600 text-white font-bold rounded-xl shadow-lg hover:bg-emerald-700 hover:scale-105 transition-all duration-300 flex items-center gap-3 cursor-pointer"
+                    >
+                      <span>Start Next Episode</span>
+                      <ChevronRight className="w-5 h-5" />
+                    </button>
+                  )}
+                </div>
+              ) : (
+                <button
+                  onClick={handleMarkAsRead}
+                  className="group relative px-8 py-4 bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 font-bold rounded-xl shadow-xl hover:scale-105 transition-all duration-300 flex items-center gap-3 overflow-hidden cursor-pointer"
+                >
+                  <div className="absolute inset-0 bg-emerald-500 transform translate-y-full group-hover:translate-y-0 transition-transform duration-300 ease-in-out z-0"></div>
+                  <Check className="w-5 h-5 relative z-10 group-hover:text-white dark:group-hover:text-white transition-colors" />
+                  <span className="relative z-10 group-hover:text-white dark:group-hover:text-white uppercase tracking-widest text-sm transition-colors">Mark as Read</span>
+                </button>
+              )}
+            </div>
+
           </div>
         </div>
       </div>
