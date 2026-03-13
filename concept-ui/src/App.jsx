@@ -1881,11 +1881,11 @@ export default function App() {
                 transition={{ delay: 0.3, duration: 0.8, ease: "easeOut" }}
                 className="flex flex-wrap justify-center items-center gap-3 sm:gap-4 mb-8 sm:mb-10 text-[9px] sm:text-[10px] uppercase tracking-[0.25em] font-semibold text-slate-500 dark:text-slate-400/70"
               >
-                <span className="flex items-center gap-1.5 cursor-default"><Database className="w-3 h-3 opacity-50" /> <span className="text-slate-700 dark:text-slate-200">14,500+</span> Narrations</span>
+                <span className="flex items-center gap-1.5 cursor-default"><BookOpen className="w-3 h-3 opacity-50" /> <span className="text-slate-700 dark:text-slate-200">14,500+</span> Narrations</span>
+                <span className="opacity-40 text-[#c6a87c]">•</span>
+                <span className="flex items-center gap-1.5 cursor-default"><Sparkles className="w-3 h-3 opacity-50" /> <span className="text-slate-700 dark:text-slate-200">2.4M</span> Semantic Links</span>
                 <span className="opacity-40 text-[#c6a87c]">•</span>
                 <span className="flex items-center gap-1.5 cursor-default"><Clock className="w-3 h-3 opacity-50" /> <span className="text-slate-700 dark:text-slate-200">50+ Hrs</span> Scholarship</span>
-                <span className="opacity-40 text-[#c6a87c]">•</span>
-                <span className="flex items-center gap-1.5 cursor-default"><BookOpen className="w-3 h-3 opacity-50" /> <span className="text-slate-700 dark:text-slate-200">114</span> Surahs Mapped</span>
               </motion.div>
 
               <div className="w-full relative group pointer-events-auto" ref={searchInputContainerRef}>
