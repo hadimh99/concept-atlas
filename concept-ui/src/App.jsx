@@ -1792,6 +1792,9 @@ export default function App() {
           font-display: swap;
         }
 
+        /* FIX: Prevents Layout Shift by locking the scrollbar track in place */
+        html { overflow-y: scroll; }
+
         .hide-scroll::-webkit-scrollbar { display: none; }
         .hide-scroll { -ms-overflow-style: none; scrollbar-width: none; -webkit-overflow-scrolling: touch; overscroll-behavior-y: contain; }
         .smart-scrollbar { --thumb-bg: transparent; scrollbar-width: thin; scrollbar-color: var(--thumb-bg) transparent; -webkit-overflow-scrolling: touch; overscroll-behavior-y: contain; }
@@ -1813,10 +1816,9 @@ export default function App() {
           pointer-events: none; z-index: 0;
         }
 
-        /* NEW: The Brass Sheen Hover Effect */
+        /* FIX: The Brass Sheen Hover Effect */
         .brass-sheen {
-          position: relative;
-          overflow: hidden;
+          overflow: hidden; 
         }
         .brass-sheen::after {
           content: '';
@@ -1825,10 +1827,12 @@ export default function App() {
           left: -150%;
           width: 50%;
           height: 100%;
-          background: linear-gradient(to right, rgba(255,255,255,0) 0%, rgba(198, 168, 124, 0.4) 50%, rgba(255,255,255,0) 100%);
+          /* Brightened to a crisp white flash so it pops over the gold */
+          background: linear-gradient(to right, rgba(255,255,255,0) 0%, rgba(255, 255, 255, 0.6) 50%, rgba(255,255,255,0) 100%);
           transform: skewX(-25deg);
-          transition: left 0.7s ease-in-out;
+          transition: left 0.6s ease-in-out;
           pointer-events: none;
+          z-index: 5;
         }
         .brass-sheen:hover::after {
           left: 200%;
