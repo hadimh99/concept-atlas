@@ -1792,8 +1792,11 @@ export default function App() {
           font-display: swap;
         }
 
-        /* FIX: Prevents Layout Shift by locking the scrollbar track in place */
-        html { overflow-y: scroll; }
+        /* FIX: Prevents Layout Shift by permanently reserving scrollbar space */
+        html, body { 
+          scrollbar-gutter: stable; 
+          overflow-x: hidden;
+        }
 
         .hide-scroll::-webkit-scrollbar { display: none; }
         .hide-scroll { -ms-overflow-style: none; scrollbar-width: none; -webkit-overflow-scrolling: touch; overscroll-behavior-y: contain; }
@@ -1814,28 +1817,6 @@ export default function App() {
           position: absolute; inset: 0;
           background: radial-gradient(circle at 50% 42%, rgba(198, 168, 124, 0.08) 0%, rgba(6, 33, 22, 0.75) 45%, rgba(2, 6, 4, 1) 100%);
           pointer-events: none; z-index: 0;
-        }
-
-        /* FIX: The Brass Sheen Hover Effect */
-        .brass-sheen {
-          overflow: hidden; 
-        }
-        .brass-sheen::after {
-          content: '';
-          position: absolute;
-          top: 0;
-          left: -150%;
-          width: 50%;
-          height: 100%;
-          /* Brightened to a crisp white flash so it pops over the gold */
-          background: linear-gradient(to right, rgba(255,255,255,0) 0%, rgba(255, 255, 255, 0.6) 50%, rgba(255,255,255,0) 100%);
-          transform: skewX(-25deg);
-          transition: left 0.6s ease-in-out;
-          pointer-events: none;
-          z-index: 5;
-        }
-        .brass-sheen:hover::after {
-          left: 200%;
         }
       `}</style>
 
@@ -1947,8 +1928,11 @@ export default function App() {
                       placeholder={isKeyword ? "Enter an exact word or phrase..." : "Enter a phrase or concept (e.g. intellect)..."}
                       className="w-full bg-transparent appearance-none outline-none rounded-none py-3 sm:py-4 pl-3 sm:pl-4 pr-14 sm:pr-16 text-base font-sans text-slate-800 dark:text-[#FAFAFA] placeholder:text-slate-500/80 dark:placeholder:text-[#c6a87c]/40 cursor-text caret-[#c6a87c]"
                     />
-                    {/* SLEEK GOLD SUBMIT BUTTON WITH BRASS SHEEN */}
-                    <button type="submit" className="brass-sheen absolute right-2 p-2 sm:p-2.5 rounded-xl transition-all shadow-sm cursor-pointer bg-slate-100 dark:bg-[#c6a87c]/10 hover:bg-slate-200 dark:hover:bg-[#c6a87c]/20 text-slate-600 dark:text-[#c6a87c] dark:hover:text-[#FAFAFA] border border-transparent dark:border-[#c6a87c]/20"><Search className="w-4 h-4 sm:w-5 sm:h-5 relative z-10" /></button>
+                    {/* FIX: SLEEK GOLD SUBMIT BUTTON WITH NATIVE TAILWIND SHEEN */}
+                    <button type="submit" className="absolute right-2 p-2 sm:p-2.5 rounded-xl shadow-sm cursor-pointer bg-slate-100 dark:bg-[#c6a87c]/10 hover:bg-slate-200 dark:hover:bg-[#c6a87c]/20 text-slate-600 dark:text-[#c6a87c] dark:hover:text-[#FAFAFA] border border-transparent dark:border-[#c6a87c]/20 overflow-hidden group/btn">
+                      <div className="absolute inset-0 -translate-x-[150%] skew-x-[-25deg] bg-gradient-to-r from-transparent via-white/60 to-transparent group-hover/btn:translate-x-[150%] transition-transform duration-700 ease-in-out z-0"></div>
+                      <Search className="w-4 h-4 sm:w-5 sm:h-5 relative z-10" />
+                    </button>
                   </div>
 
                   <AnimatePresence>
