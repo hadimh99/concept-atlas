@@ -998,8 +998,8 @@ const TranscriptLibrary = ({ transcripts }) => {
                   key={i}
                   title={`${day.count} reads on ${day.date}`}
                   className={`w-3 h-3 sm:w-4 sm:h-4 rounded-sm transition-colors ${day.count > 1 ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.4)]' :
-                      day.count === 1 ? 'bg-[#c6a87c] shadow-[0_0_8px_rgba(198,168,124,0.4)]' :
-                        'bg-zinc-100 dark:bg-zinc-800'
+                    day.count === 1 ? 'bg-[#c6a87c] shadow-[0_0_8px_rgba(198,168,124,0.4)]' :
+                      'bg-zinc-100 dark:bg-zinc-800'
                     }`}
                 />
               ))}
@@ -1869,7 +1869,25 @@ export default function App() {
         <AnimatePresence>
           {activeTab === 'search' && !data && !loading && (
             <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.9, filter: "blur(10px)" }} className="z-10 flex flex-col items-center justify-center w-full max-w-2xl px-4 sm:px-6 mx-auto absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
-              <h2 className={`font-serif text-3xl sm:text-4xl md:text-5xl font-medium mb-6 sm:mb-8 text-center leading-tight ${isKeyword ? 'text-slate-800 dark:text-slate-100' : ''}`}>Explore the Depths of <br /><span className="italic">Twelver Literature</span></h2>
+
+              <h2 className={`font-serif text-3xl sm:text-4xl md:text-5xl font-medium mb-4 text-center leading-tight ${isKeyword ? 'text-slate-800 dark:text-slate-100' : 'text-slate-900 dark:text-white'}`}>
+                Explore the Depths of <br /><span className="italic text-indigo-400/80 dark:text-indigo-300/80">Twelver Literature</span>
+              </h2>
+
+              {/* ULTRA-PREMIUM SUB-HEADLINE STATS */}
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.3, duration: 0.8, ease: "easeOut" }}
+                className="flex flex-wrap justify-center items-center gap-3 sm:gap-4 mb-8 sm:mb-10 text-[9px] sm:text-[10px] uppercase tracking-[0.25em] font-semibold text-slate-500 dark:text-slate-400/70"
+              >
+                <span className="flex items-center gap-1.5 cursor-default"><Database className="w-3 h-3 opacity-50" /> <span className="text-slate-700 dark:text-slate-200">14,500+</span> Narrations</span>
+                <span className="opacity-40 text-[#c6a87c]">•</span>
+                <span className="flex items-center gap-1.5 cursor-default"><Clock className="w-3 h-3 opacity-50" /> <span className="text-slate-700 dark:text-slate-200">50+ Hrs</span> Scholarship</span>
+                <span className="opacity-40 text-[#c6a87c]">•</span>
+                <span className="flex items-center gap-1.5 cursor-default"><BookOpen className="w-3 h-3 opacity-50" /> <span className="text-slate-700 dark:text-slate-200">114</span> Surahs Mapped</span>
+              </motion.div>
+
               <div className="w-full relative group pointer-events-auto" ref={searchInputContainerRef}>
                 <div className={`absolute inset-0 w-full h-full rounded-2xl border shadow-xl pointer-events-none z-0 transition-colors duration-700 ${isKeyword ? 'border-slate-300 dark:border-slate-700' : 'border-white/60 dark:border-white/10'}`} style={{ backgroundColor: isKeyword ? (theme === 'dark' ? 'rgba(30, 41, 59, 0.7)' : 'rgba(255, 255, 255, 0.9)') : (theme === 'dark' ? 'rgba(0, 0, 0, 0.4)' : 'rgba(255, 255, 255, 0.3)'), backdropFilter: 'blur(24px)' }}></div>
 
