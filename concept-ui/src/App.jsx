@@ -1806,11 +1806,32 @@ export default function App() {
           background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
         }
         
-        /* The Banker's Lamp Spotlight: Gold fading to Billiard Green fading to Pitch Black */
+        /* The Banker's Lamp Spotlight */
         .gilded-halo {
           position: absolute; inset: 0;
           background: radial-gradient(circle at 50% 42%, rgba(198, 168, 124, 0.08) 0%, rgba(6, 33, 22, 0.75) 45%, rgba(2, 6, 4, 1) 100%);
           pointer-events: none; z-index: 0;
+        }
+
+        /* NEW: The Brass Sheen Hover Effect */
+        .brass-sheen {
+          position: relative;
+          overflow: hidden;
+        }
+        .brass-sheen::after {
+          content: '';
+          position: absolute;
+          top: 0;
+          left: -150%;
+          width: 50%;
+          height: 100%;
+          background: linear-gradient(to right, rgba(255,255,255,0) 0%, rgba(198, 168, 124, 0.4) 50%, rgba(255,255,255,0) 100%);
+          transform: skewX(-25deg);
+          transition: left 0.7s ease-in-out;
+          pointer-events: none;
+        }
+        .brass-sheen:hover::after {
+          left: 200%;
         }
       `}</style>
 
@@ -1909,21 +1930,21 @@ export default function App() {
 
               <div className="w-full relative group pointer-events-auto" ref={searchInputContainerRef}>
 
-                {/* SAFARI-SAFE SMOKED GREEN GLASS CAPSULE */}
-                <div className="absolute inset-0 w-full h-full rounded-2xl border pointer-events-none z-0 transition-colors duration-700 bg-white/70 dark:bg-[#020805]/40 border-slate-300/50 dark:border-[#c6a87c]/20 shadow-[0_8px_32px_rgba(0,0,0,0.05)] dark:shadow-[0_8px_32px_rgba(0,0,0,0.6)] backdrop-blur-xl"></div>
+                {/* SAFARI-SAFE SMOKED GREEN GLASS CAPSULE WITH BREATHING BORDER */}
+                <div className="absolute inset-0 w-full h-full rounded-2xl border pointer-events-none z-0 transition-all duration-700 bg-white/70 dark:bg-[#020805]/40 border-slate-300/50 dark:border-[#c6a87c]/20 shadow-[0_8px_32px_rgba(0,0,0,0.05)] dark:shadow-[0_8px_32px_rgba(0,0,0,0.6)] backdrop-blur-xl group-focus-within:border-[#c6a87c]/50 group-focus-within:shadow-[0_0_40px_rgba(198,168,124,0.15)]"></div>
 
                 <form onSubmit={handleSearchSubmit} className="relative z-10 flex flex-col p-2">
-                  <div className="flex items-center border-b relative border-slate-300/80 dark:border-[#c6a87c]/20">
+                  <div className="flex items-center border-b relative border-slate-300/80 dark:border-[#c6a87c]/20 transition-colors duration-500 group-focus-within:border-[#c6a87c]/50">
                     <input
                       type="text"
                       value={query}
                       onFocus={() => setShowSearchDropdown(true)}
                       onChange={(e) => setQuery(e.target.value)}
                       placeholder={isKeyword ? "Enter an exact word or phrase..." : "Enter a phrase or concept (e.g. intellect)..."}
-                      className="w-full bg-transparent appearance-none outline-none rounded-none py-3 sm:py-4 pl-3 sm:pl-4 pr-14 sm:pr-16 text-base font-sans text-slate-800 dark:text-[#FAFAFA] placeholder:text-slate-500/80 dark:placeholder:text-[#c6a87c]/40 cursor-text"
+                      className="w-full bg-transparent appearance-none outline-none rounded-none py-3 sm:py-4 pl-3 sm:pl-4 pr-14 sm:pr-16 text-base font-sans text-slate-800 dark:text-[#FAFAFA] placeholder:text-slate-500/80 dark:placeholder:text-[#c6a87c]/40 cursor-text caret-[#c6a87c]"
                     />
-                    {/* SLEEK GOLD SUBMIT BUTTON */}
-                    <button type="submit" className="absolute right-2 p-2 sm:p-2.5 rounded-xl transition-all shadow-sm cursor-pointer bg-slate-100 dark:bg-[#c6a87c]/10 hover:bg-slate-200 dark:hover:bg-[#c6a87c]/20 text-slate-600 dark:text-[#c6a87c] dark:hover:text-[#FAFAFA] border border-transparent dark:border-[#c6a87c]/20"><Search className="w-4 h-4 sm:w-5 sm:h-5" /></button>
+                    {/* SLEEK GOLD SUBMIT BUTTON WITH BRASS SHEEN */}
+                    <button type="submit" className="brass-sheen absolute right-2 p-2 sm:p-2.5 rounded-xl transition-all shadow-sm cursor-pointer bg-slate-100 dark:bg-[#c6a87c]/10 hover:bg-slate-200 dark:hover:bg-[#c6a87c]/20 text-slate-600 dark:text-[#c6a87c] dark:hover:text-[#FAFAFA] border border-transparent dark:border-[#c6a87c]/20"><Search className="w-4 h-4 sm:w-5 sm:h-5 relative z-10" /></button>
                   </div>
 
                   <AnimatePresence>
