@@ -1775,7 +1775,7 @@ export default function App() {
 
   const appBgClass = activeTab === 'quran' ? (theme === 'dark' ? 'bg-[#121212] text-slate-100' : 'bg-[#f4ecd8] text-slate-900') :
     (activeTab === 'library' ? (theme === 'dark' ? 'bg-[#1c1c1e] text-zinc-100' : 'bg-[#f4f4f5] text-zinc-900') :
-      (theme === 'dark' ? 'bg-[#050814] text-slate-100' : 'bg-[#f8f9fa] text-slate-900'));
+      (theme === 'dark' ? 'bg-[#040F0B] text-[#FDF8ED]' : 'bg-[#f8f9fa] text-slate-900'));
   const isMapView = activeTab === 'search' && data && viewMode === 'map' && !loading;
   const lockMainScreen = isMapView;
 
@@ -1799,43 +1799,42 @@ export default function App() {
         .smart-scrollbar::-webkit-scrollbar-track { background: transparent; }
         .smart-scrollbar::-webkit-scrollbar-thumb { background-color: var(--thumb-bg); border-radius: 10px; }
         .smart-scrollbar::-webkit-scrollbar-thumb:hover { background-color: rgba(100, 116, 139, 0.8) !important; }
-        .dark .smart-scrollbar::-webkit-scrollbar-thumb:hover { background-color: rgba(203, 213, 225, 0.8) !important; }
+        .dark .smart-scrollbar::-webkit-scrollbar-thumb:hover { background-color: rgba(232, 227, 210, 0.8) !important; }
 
-        /* The Vellum Noise Overlay (Safari Safe) */
-        .obsidian-noise {
+        /* The Vellum Noise Overlay */
+        .ivy-noise {
           position: absolute; inset: 0; z-index: 0; opacity: 0.04; pointer-events: none; mix-blend-mode: overlay;
           background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
         }
         
-        /* The Midnight Halo Spotlight */
-        .midnight-halo {
+        /* The Warm Ivory Spotlight */
+        .ivy-halo {
           position: absolute; top: 40%; left: 50%; transform: translate(-50%, -50%);
           width: 90vw; height: 90vw; max-width: 900px; max-height: 900px;
-          background: radial-gradient(circle, rgba(226, 232, 240, 0.04) 0%, rgba(5, 8, 20, 0) 70%);
+          background: radial-gradient(circle, rgba(232, 227, 210, 0.04) 0%, rgba(4, 15, 11, 0) 70%);
           pointer-events: none; z-index: 0;
         }
       `}</style>
 
       {showMobileMenu && <div className="fixed inset-0 z-[70] pointer-events-auto" onClick={() => setShowMobileMenu(false)} />}
 
-      {/* Apply textures ONLY to the Search Page */}
       {activeTab === 'search' && (
         <>
-          <div className="midnight-halo dark:block hidden" />
-          <div className="obsidian-noise" />
+          <div className="ivy-halo dark:block hidden" />
+          <div className="ivy-noise" />
         </>
       )}
 
       <header ref={headerRef} className="fixed top-4 sm:top-4 w-full z-[75] p-4 sm:p-6 flex justify-between items-center pointer-events-none transition-all duration-500 ease-in-out">        <div onClick={handleHomeClick} className="flex items-center gap-3 pointer-events-auto cursor-pointer group">
-        <div className={`w-10 h-10 rounded-full flex items-center justify-center transition-all duration-500 group-hover:scale-105 border ${activeTab === 'quran' ? 'bg-amber-500/10 border-amber-500/20' : (activeTab === 'library' ? 'bg-[#c6a87c]/10 border-[#c6a87c]/20' : 'bg-slate-800/40 dark:bg-white/5 border-slate-700/50 dark:border-white/10 backdrop-blur-md shadow-sm')}`}>
-          <KisaLogo className={`w-5 h-5 ${activeTab === 'library' ? 'text-[#c6a87c]' : (activeTab === 'quran' ? 'text-amber-600 dark:text-amber-500' : 'text-slate-700 dark:text-[#E2E8F0]')}`} />
+        <div className={`w-10 h-10 rounded-full flex items-center justify-center transition-all duration-500 group-hover:scale-105 border ${activeTab === 'quran' ? 'bg-amber-500/10 border-amber-500/20' : (activeTab === 'library' ? 'bg-[#c6a87c]/10 border-[#c6a87c]/20' : 'bg-slate-800/40 dark:bg-[#E8E3D2]/5 border-slate-700/50 dark:border-[#E8E3D2]/10 backdrop-blur-md shadow-sm')}`}>
+          <KisaLogo className={`w-5 h-5 ${activeTab === 'library' ? 'text-[#c6a87c]' : (activeTab === 'quran' ? 'text-amber-600 dark:text-amber-500' : 'text-slate-700 dark:text-[#E8E3D2]')}`} />
         </div>
         <div>
           <h1 className="font-sans font-bold text-lg sm:text-xl tracking-tight hidden sm:block group-hover:opacity-80 transition-opacity">Kisa</h1>
           <div className="flex items-center gap-2 sm:mt-0.5">
             <p className="font-sans text-[10px] sm:text-xs opacity-60 hidden sm:block">{activeTab === 'quran' ? 'Quran Reader' : (activeTab === 'library' ? 'Digital Archive' : 'Database Index')}</p>
-            <span className="hidden sm:block w-1 h-1 rounded-full bg-slate-300 dark:bg-slate-600"></span>
-            <button onClick={(e) => { e.stopPropagation(); setShowUpdates(true); }} className={`hidden sm:flex pointer-events-auto text-[10px] font-bold uppercase tracking-wider transition-colors cursor-pointer items-center gap-1 px-1.5 py-0.5 rounded-md ${activeTab === 'library' ? 'text-[#c6a87c] bg-[#c6a87c]/10 hover:text-[#d4b78f]' : (activeTab === 'quran' ? 'text-amber-500 bg-amber-500/10 hover:text-amber-400' : 'text-slate-600 dark:text-[#E2E8F0]/70 bg-slate-100 dark:bg-[#E2E8F0]/10 hover:bg-slate-200 dark:hover:bg-[#E2E8F0]/20')}`}>
+            <span className="hidden sm:block w-1 h-1 rounded-full bg-slate-300 dark:bg-[#E8E3D2]/30"></span>
+            <button onClick={(e) => { e.stopPropagation(); setShowUpdates(true); }} className={`hidden sm:flex pointer-events-auto text-[10px] font-bold uppercase tracking-wider transition-colors cursor-pointer items-center gap-1 px-1.5 py-0.5 rounded-md ${activeTab === 'library' ? 'text-[#c6a87c] bg-[#c6a87c]/10 hover:text-[#d4b78f]' : (activeTab === 'quran' ? 'text-amber-500 bg-amber-500/10 hover:text-amber-400' : 'text-slate-600 dark:text-[#FDF8ED]/80 bg-slate-100 dark:bg-[#E8E3D2]/10 hover:bg-slate-200 dark:hover:bg-[#E8E3D2]/20')}`}>
               <Sparkles className="w-3 h-3" />What's New
             </button>
           </div>
@@ -1843,36 +1842,36 @@ export default function App() {
       </div>
 
         <div className="flex items-center gap-2 sm:gap-4 relative z-[75] pointer-events-auto">
-          <div className={`flex items-center rounded-full p-1 mr-1 sm:mr-2 border shadow-sm ${activeTab === 'search' ? 'bg-white/60 dark:bg-white/5 border-slate-200 dark:border-white/10 backdrop-blur-xl' : 'bg-white/40 dark:bg-[#252528]/80 border-slate-300/30 dark:border-zinc-700/50 backdrop-blur-md'}`}>
-            <button onClick={() => setActiveTab('search')} className={`p-2 rounded-full transition-all duration-300 cursor-pointer ${activeTab === 'search' ? 'bg-slate-200/80 dark:bg-[#E2E8F0]/10 text-slate-800 dark:text-[#E2E8F0] shadow-sm' : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-300'}`} title="Search Engine"><Search className="w-4 h-4" /></button>
-            <button onClick={() => setActiveTab('quran')} className={`p-2 rounded-full transition-all duration-300 cursor-pointer ${activeTab === 'quran' ? 'bg-amber-600/20 text-amber-800 dark:text-amber-500' : 'text-slate-500 hover:text-slate-800 dark:hover:text-[#E2E8F0]'}`} title="Quran Reader"><BookOpen className="w-4 h-4" /></button>
-            <button onClick={() => setActiveTab('library')} className={`p-2 rounded-full transition-all duration-300 cursor-pointer ${activeTab === 'library' ? 'bg-[#c6a87c]/20 text-[#c6a87c] dark:text-[#d4b78f]' : 'text-slate-500 hover:text-slate-800 dark:hover:text-[#E2E8F0]'}`} title="Transcript Library"><LibraryIcon className="w-4 h-4" /></button>
+          <div className={`flex items-center rounded-full p-1 mr-1 sm:mr-2 border shadow-sm ${activeTab === 'search' ? 'bg-white/60 dark:bg-[#E8E3D2]/5 border-slate-200 dark:border-[#E8E3D2]/10 backdrop-blur-xl' : 'bg-white/40 dark:bg-[#252528]/80 border-slate-300/30 dark:border-zinc-700/50 backdrop-blur-md'}`}>
+            <button onClick={() => setActiveTab('search')} className={`p-2 rounded-full transition-all duration-300 cursor-pointer ${activeTab === 'search' ? 'bg-slate-200/80 dark:bg-[#E8E3D2]/10 text-slate-800 dark:text-[#FDF8ED] shadow-sm' : 'text-slate-500 hover:text-slate-800 dark:text-[#E8E3D2]/60 dark:hover:text-[#FDF8ED]'}`} title="Search Engine"><Search className="w-4 h-4" /></button>
+            <button onClick={() => setActiveTab('quran')} className={`p-2 rounded-full transition-all duration-300 cursor-pointer ${activeTab === 'quran' ? 'bg-amber-600/20 text-amber-800 dark:text-amber-500' : 'text-slate-500 hover:text-slate-800 dark:text-[#E8E3D2]/60 dark:hover:text-[#FDF8ED]'}`} title="Quran Reader"><BookOpen className="w-4 h-4" /></button>
+            <button onClick={() => setActiveTab('library')} className={`p-2 rounded-full transition-all duration-300 cursor-pointer ${activeTab === 'library' ? 'bg-[#c6a87c]/20 text-[#c6a87c] dark:text-[#d4b78f]' : 'text-slate-500 hover:text-slate-800 dark:text-[#E8E3D2]/60 dark:hover:text-[#FDF8ED]'}`} title="Transcript Library"><LibraryIcon className="w-4 h-4" /></button>
           </div>
 
           <div className="hidden md:flex items-center gap-2 sm:gap-4">
-            {activeTab === 'search' && data && !isKeyword && (<div className="flex items-center bg-white/60 dark:bg-white/5 border border-slate-200 dark:border-white/10 backdrop-blur-xl rounded-full p-1"><button onClick={() => setViewMode('map')} className={`p-2 rounded-full transition-all duration-300 cursor-pointer ${viewMode === 'map' ? 'bg-slate-200/80 dark:bg-[#E2E8F0]/10 text-slate-800 dark:text-[#E2E8F0] shadow-sm' : 'text-slate-500 hover:text-slate-800 dark:hover:text-[#E2E8F0]'}`}><Layout className="w-4 h-4" /></button><button onClick={() => setViewMode('list')} className={`p-2 rounded-full transition-all duration-300 cursor-pointer ${viewMode === 'list' ? 'bg-slate-200/80 dark:bg-[#E2E8F0]/10 text-slate-800 dark:text-[#E2E8F0] shadow-sm' : 'text-slate-500 hover:text-slate-800 dark:hover:text-[#E2E8F0]'}`}><List className="w-4 h-4" /></button></div>)}
-            <button onClick={() => setShowHistoryDrawer(true)} className="w-10 h-10 sm:w-11 sm:h-11 rounded-full flex items-center justify-center group transition-all duration-300 hover:scale-110 cursor-pointer"><Clock className={`w-5 h-5 text-slate-500 dark:text-slate-400 ${activeTab === 'library' ? 'group-hover:text-[#c6a87c]' : (activeTab === 'quran' ? 'group-hover:text-amber-500' : 'group-hover:text-[#E2E8F0]')}`} /></button>
-            <button onClick={() => setShowInfo(true)} className="w-10 h-10 sm:w-11 sm:h-11 rounded-full flex items-center justify-center group transition-all duration-300 hover:scale-110 cursor-pointer"><HelpCircle className={`w-5 h-5 text-slate-500 dark:text-slate-400 ${activeTab === 'library' ? 'group-hover:text-[#c6a87c]' : (activeTab === 'quran' ? 'group-hover:text-amber-500' : 'group-hover:text-[#E2E8F0]')}`} /></button>
-            <button onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')} className="w-10 h-10 sm:w-11 sm:h-11 rounded-full flex items-center justify-center group transition-all duration-300 hover:scale-110 cursor-pointer">{theme === 'dark' ? <Sun className="w-5 h-5 text-slate-500 dark:text-slate-400 group-hover:text-yellow-400" /> : <Moon className="w-5 h-5 text-slate-500 group-hover:text-slate-900" />}</button>
+            {activeTab === 'search' && data && !isKeyword && (<div className="flex items-center bg-white/60 dark:bg-[#E8E3D2]/5 border border-slate-200 dark:border-[#E8E3D2]/10 backdrop-blur-xl rounded-full p-1"><button onClick={() => setViewMode('map')} className={`p-2 rounded-full transition-all duration-300 cursor-pointer ${viewMode === 'map' ? 'bg-slate-200/80 dark:bg-[#E8E3D2]/10 text-slate-800 dark:text-[#FDF8ED] shadow-sm' : 'text-slate-500 hover:text-slate-800 dark:text-[#E8E3D2]/60 dark:hover:text-[#FDF8ED]'}`}><Layout className="w-4 h-4" /></button><button onClick={() => setViewMode('list')} className={`p-2 rounded-full transition-all duration-300 cursor-pointer ${viewMode === 'list' ? 'bg-slate-200/80 dark:bg-[#E8E3D2]/10 text-slate-800 dark:text-[#FDF8ED] shadow-sm' : 'text-slate-500 hover:text-slate-800 dark:text-[#E8E3D2]/60 dark:hover:text-[#FDF8ED]'}`}><List className="w-4 h-4" /></button></div>)}
+            <button onClick={() => setShowHistoryDrawer(true)} className="w-10 h-10 sm:w-11 sm:h-11 rounded-full flex items-center justify-center group transition-all duration-300 hover:scale-110 cursor-pointer"><Clock className={`w-5 h-5 text-slate-500 dark:text-[#E8E3D2]/60 ${activeTab === 'library' ? 'group-hover:text-[#c6a87c]' : (activeTab === 'quran' ? 'group-hover:text-amber-500' : 'group-hover:text-[#FDF8ED]')}`} /></button>
+            <button onClick={() => setShowInfo(true)} className="w-10 h-10 sm:w-11 sm:h-11 rounded-full flex items-center justify-center group transition-all duration-300 hover:scale-110 cursor-pointer"><HelpCircle className={`w-5 h-5 text-slate-500 dark:text-[#E8E3D2]/60 ${activeTab === 'library' ? 'group-hover:text-[#c6a87c]' : (activeTab === 'quran' ? 'group-hover:text-amber-500' : 'group-hover:text-[#FDF8ED]')}`} /></button>
+            <button onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')} className="w-10 h-10 sm:w-11 sm:h-11 rounded-full flex items-center justify-center group transition-all duration-300 hover:scale-110 cursor-pointer">{theme === 'dark' ? <Sun className="w-5 h-5 text-slate-500 dark:text-[#E8E3D2]/60 group-hover:text-yellow-400" /> : <Moon className="w-5 h-5 text-slate-400 group-hover:text-slate-900" />}</button>
           </div>
 
           <div className="md:hidden flex items-center gap-1 sm:gap-2 relative">
-            <button onClick={() => setShowHistoryDrawer(true)} className={`w-10 h-10 rounded-full flex items-center justify-center transition-all duration-300 cursor-pointer border shadow-sm ${activeTab === 'library' ? 'bg-[#c6a87c]/10 text-[#c6a87c] border-zinc-700/50' : (activeTab === 'quran' ? 'bg-white/40 dark:bg-slate-800/50 backdrop-blur-md border-slate-300/30 dark:border-slate-700 text-slate-600 dark:text-slate-300' : 'bg-white/60 dark:bg-white/5 border-slate-200 dark:border-white/10 backdrop-blur-xl text-slate-600 dark:text-[#E2E8F0]')}`}>
+            <button onClick={() => setShowHistoryDrawer(true)} className={`w-10 h-10 rounded-full flex items-center justify-center transition-all duration-300 cursor-pointer border shadow-sm ${activeTab === 'library' ? 'bg-[#c6a87c]/10 text-[#c6a87c] border-zinc-700/50' : (activeTab === 'quran' ? 'bg-white/40 dark:bg-slate-800/50 backdrop-blur-md border-slate-300/30 dark:border-slate-700 text-slate-600 dark:text-slate-300' : 'bg-white/60 dark:bg-[#E8E3D2]/5 border-slate-200 dark:border-[#E8E3D2]/10 backdrop-blur-xl text-slate-600 dark:text-[#FDF8ED]')}`}>
               <Clock className="w-5 h-5" />
             </button>
             <div className="relative">
-              <button onClick={() => setShowMobileMenu(!showMobileMenu)} className={`w-10 h-10 rounded-full flex items-center justify-center transition-all duration-300 cursor-pointer border shadow-sm ${activeTab === 'library' ? 'bg-[#c6a87c]/10 text-[#c6a87c] border-zinc-700/50' : (activeTab === 'quran' ? 'bg-white/40 dark:bg-slate-800/50 backdrop-blur-md border-slate-300/30 dark:border-slate-700 text-slate-600 dark:text-slate-300' : 'bg-white/60 dark:bg-white/5 border-slate-200 dark:border-white/10 backdrop-blur-xl text-slate-600 dark:text-[#E2E8F0]')}`}>
+              <button onClick={() => setShowMobileMenu(!showMobileMenu)} className={`w-10 h-10 rounded-full flex items-center justify-center transition-all duration-300 cursor-pointer border shadow-sm ${activeTab === 'library' ? 'bg-[#c6a87c]/10 text-[#c6a87c] border-zinc-700/50' : (activeTab === 'quran' ? 'bg-white/40 dark:bg-slate-800/50 backdrop-blur-md border-slate-300/30 dark:border-slate-700 text-slate-600 dark:text-slate-300' : 'bg-white/60 dark:bg-[#E8E3D2]/5 border-slate-200 dark:border-[#E8E3D2]/10 backdrop-blur-xl text-slate-600 dark:text-[#FDF8ED]')}`}>
                 <Menu className="w-5 h-5" />
               </button>
 
               <AnimatePresence>
                 {showMobileMenu && (
-                  <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className={`absolute right-0 top-full mt-2 w-48 rounded-xl shadow-xl p-2 flex flex-col gap-1 z-[75] border ${activeTab === 'library' ? 'bg-white dark:bg-[#1c1c1e] border-zinc-200 dark:border-zinc-800' : (activeTab === 'quran' ? 'bg-[#f4ecd8] dark:bg-[#1a1a1a] border-slate-300 dark:border-slate-700' : 'bg-white dark:bg-[#0B101E] border-slate-200 dark:border-white/10 backdrop-blur-2xl')}`}>
+                  <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className={`absolute right-0 top-full mt-2 w-48 rounded-xl shadow-xl p-2 flex flex-col gap-1 z-[75] border ${activeTab === 'library' ? 'bg-white dark:bg-[#1c1c1e] border-zinc-200 dark:border-zinc-800' : (activeTab === 'quran' ? 'bg-[#f4ecd8] dark:bg-[#1a1a1a] border-slate-300 dark:border-slate-700' : 'bg-white dark:bg-[#040F0B] border-slate-200 dark:border-[#E8E3D2]/10 backdrop-blur-2xl')}`}>
                     {activeTab === 'search' && data && <button onClick={() => { handleHomeClick(); setShowMobileMenu(false); }} className="w-full text-left flex items-center gap-3 p-3 rounded-lg text-sm text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 cursor-pointer"><Home className="w-4 h-4 shrink-0" /> Reset Search</button>}
-                    {activeTab === 'search' && <button onClick={() => { navigator.clipboard.writeText(window.location.href); setCopiedLink(true); setTimeout(() => { setCopiedLink(false); setShowMobileMenu(false); }, 1000); }} className={`w-full text-left flex items-center gap-3 p-3 rounded-lg text-sm cursor-pointer ${copiedLink ? 'text-emerald-500' : 'text-slate-700 dark:text-[#E2E8F0] hover:bg-slate-100 dark:hover:bg-white/5'}`}><Share2 className="w-4 h-4 shrink-0" /> Share Link</button>}
-                    <button onClick={() => { setShowUpdates(true); setShowMobileMenu(false); }} className={`w-full text-left flex items-center gap-3 p-3 rounded-lg text-sm cursor-pointer ${activeTab === 'library' ? 'text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-[#2c2c2e]' : 'text-slate-700 dark:text-[#E2E8F0] hover:bg-slate-100 dark:hover:bg-white/5'}`}><Sparkles className="w-4 h-4 shrink-0" /> What's New</button>
-                    <button onClick={() => { setShowInfo(true); setShowMobileMenu(false); }} className={`w-full text-left flex items-center gap-3 p-3 rounded-lg text-sm cursor-pointer ${activeTab === 'library' ? 'text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-[#2c2c2e]' : 'text-slate-700 dark:text-[#E2E8F0] hover:bg-slate-100 dark:hover:bg-white/5'}`}><HelpCircle className="w-4 h-4 shrink-0" /> Help & Guide</button>
-                    <button onClick={() => { setTheme(theme === 'dark' ? 'light' : 'dark'); setShowMobileMenu(false); }} className={`w-full text-left flex items-center gap-3 p-3 rounded-lg text-sm cursor-pointer ${activeTab === 'library' ? 'text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-[#2c2c2e]' : 'text-slate-700 dark:text-[#E2E8F0] hover:bg-slate-100 dark:hover:bg-white/5'}`}>{theme === 'dark' ? <Sun className={`w-4 h-4 shrink-0 ${activeTab === 'library' ? 'text-[#c6a87c]' : 'text-amber-500'}`} /> : <Moon className="w-4 h-4 shrink-0" />} Toggle Theme</button>
+                    {activeTab === 'search' && <button onClick={() => { navigator.clipboard.writeText(window.location.href); setCopiedLink(true); setTimeout(() => { setCopiedLink(false); setShowMobileMenu(false); }, 1000); }} className={`w-full text-left flex items-center gap-3 p-3 rounded-lg text-sm cursor-pointer ${copiedLink ? 'text-emerald-500' : 'text-slate-700 dark:text-[#FDF8ED] hover:bg-slate-100 dark:hover:bg-[#E8E3D2]/5'}`}><Share2 className="w-4 h-4 shrink-0" /> Share Link</button>}
+                    <button onClick={() => { setShowUpdates(true); setShowMobileMenu(false); }} className={`w-full text-left flex items-center gap-3 p-3 rounded-lg text-sm cursor-pointer ${activeTab === 'library' ? 'text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-[#2c2c2e]' : 'text-slate-700 dark:text-[#FDF8ED] hover:bg-slate-100 dark:hover:bg-[#E8E3D2]/5'}`}><Sparkles className="w-4 h-4 shrink-0" /> What's New</button>
+                    <button onClick={() => { setShowInfo(true); setShowMobileMenu(false); }} className={`w-full text-left flex items-center gap-3 p-3 rounded-lg text-sm cursor-pointer ${activeTab === 'library' ? 'text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-[#2c2c2e]' : 'text-slate-700 dark:text-[#FDF8ED] hover:bg-slate-100 dark:hover:bg-[#E8E3D2]/5'}`}><HelpCircle className="w-4 h-4 shrink-0" /> Help & Guide</button>
+                    <button onClick={() => { setTheme(theme === 'dark' ? 'light' : 'dark'); setShowMobileMenu(false); }} className={`w-full text-left flex items-center gap-3 p-3 rounded-lg text-sm cursor-pointer ${activeTab === 'library' ? 'text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-[#2c2c2e]' : 'text-slate-700 dark:text-[#FDF8ED] hover:bg-slate-100 dark:hover:bg-[#E8E3D2]/5'}`}>{theme === 'dark' ? <Sun className={`w-4 h-4 shrink-0 ${activeTab === 'library' ? 'text-[#c6a87c]' : 'text-amber-500'}`} /> : <Moon className="w-4 h-4 shrink-0" />} Toggle Theme</button>
                   </motion.div>
                 )}
               </AnimatePresence>
@@ -1892,8 +1891,8 @@ export default function App() {
           {activeTab === 'search' && !data && !loading && (
             <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.9, filter: "blur(10px)" }} className="z-10 flex flex-col items-center justify-center w-full max-w-2xl px-4 sm:px-6 mx-auto absolute top-[45%] left-1/2 transform -translate-x-1/2 -translate-y-1/2">
 
-              <h2 className="font-serif text-3xl sm:text-4xl md:text-5xl font-normal mb-4 text-center leading-tight text-slate-900 dark:text-slate-100 drop-shadow-sm">
-                Explore the Depths of <br /><span className="italic text-slate-500 dark:text-[#E2E8F0]">Twelver Literature</span>
+              <h2 className="font-serif text-3xl sm:text-4xl md:text-5xl font-normal mb-4 text-center leading-tight text-slate-900 dark:text-[#FDF8ED] drop-shadow-sm">
+                Explore the Depths of <br /><span className="italic text-slate-500 dark:text-[#E8E3D2] opacity-90">Twelver Literature</span>
               </h2>
 
               {/* ULTRA-PREMIUM SUB-HEADLINE STATS */}
@@ -1901,50 +1900,50 @@ export default function App() {
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.3, duration: 0.8, ease: "easeOut" }}
-                className="flex flex-wrap justify-center items-center gap-3 sm:gap-4 mb-10 sm:mb-12 text-[9px] sm:text-[10px] uppercase tracking-[0.25em] font-semibold text-slate-500 dark:text-[#E2E8F0]/70"
+                className="flex flex-wrap justify-center items-center gap-3 sm:gap-4 mb-10 sm:mb-12 text-[9px] sm:text-[10px] uppercase tracking-[0.25em] font-semibold text-slate-500 dark:text-[#E8E3D2]/70"
               >
-                <span className="flex items-center gap-1.5 cursor-default"><BookOpen className="w-3 h-3 opacity-40 text-slate-400 dark:text-[#E2E8F0]" /> <span className="text-slate-800 dark:text-[#E2E8F0]">14,500+</span> Narrations</span>
-                <span className="opacity-30 dark:opacity-20 text-slate-400 dark:text-[#E2E8F0]">•</span>
-                <span className="flex items-center gap-1.5 cursor-default"><Sparkles className="w-3 h-3 opacity-40 text-slate-400 dark:text-[#E2E8F0]" /> <span className="text-slate-800 dark:text-[#E2E8F0]">2.4M</span> Semantic Links</span>
-                <span className="opacity-30 dark:opacity-20 text-slate-400 dark:text-[#E2E8F0]">•</span>
-                <span className="flex items-center gap-1.5 cursor-default"><Clock className="w-3 h-3 opacity-40 text-slate-400 dark:text-[#E2E8F0]" /> <span className="text-slate-800 dark:text-[#E2E8F0]">50+ Hrs</span> Scholarship</span>
+                <span className="flex items-center gap-1.5 cursor-default"><BookOpen className="w-3 h-3 opacity-60 text-slate-400 dark:text-[#E8E3D2]" /> <span className="text-slate-800 dark:text-[#FDF8ED]">14,500+</span> Narrations</span>
+                <span className="opacity-30 text-slate-400 dark:text-[#E8E3D2]">•</span>
+                <span className="flex items-center gap-1.5 cursor-default"><Sparkles className="w-3 h-3 opacity-60 text-slate-400 dark:text-[#E8E3D2]" /> <span className="text-slate-800 dark:text-[#FDF8ED]">2.4M</span> Semantic Links</span>
+                <span className="opacity-30 text-slate-400 dark:text-[#E8E3D2]">•</span>
+                <span className="flex items-center gap-1.5 cursor-default"><Clock className="w-3 h-3 opacity-60 text-slate-400 dark:text-[#E8E3D2]" /> <span className="text-slate-800 dark:text-[#FDF8ED]">50+ Hrs</span> Scholarship</span>
               </motion.div>
 
               <div className="w-full relative group pointer-events-auto" ref={searchInputContainerRef}>
 
-                {/* SAFARI-SAFE PLATINUM FROSTED GLASS CAPSULE */}
-                <div className="absolute inset-0 w-full h-full rounded-2xl border pointer-events-none z-0 transition-colors duration-700 bg-white/70 dark:bg-[#E2E8F0]/[0.03] border-slate-300/50 dark:border-white/10 shadow-[0_8px_32px_rgba(0,0,0,0.05)] dark:shadow-[0_8px_32px_rgba(0,0,0,0.4)] backdrop-blur-xl"></div>
+                {/* SAFARI-SAFE IVORY FROSTED GLASS CAPSULE */}
+                <div className="absolute inset-0 w-full h-full rounded-2xl border pointer-events-none z-0 transition-colors duration-700 bg-white/70 dark:bg-[#E8E3D2]/[0.03] border-slate-300/50 dark:border-[#E8E3D2]/10 shadow-[0_8px_32px_rgba(0,0,0,0.05)] dark:shadow-[0_8px_32px_rgba(0,0,0,0.5)] backdrop-blur-xl"></div>
 
                 <form onSubmit={handleSearchSubmit} className="relative z-10 flex flex-col p-2">
-                  <div className="flex items-center border-b relative border-slate-300/80 dark:border-white/10">
+                  <div className="flex items-center border-b relative border-slate-300/80 dark:border-[#E8E3D2]/10">
                     <input
                       type="text"
                       value={query}
                       onFocus={() => setShowSearchDropdown(true)}
                       onChange={(e) => setQuery(e.target.value)}
                       placeholder={isKeyword ? "Enter an exact word or phrase..." : "Enter a phrase or concept (e.g. intellect)..."}
-                      className="w-full bg-transparent appearance-none outline-none rounded-none py-3 sm:py-4 pl-3 sm:pl-4 pr-14 sm:pr-16 text-base font-sans text-slate-800 dark:text-slate-100 placeholder:text-slate-500/80 cursor-text"
+                      className="w-full bg-transparent appearance-none outline-none rounded-none py-3 sm:py-4 pl-3 sm:pl-4 pr-14 sm:pr-16 text-base font-sans text-slate-800 dark:text-[#FDF8ED] placeholder:text-slate-500/80 dark:placeholder:text-[#E8E3D2]/40 cursor-text"
                     />
-                    {/* SLEEK PLATINUM SUBMIT BUTTON */}
-                    <button type="submit" className="absolute right-2 p-2 sm:p-2.5 rounded-xl transition-all shadow-sm cursor-pointer bg-slate-100 dark:bg-[#E2E8F0]/10 hover:bg-slate-200 dark:hover:bg-[#E2E8F0]/20 text-slate-600 dark:text-[#E2E8F0] border border-transparent dark:border-white/5"><Search className="w-4 h-4 sm:w-5 sm:h-5" /></button>
+                    {/* SLEEK IVORY SUBMIT BUTTON */}
+                    <button type="submit" className="absolute right-2 p-2 sm:p-2.5 rounded-xl transition-all shadow-sm cursor-pointer bg-slate-100 dark:bg-[#E8E3D2]/10 hover:bg-slate-200 dark:hover:bg-[#E8E3D2]/20 text-slate-600 dark:text-[#FDF8ED] border border-transparent dark:border-[#E8E3D2]/10"><Search className="w-4 h-4 sm:w-5 sm:h-5" /></button>
                   </div>
 
                   <AnimatePresence>
                     {showSearchDropdown && appHistory.length > 0 && query.trim() === '' && (
-                      <motion.div initial={{ opacity: 0, y: -5 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -5 }} className="absolute left-0 right-0 top-full mt-2 rounded-xl shadow-2xl overflow-hidden z-50 border bg-white/95 dark:bg-[#0B101E]/95 border-slate-200 dark:border-white/10 backdrop-blur-2xl">
-                        <div className="px-4 py-2 text-[10px] uppercase tracking-widest font-bold border-b flex justify-between items-center text-slate-500 dark:text-slate-400 bg-slate-50 dark:bg-white/5 border-slate-200 dark:border-white/5">
+                      <motion.div initial={{ opacity: 0, y: -5 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -5 }} className="absolute left-0 right-0 top-full mt-2 rounded-xl shadow-2xl overflow-hidden z-50 border bg-white/95 dark:bg-[#040F0B]/95 border-slate-200 dark:border-[#E8E3D2]/10 backdrop-blur-2xl">
+                        <div className="px-4 py-2 text-[10px] uppercase tracking-widest font-bold border-b flex justify-between items-center text-slate-500 dark:text-[#E8E3D2]/70 bg-slate-50 dark:bg-[#E8E3D2]/5 border-slate-200 dark:border-[#E8E3D2]/10">
                           <span>Recent Activity</span>
                         </div>
                         <div className="flex flex-col">
                           {appHistory.slice(0, 5).map((item, i) => (
-                            <div key={i} onClick={() => handleHistoryClick(item)} className="px-4 py-3 sm:py-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-1 sm:gap-3 cursor-pointer transition-colors border-b last:border-b-0 group hover:bg-slate-50 dark:hover:bg-white/5 border-slate-100 dark:border-white/5">
+                            <div key={i} onClick={() => handleHistoryClick(item)} className="px-4 py-3 sm:py-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-1 sm:gap-3 cursor-pointer transition-colors border-b last:border-b-0 group hover:bg-slate-50 dark:hover:bg-[#E8E3D2]/5 border-slate-100 dark:border-[#E8E3D2]/5">
                               <div className="flex items-center gap-3 min-w-0 flex-1 pr-2">
-                                {item.type === 'quran' ? <BookOpen className="w-4 h-4 text-amber-500 shrink-0" /> : (item.mode === 'keyword' ? <Database className="w-4 h-4 text-slate-400 dark:text-slate-500 shrink-0" /> : <Sparkles className="w-4 h-4 text-[#E2E8F0] shrink-0" />)}
-                                <span className="font-medium truncate w-full text-sm sm:text-base transition-colors text-slate-700 dark:text-slate-300 group-hover:text-slate-900 dark:group-hover:text-white">
+                                {item.type === 'quran' ? <BookOpen className="w-4 h-4 text-amber-500 shrink-0" /> : (item.mode === 'keyword' ? <Database className="w-4 h-4 text-slate-400 dark:text-[#E8E3D2]/60 shrink-0" /> : <Sparkles className="w-4 h-4 text-[#E8E3D2] shrink-0" />)}
+                                <span className="font-medium truncate w-full text-sm sm:text-base transition-colors text-slate-700 dark:text-[#E8E3D2] group-hover:text-slate-900 dark:group-hover:text-[#FDF8ED]">
                                   {item.type === 'quran' ? `Surah ${item.surahName}` : item.query}
                                 </span>
                               </div>
-                              <span className="text-[10px] sm:text-xs font-mono text-slate-400 dark:text-slate-500 shrink-0 pl-7 sm:pl-0 opacity-70 group-hover:opacity-100 transition-opacity">{timeAgo(item.timestamp)}</span>
+                              <span className="text-[10px] sm:text-xs font-mono text-slate-400 dark:text-[#E8E3D2]/50 shrink-0 pl-7 sm:pl-0 opacity-70 group-hover:opacity-100 transition-opacity">{timeAgo(item.timestamp)}</span>
                             </div>
                           ))}
                         </div>
@@ -1953,23 +1952,23 @@ export default function App() {
                   </AnimatePresence>
 
                   <div className="relative py-3 px-2 flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
-                    {/* MUTED PLATINUM TOGGLE BUTTONS */}
-                    <div className="flex items-center rounded-lg p-1 border bg-slate-100/50 dark:bg-black/20 border-slate-300/50 dark:border-white/5 shadow-inner">
-                      <button type="button" onClick={() => { setSearchMode('concept'); setViewMode(window.innerWidth < 800 ? 'list' : 'map'); }} className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[10px] sm:text-xs font-bold uppercase tracking-wider transition-all duration-300 flex-1 sm:flex-none justify-center cursor-pointer ${!isKeyword ? 'bg-white dark:bg-[#E2E8F0]/10 text-slate-800 dark:text-[#E2E8F0] shadow-sm border border-slate-200 dark:border-[#E2E8F0]/20' : 'text-slate-500 hover:text-slate-700 dark:text-slate-500 dark:hover:text-slate-300 border border-transparent'}`}><Sparkles className="w-3.5 h-3.5 opacity-70" /> Concept</button>
-                      <button type="button" onClick={() => { setSearchMode('keyword'); setViewMode('list'); }} className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[10px] sm:text-xs font-bold uppercase tracking-wider transition-all duration-300 flex-1 sm:flex-none justify-center cursor-pointer ${isKeyword ? 'bg-white dark:bg-[#E2E8F0]/10 text-slate-800 dark:text-[#E2E8F0] shadow-sm border border-slate-200 dark:border-[#E2E8F0]/20' : 'text-slate-500 hover:text-slate-700 dark:text-slate-500 dark:hover:text-slate-300 border border-transparent'}`}><Database className="w-3.5 h-3.5 opacity-70" /> Keyword</button>
+                    {/* MUTED IVORY TOGGLE BUTTONS */}
+                    <div className="flex items-center rounded-lg p-1 border bg-slate-100/50 dark:bg-black/20 border-slate-300/50 dark:border-[#E8E3D2]/10 shadow-inner">
+                      <button type="button" onClick={() => { setSearchMode('concept'); setViewMode(window.innerWidth < 800 ? 'list' : 'map'); }} className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[10px] sm:text-xs font-bold uppercase tracking-wider transition-all duration-300 flex-1 sm:flex-none justify-center cursor-pointer ${!isKeyword ? 'bg-white dark:bg-[#E8E3D2]/15 text-slate-800 dark:text-[#FDF8ED] shadow-sm border border-slate-200 dark:border-[#E8E3D2]/20' : 'text-slate-500 hover:text-slate-700 dark:text-[#E8E3D2]/60 dark:hover:text-[#E8E3D2] border border-transparent'}`}><Sparkles className="w-3.5 h-3.5 opacity-70" /> Concept</button>
+                      <button type="button" onClick={() => { setSearchMode('keyword'); setViewMode('list'); }} className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[10px] sm:text-xs font-bold uppercase tracking-wider transition-all duration-300 flex-1 sm:flex-none justify-center cursor-pointer ${isKeyword ? 'bg-white dark:bg-[#E8E3D2]/15 text-slate-800 dark:text-[#FDF8ED] shadow-sm border border-slate-200 dark:border-[#E8E3D2]/20' : 'text-slate-500 hover:text-slate-700 dark:text-[#E8E3D2]/60 dark:hover:text-[#E8E3D2] border border-transparent'}`}><Database className="w-3.5 h-3.5 opacity-70" /> Keyword</button>
                     </div>
 
                     <div className="flex items-center w-full sm:w-auto">
-                      <div className="flex items-center gap-2 text-slate-500 dark:text-slate-400 mr-3 hidden sm:flex"><BookOpen className="w-4 h-4 opacity-70" /><span className="text-xs uppercase tracking-wider font-semibold">Source:</span></div>
-                      <button type="button" onClick={() => setShowDropdown(!showDropdown)} className="flex items-center justify-between w-full sm:w-[220px] px-3 py-1.5 sm:py-2 rounded-lg transition-colors text-xs sm:text-sm font-medium border border-transparent cursor-pointer bg-slate-100 dark:bg-black/20 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-white/5"><span className="truncate">{sourceFilter}</span><ChevronDown className="w-4 h-4 opacity-50 shrink-0 ml-2" /></button>
+                      <div className="flex items-center gap-2 text-slate-500 dark:text-[#E8E3D2]/70 mr-3 hidden sm:flex"><BookOpen className="w-4 h-4 opacity-70" /><span className="text-xs uppercase tracking-wider font-semibold">Source:</span></div>
+                      <button type="button" onClick={() => setShowDropdown(!showDropdown)} className="flex items-center justify-between w-full sm:w-[220px] px-3 py-1.5 sm:py-2 rounded-lg transition-colors text-xs sm:text-sm font-medium border border-transparent cursor-pointer bg-slate-100 dark:bg-[#E8E3D2]/5 text-slate-700 dark:text-[#FDF8ED] hover:bg-slate-200 dark:hover:bg-[#E8E3D2]/10"><span className="truncate">{sourceFilter}</span><ChevronDown className="w-4 h-4 opacity-50 shrink-0 ml-2" /></button>
                       <AnimatePresence>
                         {showDropdown && (
-                          <motion.div initial={{ opacity: 0, y: -5 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -5 }} className="absolute top-[100px] sm:top-14 right-2 sm:right-0 w-[calc(100%-16px)] sm:w-[220px] rounded-xl border shadow-xl overflow-hidden z-50 backdrop-blur-2xl bg-white/95 dark:bg-[#0B101E]/95 border-slate-200 dark:border-white/10">
+                          <motion.div initial={{ opacity: 0, y: -5 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -5 }} className="absolute top-[100px] sm:top-14 right-2 sm:right-0 w-[calc(100%-16px)] sm:w-[220px] rounded-xl border shadow-xl overflow-hidden z-50 backdrop-blur-2xl bg-white/95 dark:bg-[#040F0B]/95 border-slate-200 dark:border-[#E8E3D2]/10">
                             {SOURCES.map((source) => (
                               <div
                                 key={source}
                                 onClick={() => { setSourceFilter(source); setShowDropdown(false); }}
-                                className={`px-4 py-3 text-sm cursor-pointer transition-colors ${sourceFilter === source ? 'bg-slate-50 dark:bg-white/10 text-slate-900 dark:text-white font-bold' : 'text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-white/5'}`}
+                                className={`px-4 py-3 text-sm cursor-pointer transition-colors ${sourceFilter === source ? 'bg-slate-50 dark:bg-[#E8E3D2]/10 text-slate-900 dark:text-[#FDF8ED] font-bold' : 'text-slate-700 dark:text-[#E8E3D2] hover:bg-slate-100 dark:hover:bg-[#E8E3D2]/5'}`}
                               >
                                 {source}
                               </div>
@@ -1992,22 +1991,22 @@ export default function App() {
                 <div className="relative flex items-center justify-center">
                   {!isKeyword ? (
                     <>
-                      <motion.div className="w-32 h-32 rounded-full absolute bg-slate-400/20 dark:bg-[#E2E8F0]/10 blur-2xl" animate={{ scale: [1, 1.5, 1] }} transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }} />
-                      <motion.div className="w-24 h-24 rounded-full absolute bg-slate-300/30 dark:bg-[#E2E8F0]/20 blur-xl" animate={{ scale: [1.2, 0.8, 1.2], rotate: 180 }} transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }} />
-                      <div className="w-16 h-16 rounded-full bg-white/40 dark:bg-white/5 backdrop-blur-md flex items-center justify-center border border-slate-400/40 dark:border-white/20 shadow-[0_0_40px_rgba(255,255,255,0.1)]">
-                        <KisaLogo className="w-8 h-8 animate-pulse text-slate-600 dark:text-[#E2E8F0]" />
+                      <motion.div className="w-32 h-32 rounded-full absolute bg-slate-400/20 dark:bg-[#E8E3D2]/10 blur-2xl" animate={{ scale: [1, 1.5, 1] }} transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }} />
+                      <motion.div className="w-24 h-24 rounded-full absolute bg-slate-300/30 dark:bg-[#c6a87c]/15 blur-xl" animate={{ scale: [1.2, 0.8, 1.2], rotate: 180 }} transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }} />
+                      <div className="w-16 h-16 rounded-full bg-white/40 dark:bg-[#E8E3D2]/5 backdrop-blur-md flex items-center justify-center border border-slate-400/40 dark:border-[#E8E3D2]/20 shadow-[0_0_40px_rgba(255,255,255,0.1)]">
+                        <KisaLogo className="w-8 h-8 animate-pulse text-slate-600 dark:text-[#FDF8ED]" />
                       </div>
                     </>
                   ) : (
                     <>
-                      <motion.div className="w-32 h-32 rounded-full absolute bg-slate-400/20 dark:bg-[#E2E8F0]/10 blur-xl" animate={{ scale: [1, 1.2, 1] }} transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }} />
-                      <div className="w-16 h-16 rounded-full bg-white/40 dark:bg-white/5 backdrop-blur-md border border-slate-400/40 dark:border-white/20 flex items-center justify-center shadow-lg">
-                        <KisaLogo className="w-8 h-8 animate-pulse text-slate-600 dark:text-[#E2E8F0]" />
+                      <motion.div className="w-32 h-32 rounded-full absolute bg-slate-400/20 dark:bg-[#E8E3D2]/10 blur-xl" animate={{ scale: [1, 1.2, 1] }} transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }} />
+                      <div className="w-16 h-16 rounded-full bg-white dark:bg-[#040F0B] border border-slate-200 dark:border-[#E8E3D2]/20 flex items-center justify-center shadow-lg">
+                        <KisaLogo className="w-8 h-8 animate-pulse text-slate-600 dark:text-[#FDF8ED]" />
                       </div>
                     </>
                   )}
                 </div>
-                <motion.p className="mt-8 font-sans tracking-widest uppercase text-xs sm:text-sm font-semibold opacity-70 whitespace-nowrap text-center text-slate-700 dark:text-[#E2E8F0]">
+                <motion.p className="mt-8 font-sans tracking-widest uppercase text-xs sm:text-sm font-semibold opacity-70 whitespace-nowrap text-center text-slate-700 dark:text-[#E8E3D2]">
                   {loadingMessage}
                 </motion.p>
               </div>
@@ -2022,23 +2021,23 @@ export default function App() {
                 <div className="absolute inset-0 w-full h-full overflow-hidden">
                   <div className="absolute top-1/2 left-1/2 w-0 h-0 flex items-center justify-center z-30 pointer-events-none">
                     <motion.div layoutId="search-node" className="flex flex-col items-center justify-center pointer-events-auto cursor-pointer" onClick={() => setActiveCluster(null)}>
-                      <div className="bg-white/40 dark:bg-white/5 px-6 sm:px-8 py-3 sm:py-4 flex flex-col items-center gap-2 backdrop-blur-xl border border-slate-300/50 dark:border-white/10 rounded-2xl shadow-[0_0_50px_rgba(0,0,0,0.05)] dark:shadow-[0_0_50px_rgba(255,255,255,0.05)] group hover:scale-105 transition-transform mt-8">
+                      <div className="bg-white/40 dark:bg-[#E8E3D2]/5 px-6 sm:px-8 py-3 sm:py-4 flex flex-col items-center gap-2 backdrop-blur-xl border border-slate-300/50 dark:border-[#E8E3D2]/10 rounded-2xl shadow-[0_0_50px_rgba(0,0,0,0.05)] dark:shadow-[0_0_50px_rgba(232,227,210,0.05)] group hover:scale-105 transition-transform mt-8">
                         {/* MAP VIEW: DYNAMIC CENTER NODE FOR ANCHORS */}
                         {anchorHadith ? (
-                          <div className="flex flex-col items-center text-slate-800 dark:text-slate-200">
+                          <div className="flex flex-col items-center text-slate-800 dark:text-[#FDF8ED]">
                             <div className="flex items-center gap-3">
                               <span className="font-serif text-xl sm:text-2xl font-medium whitespace-nowrap">Similar to</span>
-                              <div className="w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-slate-200/50 dark:bg-white/10 flex items-center justify-center"><span className="text-[10px] sm:text-xs font-bold">{data.total_results}</span></div>
+                              <div className="w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-slate-500/20 dark:bg-[#E8E3D2]/10 flex items-center justify-center"><span className="text-[10px] sm:text-xs font-bold">{data.total_results}</span></div>
                             </div>
-                            <ChevronDown className="w-4 h-4 opacity-50 mt-1 mb-1 animate-bounce text-slate-500 dark:text-slate-400" />
-                            <button onClick={(e) => { e.stopPropagation(); setShowAnchorModal(true); }} className="flex items-center gap-1.5 text-[10px] sm:text-xs uppercase tracking-wider font-bold text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white bg-white/50 dark:bg-white/5 px-4 py-1.5 rounded-full transition-colors shadow-sm border border-slate-300/50 dark:border-white/10 hover:border-slate-400 dark:hover:border-white/30">
+                            <ChevronDown className="w-4 h-4 opacity-50 mt-1 mb-1 animate-bounce text-slate-500 dark:text-[#E8E3D2]" />
+                            <button onClick={(e) => { e.stopPropagation(); setShowAnchorModal(true); }} className="flex items-center gap-1.5 text-[10px] sm:text-xs uppercase tracking-wider font-bold text-slate-700 dark:text-[#E8E3D2] hover:text-slate-900 dark:hover:text-[#FDF8ED] bg-slate-200/50 dark:bg-[#E8E3D2]/10 px-4 py-1.5 rounded-full transition-colors shadow-sm border border-slate-300/50 dark:border-[#E8E3D2]/20 hover:border-slate-400 dark:hover:border-[#E8E3D2]/40">
                               <Sparkles className="w-3 h-3" /> View Source
                             </button>
                           </div>
                         ) : (
-                          <div className="flex items-center gap-3 text-slate-800 dark:text-slate-200">
+                          <div className="flex items-center gap-3 text-slate-800 dark:text-[#FDF8ED]">
                             <span className="font-serif text-xl sm:text-2xl font-medium truncate max-w-[200px] sm:max-w-[280px]" title={query}>{query}</span>
-                            <div className="w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-slate-200/50 dark:bg-white/10 flex items-center justify-center"><span className="text-[10px] sm:text-xs font-bold">{data.total_results}</span></div>
+                            <div className="w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-slate-500/20 dark:bg-[#E8E3D2]/10 flex items-center justify-center"><span className="text-[10px] sm:text-xs font-bold">{data.total_results}</span></div>
                           </div>
                         )}
                       </div>
@@ -2052,11 +2051,11 @@ export default function App() {
                       const ry = Math.max(220, Math.min(centerPos.y - 140, 320));
                       const pos = getRadialPosition(i, clusterCount, rx, ry);
 
-                      // Replaced colorful tech lines with Platinum lines
-                      const color = theme === 'dark' ? '#E2E8F0' : '#64748b';
+                      // Replaced lines with Warm Ivory
+                      const color = theme === 'dark' ? '#E8E3D2' : '#64748b';
                       const isActive = activeCluster === i;
                       const isHovered = hoveredCluster === i;
-                      return (<motion.line key={`line-${i}`} x1={centerPos.x} y1={centerPos.y} x2={centerPos.x + pos.x} y2={centerPos.y + pos.y} stroke={color} strokeWidth={isActive ? 2 : isHovered ? 1.5 : 1} strokeOpacity={isActive ? 0.6 : isHovered ? 0.4 : 0.1} initial={{ pathLength: 0 }} animate={{ pathLength: 1 }} transition={{ duration: 1, delay: i * 0.2 }} className="transition-all duration-300" />);
+                      return (<motion.line key={`line-${i}`} x1={centerPos.x} y1={centerPos.y} x2={centerPos.x + pos.x} y2={centerPos.y + pos.y} stroke={color} strokeWidth={isActive ? 2 : isHovered ? 1.5 : 1} strokeOpacity={isActive ? 0.5 : isHovered ? 0.3 : 0.08} initial={{ pathLength: 0 }} animate={{ pathLength: 1 }} transition={{ duration: 1, delay: i * 0.2 }} className="transition-all duration-300" />);
                     })}
                   </svg>
 
@@ -2068,8 +2067,7 @@ export default function App() {
                     const ry = Math.max(220, Math.min(centerPos.y - 140, 320));
                     const pos = getRadialPosition(i, clusterCount, rx, ry);
 
-                    // Platinum node border colors
-                    const color = theme === 'dark' ? '#E2E8F0' : '#64748b';
+                    const color = theme === 'dark' ? '#E8E3D2' : '#64748b';
                     const isActive = activeCluster === i;
                     const isHovered = hoveredCluster === i;
                     const isFaded = activeCluster !== null && !isActive;
@@ -2082,14 +2080,14 @@ export default function App() {
                       <div key={`cluster-wrap-${i}`} className="absolute top-1/2 left-1/2 w-0 h-0 flex items-center justify-center z-20 pointer-events-none">
                         <motion.div initial={{ opacity: 0, scale: 0 }} animate={{ opacity: isFaded ? 0.2 : 1, x: pos.x, y: pos.y, scale: isActive ? baseScale * 1.05 : baseScale }} transition={{ type: "spring", stiffness: 60, delay: i * 0.1 }} className={`pointer-events-auto transition-all duration-300 mt-8 ${isFaded ? 'pointer-events-none grayscale' : ''}`} onMouseEnter={() => setHoveredCluster(i)} onMouseLeave={() => setHoveredCluster(null)}>
 
-                          <div className="flex flex-col cursor-pointer transition-all duration-300 shadow-lg relative group w-[240px] sm:w-[280px] bg-white/40 dark:bg-white/5 backdrop-blur-xl rounded-xl" style={{ border: `1px solid ${isActive || isHovered ? color : (theme === 'dark' ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)')}`, boxShadow: isActive || isHovered ? `0 0 24px ${color}30` : '0 8px 32px rgba(0,0,0,0.05)' }}>
-                            <div onClick={() => setActiveCluster(isActive ? null : i)} className="px-4 py-3 sm:px-5 sm:py-4 flex items-center justify-between gap-3 text-slate-800 dark:text-slate-200">
+                          <div className="flex flex-col cursor-pointer transition-all duration-300 shadow-lg relative group w-[240px] sm:w-[280px] bg-white/40 dark:bg-[#E8E3D2]/5 backdrop-blur-xl rounded-xl" style={{ border: `1px solid ${isActive || isHovered ? color : (theme === 'dark' ? 'rgba(232, 227, 210, 0.1)' : 'rgba(0,0,0,0.1)')}`, boxShadow: isActive || isHovered ? `0 0 24px ${color}20` : '0 8px 32px rgba(0,0,0,0.05)' }}>
+                            <div onClick={() => setActiveCluster(isActive ? null : i)} className="px-4 py-3 sm:px-5 sm:py-4 flex items-center justify-between gap-3 text-slate-800 dark:text-[#FDF8ED]">
                               <div className="absolute left-0 top-0 bottom-0 w-1.5 transition-all duration-300 group-hover:w-2 rounded-l-xl" style={{ backgroundColor: color }} />
                               <div className="pl-2 pr-1 w-full">
                                 <h3 className="font-mono font-medium text-xs sm:text-sm lg:text-base leading-snug whitespace-normal break-words">{cluster.theme_label}</h3>
-                                <p className="text-[10px] sm:text-xs opacity-60 mt-1">{itemsLength} Hadiths</p>
+                                <p className="text-[10px] sm:text-xs opacity-60 mt-1 text-[#E8E3D2]">{itemsLength} Hadiths</p>
                               </div>
-                              <div className="opacity-50 group-hover:opacity-100 transition-opacity shrink-0">{isActive ? <X className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}</div>
+                              <div className="opacity-50 group-hover:opacity-100 transition-opacity shrink-0 text-[#E8E3D2]">{isActive ? <X className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}</div>
                             </div>
                           </div>
                         </motion.div>
@@ -2101,35 +2099,35 @@ export default function App() {
 
               {viewMode === 'list' && (
                 <div className="z-30 w-full max-w-4xl mx-auto px-4 sm:px-6 pt-24 sm:pt-28 pb-12 pointer-events-auto">
-                  <div className={`p-5 sm:p-6 rounded-xl mb-6 sm:mb-8 border shadow-sm ${anchorHadith ? 'mt-10' : ''} ${isKeyword ? 'bg-white dark:bg-[#0B101E]/80 border-slate-200 dark:border-white/10 backdrop-blur-xl' : 'bg-white/60 dark:bg-[#0B101E]/80 border-slate-200 dark:border-white/10 backdrop-blur-xl'}`}>
+                  <div className={`p-5 sm:p-6 rounded-xl mb-6 sm:mb-8 border shadow-sm ${anchorHadith ? 'mt-10' : ''} ${isKeyword ? 'bg-white dark:bg-[#040F0B]/80 border-slate-200 dark:border-[#E8E3D2]/10 backdrop-blur-xl' : 'bg-white/60 dark:bg-[#040F0B]/80 border-slate-200 dark:border-[#E8E3D2]/10 backdrop-blur-xl'}`}>
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                       <div className="flex-1 min-w-0">
-                        <h2 className={`font-serif text-xl sm:text-2xl md:text-3xl font-normal tracking-tight break-words whitespace-normal leading-snug text-slate-900 dark:text-white`}>
-                          {isKeyword ? 'Index Results:' : 'Search:'} <span className="italic text-slate-500 dark:text-[#E2E8F0]">"{query}"</span>
+                        <h2 className={`font-serif text-xl sm:text-2xl md:text-3xl font-normal tracking-tight break-words whitespace-normal leading-snug text-slate-900 dark:text-[#FDF8ED]`}>
+                          {isKeyword ? 'Index Results:' : 'Search:'} <span className="italic text-slate-500 dark:text-[#E8E3D2]">"{query}"</span>
                         </h2>
-                        <div className="flex flex-wrap gap-2 mt-3">{uniqueBooks.map((bookName, idx) => (<span key={idx} className={`text-[10px] sm:text-xs uppercase tracking-wider font-bold px-2.5 py-1 rounded-md border ${isKeyword ? 'bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-white/10' : 'text-slate-600 dark:text-slate-300 bg-slate-200/50 dark:bg-white/5 border-slate-300/50 dark:border-white/10'}`}>{bookName}</span>))}</div>
+                        <div className="flex flex-wrap gap-2 mt-3">{uniqueBooks.map((bookName, idx) => (<span key={idx} className={`text-[10px] sm:text-xs uppercase tracking-wider font-bold px-2.5 py-1 rounded-md border ${isKeyword ? 'bg-slate-100 dark:bg-[#E8E3D2]/5 text-slate-600 dark:text-[#E8E3D2] border-slate-200 dark:border-[#E8E3D2]/20' : 'text-slate-600 dark:text-[#E8E3D2] bg-slate-200/50 dark:bg-[#E8E3D2]/5 border-slate-300/50 dark:border-[#E8E3D2]/20'}`}>{bookName}</span>))}</div>
                       </div>
-                      <div className={`flex gap-6 sm:border-l sm:pl-6 shrink-0 ${isKeyword ? 'border-slate-200 dark:border-white/10' : 'border-slate-300/50 dark:border-white/10'}`}>{!isKeyword && (<div><p className="text-[10px] uppercase tracking-widest text-slate-400 font-semibold mb-1">Themes</p><p className="font-mono text-xl text-slate-700 dark:text-slate-300">{data.clusters ? data.clusters.length : 0}</p></div>)}<div><p className="text-[10px] uppercase tracking-widest text-slate-400 font-semibold mb-1">{isKeyword ? 'Matches' : 'Hadiths'}</p><p className="font-mono text-xl text-slate-700 dark:text-slate-300">{data.total_results}</p></div></div>
+                      <div className={`flex gap-6 sm:border-l sm:pl-6 shrink-0 ${isKeyword ? 'border-slate-200 dark:border-[#E8E3D2]/10' : 'border-slate-300/50 dark:border-[#E8E3D2]/10'}`}>{!isKeyword && (<div><p className="text-[10px] uppercase tracking-widest text-slate-400 dark:text-[#E8E3D2]/60 font-semibold mb-1">Themes</p><p className="font-mono text-xl text-slate-700 dark:text-[#FDF8ED]">{data.clusters ? data.clusters.length : 0}</p></div>)}<div><p className="text-[10px] uppercase tracking-widest text-slate-400 dark:text-[#E8E3D2]/60 font-semibold mb-1">{isKeyword ? 'Matches' : 'Hadiths'}</p><p className="font-mono text-xl text-slate-700 dark:text-[#FDF8ED]">{data.total_results}</p></div></div>
                     </div>
 
                     {/* LIST VIEW: EMBEDDED ANCHOR ACCORDION */}
                     {anchorHadith && (
-                      <div className={`mt-5 pt-4 border-t ${isKeyword ? 'border-slate-200 dark:border-white/10' : 'border-slate-300/50 dark:border-white/10'}`}>
+                      <div className={`mt-5 pt-4 border-t ${isKeyword ? 'border-slate-200 dark:border-[#E8E3D2]/10' : 'border-slate-300/50 dark:border-[#E8E3D2]/10'}`}>
                         <div className="flex items-center justify-between cursor-pointer group" onClick={() => setShowAnchor(!showAnchor)}>
                           <div className="flex items-center gap-2">
-                            <Sparkles className="w-4 h-4 shrink-0 text-slate-500 dark:text-slate-400" />
-                            <span className="text-xs sm:text-sm font-bold tracking-widest uppercase transition-colors break-words text-slate-700 dark:text-slate-300 group-hover:text-slate-900 dark:group-hover:text-white">
+                            <Sparkles className="w-4 h-4 shrink-0 text-slate-500 dark:text-[#E8E3D2]/60" />
+                            <span className="text-xs sm:text-sm font-bold tracking-widest uppercase transition-colors break-words text-slate-700 dark:text-[#E8E3D2] group-hover:text-slate-900 dark:group-hover:text-[#FDF8ED]">
                               View Anchored Source
                             </span>
                           </div>
-                          <div className="p-1.5 shrink-0 rounded-full transition-colors bg-slate-100 dark:bg-white/5 text-slate-500 group-hover:bg-slate-200 dark:group-hover:bg-white/10">
+                          <div className="p-1.5 shrink-0 rounded-full transition-colors bg-slate-100 dark:bg-[#E8E3D2]/5 text-slate-500 dark:text-[#E8E3D2] group-hover:bg-slate-200 dark:group-hover:bg-[#E8E3D2]/10">
                             {showAnchor ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
                           </div>
                         </div>
                         <AnimatePresence>
                           {showAnchor && (
                             <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden">
-                              <div className="pt-4 pb-2 text-sm sm:text-base font-serif leading-relaxed text-slate-800 dark:text-slate-300">
+                              <div className="pt-4 pb-2 text-sm sm:text-base font-serif leading-relaxed text-slate-800 dark:text-[#E8E3D2]">
                                 {anchorHadith.english_text}
                               </div>
 
@@ -2140,7 +2138,7 @@ export default function App() {
                                   handleCopyHadith(anchorHadith);
                                   setAnchorCopied(true);
                                   setTimeout(() => setAnchorCopied(false), 2000);
-                                }} className={`flex items-center gap-2 text-xs font-mono transition-colors px-3 py-1.5 rounded-md cursor-pointer ${anchorCopied ? 'text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-500/10' : 'text-slate-500 hover:text-slate-700 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-white/5'}`}>
+                                }} className={`flex items-center gap-2 text-xs font-mono transition-colors px-3 py-1.5 rounded-md cursor-pointer ${anchorCopied ? 'text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-500/10' : 'text-slate-500 hover:text-slate-700 dark:text-[#E8E3D2]/80 hover:bg-slate-100 dark:hover:bg-[#E8E3D2]/10'}`}>
                                   {anchorCopied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}<span>{anchorCopied ? 'Copied!' : 'Copy Text'}</span>
                                 </button>
                               </div>
@@ -2152,13 +2150,13 @@ export default function App() {
                     )}
                   </div>
 
-                  <div className={`flex flex-col border-t ${isKeyword ? 'border-slate-200 dark:border-white/10' : 'border-slate-300/50 dark:border-white/10'}`}>
+                  <div className={`flex flex-col border-t ${isKeyword ? 'border-slate-200 dark:border-[#E8E3D2]/10' : 'border-slate-300/50 dark:border-[#E8E3D2]/10'}`}>
                     {(data.clusters || []).map((cluster, i) => {
                       const itemsLength = cluster.items ? cluster.items.length : 0;
                       return (
-                        <motion.div key={`list-item-${i}`} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.1 }} onClick={() => setActiveCluster(i)} className={`group relative flex flex-col sm:flex-row sm:items-center justify-between p-4 sm:p-6 cursor-pointer border-b transition-all duration-300 ${isKeyword ? 'border-slate-200 dark:border-white/5 hover:bg-slate-50 dark:hover:bg-white/5' : 'border-slate-300/50 dark:border-white/5 hover:bg-white/30 dark:hover:bg-white/5'}`}>
-                          <div className="flex items-start sm:items-center gap-4 sm:gap-6 flex-grow pr-8 sm:pr-0"><span className="font-mono text-sm sm:text-base font-medium pt-0.5 sm:pt-0 text-slate-400 group-hover:text-slate-600 dark:group-hover:text-[#E2E8F0]">0{i + 1}</span><div><h3 className="font-mono text-base sm:text-lg lg:text-xl font-medium tracking-tight transition-colors text-slate-800 dark:text-slate-200 group-hover:text-slate-900 dark:group-hover:text-white">{cluster.theme_label}</h3><div className="flex items-center gap-3 sm:gap-4 mt-1.5 sm:mt-2"><span className="font-mono text-[10px] sm:text-xs lg:text-sm text-slate-500">[{itemsLength} {isKeyword ? 'entries' : 'narrations'}]</span></div></div></div>
-                          <div className="absolute right-4 sm:relative sm:right-0 sm:opacity-0 group-hover:opacity-100 transform sm:translate-x-[-10px] group-hover:translate-x-0 transition-all duration-300 self-center"><ChevronRight className="w-5 h-5 text-slate-400 group-hover:text-slate-600 dark:group-hover:text-[#E2E8F0]" /></div>
+                        <motion.div key={`list-item-${i}`} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.1 }} onClick={() => setActiveCluster(i)} className={`group relative flex flex-col sm:flex-row sm:items-center justify-between p-4 sm:p-6 cursor-pointer border-b transition-all duration-300 ${isKeyword ? 'border-slate-200 dark:border-[#E8E3D2]/10 hover:bg-slate-50 dark:hover:bg-[#E8E3D2]/5' : 'border-slate-300/50 dark:border-[#E8E3D2]/10 hover:bg-white/30 dark:hover:bg-[#E8E3D2]/5'}`}>
+                          <div className="flex items-start sm:items-center gap-4 sm:gap-6 flex-grow pr-8 sm:pr-0"><span className="font-mono text-sm sm:text-base font-medium pt-0.5 sm:pt-0 text-slate-400 group-hover:text-slate-600 dark:text-[#E8E3D2]/50 dark:group-hover:text-[#FDF8ED]">0{i + 1}</span><div><h3 className="font-mono text-base sm:text-lg lg:text-xl font-medium tracking-tight transition-colors text-slate-800 dark:text-[#E8E3D2] group-hover:text-slate-900 dark:group-hover:text-[#FDF8ED]">{cluster.theme_label}</h3><div className="flex items-center gap-3 sm:gap-4 mt-1.5 sm:mt-2"><span className="font-mono text-[10px] sm:text-xs lg:text-sm text-slate-500 dark:text-[#E8E3D2]/60">[{itemsLength} {isKeyword ? 'entries' : 'narrations'}]</span></div></div></div>
+                          <div className="absolute right-4 sm:relative sm:right-0 sm:opacity-0 group-hover:opacity-100 transform sm:translate-x-[-10px] group-hover:translate-x-0 transition-all duration-300 self-center"><ChevronRight className="w-5 h-5 text-slate-400 group-hover:text-slate-600 dark:text-[#E8E3D2]/60 dark:group-hover:text-[#FDF8ED]" /></div>
                         </motion.div>
                       )
                     })}
@@ -2173,24 +2171,24 @@ export default function App() {
                   const totalPages = Math.ceil(filteredItems.length / ITEMS_PER_PAGE) || 1, safeCurrentPage = Math.min(currentPage, totalPages), startIndex = (safeCurrentPage - 1) * ITEMS_PER_PAGE, paginatedItems = filteredItems.slice(startIndex, startIndex + ITEMS_PER_PAGE);
                   return (
                     <div className="fixed inset-0 z-[1000] flex items-center justify-center pointer-events-auto p-4 sm:p-0">
-                      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setActiveCluster(null)} className="absolute inset-0 bg-[#050814]/80 backdrop-blur-md cursor-pointer" />
-                      <motion.div initial={{ opacity: 0, scale: 0.95, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 20 }} className={`relative w-full sm:w-[90vw] max-w-[700px] h-[85vh] flex flex-col shadow-2xl rounded-2xl z-[1001] border ${isKeyword ? 'bg-white dark:bg-[#0B101E] border-slate-200 dark:border-white/10' : 'bg-[#f8f9fa] dark:bg-[#0B101E] border-slate-300 dark:border-white/10'}`}>
-                        <div className={`flex justify-between items-center backdrop-blur-xl pt-5 pb-4 px-4 sm:px-6 z-10 border-b rounded-t-2xl shrink-0 ${isKeyword ? 'bg-slate-50/95 dark:bg-white/5 border-slate-200 dark:border-white/10' : 'bg-white/50 dark:bg-white/5 border-slate-300/50 dark:border-white/10'}`}>
-                          <h2 className="text-lg sm:text-xl md:text-2xl font-mono font-normal tracking-tight truncate pr-4 text-slate-900 dark:text-[#E2E8F0]">{data.clusters[activeCluster].theme_label}</h2>
-                          <button onClick={() => setActiveCluster(null)} className="p-2 hover:bg-slate-200 dark:hover:bg-white/10 rounded-full transition-colors cursor-pointer shrink-0"><X className="w-5 h-5 sm:w-6 sm:h-6 text-slate-500" /></button>
+                      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setActiveCluster(null)} className="absolute inset-0 bg-[#040F0B]/80 backdrop-blur-md cursor-pointer" />
+                      <motion.div initial={{ opacity: 0, scale: 0.95, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 20 }} className={`relative w-full sm:w-[90vw] max-w-[700px] h-[85vh] flex flex-col shadow-2xl rounded-2xl z-[1001] border ${isKeyword ? 'bg-white dark:bg-[#040F0B] border-slate-200 dark:border-[#E8E3D2]/10' : 'bg-[#f8f9fa] dark:bg-[#040F0B] border-slate-300 dark:border-[#E8E3D2]/10'}`}>
+                        <div className={`flex justify-between items-center backdrop-blur-xl pt-5 pb-4 px-4 sm:px-6 z-10 border-b rounded-t-2xl shrink-0 ${isKeyword ? 'bg-slate-50/95 dark:bg-[#E8E3D2]/5 border-slate-200 dark:border-[#E8E3D2]/10' : 'bg-white/50 dark:bg-[#E8E3D2]/5 border-slate-300/50 dark:border-[#E8E3D2]/10'}`}>
+                          <h2 className="text-lg sm:text-xl md:text-2xl font-mono font-normal tracking-tight truncate pr-4 text-slate-900 dark:text-[#FDF8ED]">{data.clusters[activeCluster].theme_label}</h2>
+                          <button onClick={() => setActiveCluster(null)} className="p-2 hover:bg-slate-200 dark:hover:bg-[#E8E3D2]/10 rounded-full transition-colors cursor-pointer shrink-0"><X className="w-5 h-5 sm:w-6 sm:h-6 text-slate-500 dark:text-[#E8E3D2]" /></button>
                         </div>
-                        <div className={`px-4 sm:px-6 py-3 border-b shrink-0 flex flex-wrap gap-2 items-center ${isKeyword ? 'bg-slate-100/50 dark:bg-black/20 border-slate-200 dark:border-white/10' : 'bg-slate-50/50 dark:bg-black/20 border-slate-300/50 dark:border-white/10'}`}>
-                          <div className="flex items-center gap-1.5 text-slate-500 dark:text-slate-400 mr-1"><Filter className="w-3.5 h-3.5" /><span className="text-[10px] sm:text-xs font-semibold uppercase tracking-wider">Length:</span></div>
-                          {['All', 'Short', 'Medium', 'Long'].map(f => (<button key={f} onClick={() => { setLengthFilter(f); setCurrentPage(1); if (modalScrollRef.current) modalScrollRef.current.scrollTop = 0; }} className={`px-3 py-1 sm:py-1.5 rounded-md text-[10px] sm:text-xs font-medium transition-colors cursor-pointer ${lengthFilter === f ? 'bg-slate-700 dark:bg-[#E2E8F0]/20 text-white dark:text-[#E2E8F0]' : 'bg-white dark:bg-white/5 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-transparent hover:bg-slate-50 dark:hover:bg-white/10'}`}>{f}</button>))}
-                          <span className="ml-auto text-[10px] sm:text-xs font-mono text-slate-400">{filteredItems.length} matches</span>
+                        <div className={`px-4 sm:px-6 py-3 border-b shrink-0 flex flex-wrap gap-2 items-center ${isKeyword ? 'bg-slate-100/50 dark:bg-black/20 border-slate-200 dark:border-[#E8E3D2]/10' : 'bg-slate-50/50 dark:bg-black/20 border-slate-300/50 dark:border-[#E8E3D2]/10'}`}>
+                          <div className="flex items-center gap-1.5 text-slate-500 dark:text-[#E8E3D2]/70 mr-1"><Filter className="w-3.5 h-3.5" /><span className="text-[10px] sm:text-xs font-semibold uppercase tracking-wider">Length:</span></div>
+                          {['All', 'Short', 'Medium', 'Long'].map(f => (<button key={f} onClick={() => { setLengthFilter(f); setCurrentPage(1); if (modalScrollRef.current) modalScrollRef.current.scrollTop = 0; }} className={`px-3 py-1 sm:py-1.5 rounded-md text-[10px] sm:text-xs font-medium transition-colors cursor-pointer ${lengthFilter === f ? 'bg-slate-700 dark:bg-[#E8E3D2]/20 text-white dark:text-[#FDF8ED]' : 'bg-white dark:bg-[#E8E3D2]/5 text-slate-600 dark:text-[#E8E3D2] border border-slate-200 dark:border-transparent hover:bg-slate-50 dark:hover:bg-[#E8E3D2]/10'}`}>{f}</button>))}
+                          <span className="ml-auto text-[10px] sm:text-xs font-mono text-slate-400 dark:text-[#E8E3D2]/50">{filteredItems.length} matches</span>
                         </div>
                         <div ref={modalScrollRef} onScroll={handleModalScroll} className="p-4 sm:p-6 flex flex-col gap-4 sm:gap-6 overflow-y-auto flex-grow smart-scrollbar">
-                          {filteredItems.length === 0 ? <div className="flex flex-col items-center justify-center h-full text-slate-400 italic mt-10"><p>No {lengthFilter.toLowerCase()} hadiths found.</p></div> : paginatedItems.map((item, idx) => (<HadithCard key={idx} item={item} onVerseClick={handleVerseClick} handleCopyHadith={handleCopyHadith} searchMode={searchMode} onFindSimilar={handleFindSimilar} />))}
+                          {filteredItems.length === 0 ? <div className="flex flex-col items-center justify-center h-full text-slate-400 dark:text-[#E8E3D2]/50 italic mt-10"><p>No {lengthFilter.toLowerCase()} hadiths found.</p></div> : paginatedItems.map((item, idx) => (<HadithCard key={idx} item={item} onVerseClick={handleVerseClick} handleCopyHadith={handleCopyHadith} searchMode={searchMode} onFindSimilar={handleFindSimilar} />))}
                           {totalPages > 1 && filteredItems.length > 0 && (
-                            <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-4 sm:pt-6 border-t border-slate-200 dark:border-white/10 mt-2 sm:mt-4">
-                              <button onClick={() => { setCurrentPage(prev => Math.max(prev - 1, 1)); modalScrollRef.current.scrollTop = 0; }} disabled={safeCurrentPage === 1} className={`flex items-center justify-center gap-1 w-full sm:w-auto px-4 py-2 rounded-lg font-medium transition-colors cursor-pointer ${safeCurrentPage === 1 ? 'opacity-30 cursor-not-allowed text-slate-500' : 'text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-white/5'}`}><ChevronLeft className="w-5 h-5" /> Previous</button>
-                              <span className="font-mono text-xs sm:text-sm text-slate-500 dark:text-slate-400">Page {safeCurrentPage} of {totalPages}</span>
-                              <button onClick={() => { setCurrentPage(prev => Math.min(prev + 1, totalPages)); modalScrollRef.current.scrollTop = 0; }} disabled={safeCurrentPage === totalPages} className={`flex items-center justify-center gap-1 w-full sm:w-auto px-4 py-2 rounded-lg font-medium transition-colors cursor-pointer ${safeCurrentPage === totalPages ? 'opacity-30 cursor-not-allowed text-slate-500' : 'text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-white/5'}`}>Next <ChevronRight className="w-5 h-5" /></button>
+                            <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-4 sm:pt-6 border-t border-slate-200 dark:border-[#E8E3D2]/10 mt-2 sm:mt-4">
+                              <button onClick={() => { setCurrentPage(prev => Math.max(prev - 1, 1)); modalScrollRef.current.scrollTop = 0; }} disabled={safeCurrentPage === 1} className={`flex items-center justify-center gap-1 w-full sm:w-auto px-4 py-2 rounded-lg font-medium transition-colors cursor-pointer ${safeCurrentPage === 1 ? 'opacity-30 cursor-not-allowed text-slate-500' : 'text-slate-700 dark:text-[#E8E3D2] hover:bg-slate-200 dark:hover:bg-[#E8E3D2]/10'}`}><ChevronLeft className="w-5 h-5" /> Previous</button>
+                              <span className="font-mono text-xs sm:text-sm text-slate-500 dark:text-[#E8E3D2]/60">Page {safeCurrentPage} of {totalPages}</span>
+                              <button onClick={() => { setCurrentPage(prev => Math.min(prev + 1, totalPages)); modalScrollRef.current.scrollTop = 0; }} disabled={safeCurrentPage === totalPages} className={`flex items-center justify-center gap-1 w-full sm:w-auto px-4 py-2 rounded-lg font-medium transition-colors cursor-pointer ${safeCurrentPage === totalPages ? 'opacity-30 cursor-not-allowed text-slate-500' : 'text-slate-700 dark:text-[#E8E3D2] hover:bg-slate-200 dark:hover:bg-[#E8E3D2]/10'}`}>Next <ChevronRight className="w-5 h-5" /></button>
                             </div>
                           )}
                         </div>
@@ -2207,28 +2205,28 @@ export default function App() {
         <AnimatePresence>
           {showAnchorModal && anchorHadith && (
             <div className="fixed inset-0 z-[5000] flex items-center justify-center pointer-events-auto p-4 sm:p-0">
-              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setShowAnchorModal(false)} className="absolute inset-0 bg-[#050814]/80 backdrop-blur-md cursor-pointer" />
-              <motion.div initial={{ opacity: 0, scale: 0.95, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 20 }} className="relative bg-[#f8f9fa] dark:bg-[#0B101E] border border-slate-300 dark:border-white/10 w-full sm:w-[90vw] max-w-[600px] max-h-[85vh] flex flex-col shadow-2xl rounded-2xl z-[5001] overflow-hidden">
-                <div className="flex justify-between items-center bg-white/50 dark:bg-white/5 backdrop-blur-xl pt-5 pb-4 px-6 z-10 border-b border-slate-300/50 dark:border-white/10 shrink-0">
+              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setShowAnchorModal(false)} className="absolute inset-0 bg-[#040F0B]/80 backdrop-blur-md cursor-pointer" />
+              <motion.div initial={{ opacity: 0, scale: 0.95, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 20 }} className="relative bg-[#f8f9fa] dark:bg-[#040F0B] border border-slate-300 dark:border-[#E8E3D2]/10 w-full sm:w-[90vw] max-w-[600px] max-h-[85vh] flex flex-col shadow-2xl rounded-2xl z-[5001] overflow-hidden">
+                <div className="flex justify-between items-center bg-white/50 dark:bg-[#E8E3D2]/5 backdrop-blur-xl pt-5 pb-4 px-6 z-10 border-b border-slate-300/50 dark:border-[#E8E3D2]/10 shrink-0">
                   <div>
-                    <h3 className="font-mono text-sm tracking-widest uppercase text-slate-700 dark:text-[#E2E8F0] font-bold mb-0.5 flex items-center gap-2"><Sparkles className="w-4 h-4" /> Anchored Source</h3>
-                    <p className="text-[10px] sm:text-xs text-slate-500 font-mono m-0 leading-relaxed pr-4">
+                    <h3 className="font-mono text-sm tracking-widest uppercase text-slate-700 dark:text-[#FDF8ED] font-bold mb-0.5 flex items-center gap-2"><Sparkles className="w-4 h-4" /> Anchored Source</h3>
+                    <p className="text-[10px] sm:text-xs text-slate-500 dark:text-[#E8E3D2]/60 font-mono m-0 leading-relaxed pr-4">
                       {anchorHadith.full_reference || `Book: ${anchorHadith.book}, Vol: ${anchorHadith.volume}, ${anchorHadith.sub_book}, Chapter: ${anchorHadith.chapter}`}
                     </p>
                   </div>
-                  <button onClick={() => setShowAnchorModal(false)} className="p-2 hover:bg-slate-200 dark:hover:bg-white/10 rounded-full transition-colors cursor-pointer shrink-0 self-start"><X className="w-5 h-5 text-slate-500" /></button>
+                  <button onClick={() => setShowAnchorModal(false)} className="p-2 hover:bg-slate-200 dark:hover:bg-[#E8E3D2]/10 rounded-full transition-colors cursor-pointer shrink-0 self-start"><X className="w-5 h-5 text-slate-500 dark:text-[#E8E3D2]" /></button>
                 </div>
                 <div className="p-6 sm:p-8 overflow-y-auto flex-grow smart-scrollbar">
                   {anchorHadith.arabic_text && <div className="mb-6"><p className="font-arabic text-3xl sm:text-4xl text-right leading-[2.2] text-slate-800 dark:text-slate-100" dir="rtl" lang="ar" style={{ fontFamily: activeFontFamily, fontVariantLigatures: 'normal', fontFeatureSettings: '"ccmp" 1, "mark" 1, "mkmk" 1' }}>{anchorHadith.arabic_text}</p></div>}
-                  <div className={anchorHadith.arabic_text ? "border-t border-slate-300/50 dark:border-white/5 pt-6" : ""}><p className="text-base sm:text-lg text-slate-700 dark:text-slate-300 leading-relaxed font-serif">{anchorHadith.english_text}</p></div>
+                  <div className={anchorHadith.arabic_text ? "border-t border-slate-300/50 dark:border-[#E8E3D2]/10 pt-6" : ""}><p className="text-base sm:text-lg text-slate-700 dark:text-[#E8E3D2] leading-relaxed font-serif">{anchorHadith.english_text}</p></div>
 
-                  <div className="mt-6 flex justify-end pt-4 border-t border-slate-300/50 dark:border-white/5">
+                  <div className="mt-6 flex justify-end pt-4 border-t border-slate-300/50 dark:border-[#E8E3D2]/10">
                     <button onClick={(e) => {
                       e.stopPropagation();
                       handleCopyHadith(anchorHadith);
                       setAnchorCopied(true);
                       setTimeout(() => setAnchorCopied(false), 2000);
-                    }} className={`flex items-center gap-2 text-xs font-mono transition-colors px-4 py-2 rounded-md cursor-pointer ${anchorCopied ? 'text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-500/10' : 'text-slate-600 hover:text-slate-800 hover:bg-slate-200 dark:bg-white/5 dark:hover:bg-white/10 dark:text-slate-300 dark:hover:text-white'}`}>
+                    }} className={`flex items-center gap-2 text-xs font-mono transition-colors px-4 py-2 rounded-md cursor-pointer ${anchorCopied ? 'text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-500/10' : 'text-slate-600 hover:text-slate-800 hover:bg-slate-200 dark:bg-[#E8E3D2]/5 dark:hover:bg-[#E8E3D2]/15 dark:text-[#E8E3D2] dark:hover:text-[#FDF8ED]'}`}>
                       {anchorCopied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}<span>{anchorCopied ? 'Copied!' : 'Copy Text'}</span>
                     </button>
                   </div>
@@ -2243,20 +2241,20 @@ export default function App() {
         <AnimatePresence>
           {(tafsirLoading || tafsirData) && tafsirTarget && (
             <div className="fixed inset-0 z-[4000] flex items-center justify-center pointer-events-auto p-4 sm:p-0">
-              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => { setTafsirData(null); setTafsirLoading(false); setTafsirTarget(null); }} className="absolute inset-0 bg-[#050814]/80 backdrop-blur-md cursor-pointer" />
-              <motion.div initial={{ opacity: 0, scale: 0.95, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 20 }} className="relative bg-[#f8f9fa] dark:bg-[#0B101E] border border-slate-300 dark:border-white/10 w-full sm:w-[90vw] max-w-[700px] h-[80vh] flex flex-col shadow-2xl rounded-2xl z-[4001] overflow-hidden">
-                <div className="flex justify-between items-center bg-white/90 dark:bg-white/5 backdrop-blur-xl pt-5 pb-4 px-6 z-10 border-b border-slate-200 dark:border-white/10 shrink-0">
+              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => { setTafsirData(null); setTafsirLoading(false); setTafsirTarget(null); }} className="absolute inset-0 bg-[#040F0B]/80 backdrop-blur-md cursor-pointer" />
+              <motion.div initial={{ opacity: 0, scale: 0.95, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 20 }} className="relative bg-[#f8f9fa] dark:bg-[#040F0B] border border-slate-300 dark:border-[#E8E3D2]/10 w-full sm:w-[90vw] max-w-[700px] h-[80vh] flex flex-col shadow-2xl rounded-2xl z-[4001] overflow-hidden">
+                <div className="flex justify-between items-center bg-white/90 dark:bg-[#E8E3D2]/5 backdrop-blur-xl pt-5 pb-4 px-6 z-10 border-b border-slate-200 dark:border-[#E8E3D2]/10 shrink-0">
                   <div>
                     <h3 className="font-mono text-sm tracking-widest uppercase text-amber-600 dark:text-amber-500 font-bold mb-0.5 flex items-center gap-2"><LibraryBig className="w-4 h-4" /> Related Narrations</h3>
-                    <p className="text-xs text-slate-500 font-mono m-0">Surah {tafsirTarget.surah}, Verse {tafsirTarget.ayah}</p>
+                    <p className="text-xs text-slate-500 dark:text-[#E8E3D2]/60 font-mono m-0">Surah {tafsirTarget.surah}, Verse {tafsirTarget.ayah}</p>
                   </div>
-                  <button onClick={() => { setTafsirData(null); setTafsirLoading(false); setTafsirTarget(null); }} className="p-2 hover:bg-slate-200 dark:hover:bg-white/10 rounded-full transition-colors cursor-pointer shrink-0"><X className="w-5 h-5 text-slate-500" /></button>
+                  <button onClick={() => { setTafsirData(null); setTafsirLoading(false); setTafsirTarget(null); }} className="p-2 hover:bg-slate-200 dark:hover:bg-[#E8E3D2]/10 rounded-full transition-colors cursor-pointer shrink-0"><X className="w-5 h-5 text-slate-500 dark:text-[#E8E3D2]" /></button>
                 </div>
                 <div ref={tafsirScrollRef} className="p-4 sm:p-6 overflow-y-auto flex-grow smart-scrollbar bg-slate-50 dark:bg-black/20">
                   {tafsirLoading ? (
-                    <div className="flex flex-col items-center justify-center h-full text-slate-400 dark:text-slate-500"><KisaLogo className="w-10 h-10 animate-pulse text-amber-500 mb-4" /><p className="text-sm font-mono uppercase tracking-widest">Scanning Database...</p></div>
+                    <div className="flex flex-col items-center justify-center h-full text-slate-400 dark:text-[#E8E3D2]/60"><KisaLogo className="w-10 h-10 animate-pulse text-amber-500 mb-4" /><p className="text-sm font-mono uppercase tracking-widest">Scanning Database...</p></div>
                   ) : tafsirData?.empty || !tafsirData?.clusters || tafsirData.clusters.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center h-full text-slate-500 italic"><LibraryBig className="w-12 h-12 mb-4 opacity-20" /><p>No hadiths found in the database referencing this specific verse.</p></div>
+                    <div className="flex flex-col items-center justify-center h-full text-slate-500 dark:text-[#E8E3D2]/40 italic"><LibraryBig className="w-12 h-12 mb-4 opacity-20" /><p>No hadiths found in the database referencing this specific verse.</p></div>
                   ) : (
                     <div className="flex flex-col gap-4">
                       {(tafsirData.clusters || []).flatMap(c => c.items || []).map((item, idx) => (<HadithCard key={idx} item={item} searchMode="keyword" handleCopyHadith={handleCopyHadith} onFindSimilar={handleFindSimilar} />))}
@@ -2271,15 +2269,15 @@ export default function App() {
         <AnimatePresence>
           {quranPopup && (
             <div className="fixed inset-0 z-[3000] flex items-center justify-center pointer-events-auto p-4 sm:p-0">
-              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setQuranPopup(null)} className="absolute inset-0 bg-[#050814]/80 backdrop-blur-md cursor-pointer" />
-              <motion.div initial={{ opacity: 0, scale: 0.9, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.9, y: 20 }} className="relative bg-[#f8f9fa] dark:bg-[#0B101E] border border-slate-200 dark:border-white/10 w-full sm:w-[90vw] max-w-[600px] max-h-[85vh] flex flex-col shadow-2xl rounded-2xl z-[3001] overflow-hidden">
-                <div className="flex justify-between items-center bg-white/90 dark:bg-white/5 backdrop-blur-xl pt-5 pb-4 px-6 z-10 border-b border-slate-200 dark:border-white/10 shrink-0">
-                  <div><h3 className="font-mono text-sm tracking-widest uppercase text-slate-700 dark:text-[#E2E8F0] font-bold mb-0.5">Surah {quranPopup.data.surahName}</h3><p className="text-xs text-slate-400 font-mono m-0">Verse {quranPopup.ayah}</p></div>
-                  <button onClick={() => setQuranPopup(null)} className="p-2 hover:bg-slate-200 dark:hover:bg-white/10 rounded-full transition-colors cursor-pointer shrink-0"><X className="w-5 h-5 text-slate-500" /></button>
+              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setQuranPopup(null)} className="absolute inset-0 bg-[#040F0B]/80 backdrop-blur-md cursor-pointer" />
+              <motion.div initial={{ opacity: 0, scale: 0.9, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.9, y: 20 }} className="relative bg-white dark:bg-[#040F0B] border border-slate-200 dark:border-[#E8E3D2]/10 w-full sm:w-[90vw] max-w-[600px] max-h-[85vh] flex flex-col shadow-2xl rounded-2xl z-[3001] overflow-hidden">
+                <div className="flex justify-between items-center bg-slate-50/90 dark:bg-[#E8E3D2]/5 backdrop-blur-xl pt-5 pb-4 px-6 z-10 border-b border-slate-200 dark:border-[#E8E3D2]/10 shrink-0">
+                  <div><h3 className="font-mono text-sm tracking-widest uppercase text-slate-700 dark:text-[#FDF8ED] font-bold mb-0.5">Surah {quranPopup.data.surahName}</h3><p className="text-xs text-slate-400 dark:text-[#E8E3D2]/60 font-mono m-0">Verse {quranPopup.ayah}</p></div>
+                  <button onClick={() => setQuranPopup(null)} className="p-2 hover:bg-slate-200 dark:hover:bg-[#E8E3D2]/10 rounded-full transition-colors cursor-pointer shrink-0"><X className="w-5 h-5 text-slate-500 dark:text-[#E8E3D2]" /></button>
                 </div>
                 <div className="p-6 sm:p-8 overflow-y-auto flex-grow smart-scrollbar">
                   <div className="mb-6"><p className="font-arabic text-3xl sm:text-4xl text-right leading-[2.2] text-slate-800 dark:text-slate-100" dir="rtl" lang="ar" style={{ fontFamily: activeFontFamily, fontVariantLigatures: 'normal', fontFeatureSettings: '"ccmp" 1, "mark" 1, "mkmk" 1' }}>{quranPopup.data.ar}</p></div>
-                  <div className="border-t border-slate-200 dark:border-white/5 pt-6"><p className="text-base sm:text-lg text-slate-600 dark:text-slate-300 leading-relaxed font-serif">{quranPopup.data.en}</p></div>
+                  <div className="border-t border-slate-100 dark:border-[#E8E3D2]/10 pt-6"><p className="text-base sm:text-lg text-slate-600 dark:text-[#E8E3D2] leading-relaxed font-serif">{quranPopup.data.en}</p></div>
                 </div>
               </motion.div>
             </div>
@@ -2289,32 +2287,32 @@ export default function App() {
         <AnimatePresence>
           {showHistoryDrawer && (
             <div className="fixed inset-0 z-[2000] flex items-center justify-center pointer-events-auto p-4 sm:p-0">
-              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setShowHistoryDrawer(false)} className="absolute inset-0 bg-[#050814]/80 backdrop-blur-md cursor-pointer" />
-              <motion.div initial={{ opacity: 0, scale: 0.95, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 20 }} className="relative bg-[#f8f9fa] dark:bg-[#0B101E] border border-slate-300 dark:border-white/10 w-full sm:w-[90vw] max-w-[600px] max-h-[85vh] flex flex-col shadow-2xl rounded-2xl z-[2001]">
-                <div className="flex justify-between items-center bg-white/50 dark:bg-white/5 backdrop-blur-xl pt-5 pb-4 px-5 sm:px-6 z-10 border-b border-slate-300/50 dark:border-white/10 rounded-t-2xl shrink-0">
-                  <h2 className="text-lg sm:text-xl font-mono font-bold tracking-tight text-slate-800 dark:text-slate-100 flex items-center gap-2"><Clock className="w-5 h-5 text-slate-500 dark:text-[#E2E8F0]" />Study History</h2>
+              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setShowHistoryDrawer(false)} className="absolute inset-0 bg-[#040F0B]/80 backdrop-blur-md cursor-pointer" />
+              <motion.div initial={{ opacity: 0, scale: 0.95, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 20 }} className="relative bg-[#f8f9fa] dark:bg-[#040F0B] border border-slate-300 dark:border-[#E8E3D2]/10 w-full sm:w-[90vw] max-w-[600px] max-h-[85vh] flex flex-col shadow-2xl rounded-2xl z-[2001]">
+                <div className="flex justify-between items-center bg-white/50 dark:bg-[#E8E3D2]/5 backdrop-blur-xl pt-5 pb-4 px-5 sm:px-6 z-10 border-b border-slate-300/50 dark:border-[#E8E3D2]/10 rounded-t-2xl shrink-0">
+                  <h2 className="text-lg sm:text-xl font-mono font-bold tracking-tight text-slate-800 dark:text-[#FDF8ED] flex items-center gap-2"><Clock className="w-5 h-5 text-slate-500 dark:text-[#E8E3D2]" />Study History</h2>
                   <div className="flex items-center gap-2">
                     {appHistory.length > 0 && <button onClick={() => setAppHistory([])} className="p-2 hover:bg-red-50 text-red-500 hover:text-red-600 dark:hover:bg-red-500/10 rounded-full transition-colors cursor-pointer shrink-0" title="Clear History"><Trash2 className="w-4 h-4 sm:w-5 sm:h-5" /></button>}
-                    <button onClick={() => setShowHistoryDrawer(false)} className="p-2 hover:bg-slate-200 dark:hover:bg-white/10 rounded-full transition-colors cursor-pointer shrink-0"><X className="w-5 h-5 text-slate-500" /></button>
+                    <button onClick={() => setShowHistoryDrawer(false)} className="p-2 hover:bg-slate-200 dark:hover:bg-[#E8E3D2]/10 rounded-full transition-colors cursor-pointer shrink-0"><X className="w-5 h-5 text-slate-500 dark:text-[#E8E3D2]" /></button>
                   </div>
                 </div>
                 <div className="overflow-y-auto flex-grow smart-scrollbar p-2 sm:p-4">
                   {appHistory.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center py-20 text-slate-400 dark:text-slate-500 italic"><History className="w-10 h-10 mb-4 opacity-20" /><p>Your study history is empty.</p></div>
+                    <div className="flex flex-col items-center justify-center py-20 text-slate-400 dark:text-[#E8E3D2]/50 italic"><History className="w-10 h-10 mb-4 opacity-20" /><p>Your study history is empty.</p></div>
                   ) : (
                     <div className="flex flex-col gap-1 sm:gap-2">
                       {appHistory.map((item, i) => (
-                        <div key={i} onClick={() => handleHistoryClick(item)} className={`px-4 sm:px-5 py-3 sm:py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-4 rounded-xl cursor-pointer transition-colors border group hover:bg-white/40 dark:hover:bg-white/5 border-transparent hover:border-slate-300 dark:hover:border-white/10`}>
+                        <div key={i} onClick={() => handleHistoryClick(item)} className={`px-4 sm:px-5 py-3 sm:py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-4 rounded-xl cursor-pointer transition-colors border group hover:bg-white/40 dark:hover:bg-[#E8E3D2]/5 border-transparent hover:border-slate-300 dark:hover:border-[#E8E3D2]/20`}>
                           <div className="flex items-start sm:items-center gap-3 sm:gap-4 min-w-0 flex-1">
-                            <div className={`p-2 sm:p-2.5 rounded-lg shrink-0 bg-slate-200 dark:bg-black/20 text-slate-600 dark:text-slate-300 border border-transparent dark:border-white/5`}>
-                              {item.type === 'quran' ? <BookOpen className="w-4 h-4 sm:w-5 sm:h-5 text-amber-500" /> : (item.mode === 'keyword' ? <Database className="w-4 h-4 sm:w-5 sm:h-5" /> : <Sparkles className="w-4 h-4 sm:w-5 sm:h-5 text-[#E2E8F0]" />)}
+                            <div className={`p-2 sm:p-2.5 rounded-lg shrink-0 bg-slate-200 dark:bg-black/20 text-slate-600 dark:text-slate-300 border border-transparent dark:border-[#E8E3D2]/5`}>
+                              {item.type === 'quran' ? <BookOpen className="w-4 h-4 sm:w-5 sm:h-5 text-amber-500" /> : (item.mode === 'keyword' ? <Database className="w-4 h-4 sm:w-5 sm:h-5" /> : <Sparkles className="w-4 h-4 sm:w-5 sm:h-5 text-[#E8E3D2]" />)}
                             </div>
                             <div className="flex flex-col min-w-0 flex-1 pr-2">
-                              <span className="font-semibold text-sm sm:text-base truncate w-full text-slate-800 dark:text-slate-200 group-hover:dark:text-white">{item.type === 'quran' ? `Surah ${item.surahName}` : item.query}</span>
-                              <span className="text-[10px] sm:text-xs text-slate-500 font-mono mt-0.5">{item.type === 'search' ? `${item.mode === 'concept' ? 'Semantic' : 'Exact Match'} • ${item.source}` : 'Quran Recitation'}</span>
+                              <span className="font-semibold text-sm sm:text-base truncate w-full text-slate-800 dark:text-[#E8E3D2] group-hover:dark:text-[#FDF8ED]">{item.type === 'quran' ? `Surah ${item.surahName}` : item.query}</span>
+                              <span className="text-[10px] sm:text-xs text-slate-500 dark:text-[#E8E3D2]/50 font-mono mt-0.5">{item.type === 'search' ? `${item.mode === 'concept' ? 'Semantic' : 'Exact Match'} • ${item.source}` : 'Quran Recitation'}</span>
                             </div>
                           </div>
-                          <span className="text-[10px] sm:text-xs font-mono text-slate-400 self-end sm:self-auto shrink-0 opacity-60 group-hover:opacity-100 transition-opacity">{timeAgo(item.timestamp)}</span>
+                          <span className="text-[10px] sm:text-xs font-mono text-slate-400 dark:text-[#E8E3D2]/40 self-end sm:self-auto shrink-0 opacity-60 group-hover:opacity-100 transition-opacity">{timeAgo(item.timestamp)}</span>
                         </div>
                       ))}
                     </div>
@@ -2328,12 +2326,12 @@ export default function App() {
         <AnimatePresence>
           {showUpdates && (
             <div className="fixed inset-0 z-[2000] flex items-center justify-center pointer-events-auto p-4 sm:p-0">
-              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setShowUpdates(false)} className="absolute inset-0 bg-[#050814]/80 backdrop-blur-md cursor-pointer" />
-              <motion.div initial={{ opacity: 0, scale: 0.95, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 20 }} className="relative bg-[#f8f9fa] dark:bg-[#0B101E] border border-slate-200 dark:border-white/10 w-full sm:w-[90vw] max-w-[500px] max-h-[80vh] flex flex-col shadow-2xl rounded-2xl z-[2001]">
-                <div className="flex justify-between items-center bg-white/50 dark:bg-white/5 backdrop-blur-xl pt-5 pb-4 px-5 z-10 border-b border-slate-200 dark:border-white/10 rounded-t-2xl shrink-0"><h2 className="text-lg sm:text-xl font-mono font-bold tracking-tight text-slate-800 dark:text-[#E2E8F0] flex items-center gap-2"><History className="w-5 h-5 text-slate-500" />Updates Log</h2><button onClick={() => setShowUpdates(false)} className="p-2 hover:bg-slate-200 dark:hover:bg-white/10 rounded-full transition-colors cursor-pointer shrink-0"><X className="w-5 h-5 text-slate-500" /></button></div>
+              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setShowUpdates(false)} className="absolute inset-0 bg-[#040F0B]/80 backdrop-blur-md cursor-pointer" />
+              <motion.div initial={{ opacity: 0, scale: 0.95, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 20 }} className="relative bg-slate-50 dark:bg-[#040F0B] border border-slate-200 dark:border-[#E8E3D2]/10 w-full sm:w-[90vw] max-w-[500px] max-h-[80vh] flex flex-col shadow-2xl rounded-2xl z-[2001]">
+                <div className="flex justify-between items-center bg-slate-50/90 dark:bg-[#E8E3D2]/5 backdrop-blur-xl pt-5 pb-4 px-5 z-10 border-b border-slate-200 dark:border-[#E8E3D2]/10 rounded-t-2xl shrink-0"><h2 className="text-lg sm:text-xl font-mono font-bold tracking-tight text-slate-800 dark:text-[#FDF8ED] flex items-center gap-2"><History className="w-5 h-5 text-slate-500 dark:text-[#E8E3D2]" />Updates Log</h2><button onClick={() => setShowUpdates(false)} className="p-2 hover:bg-slate-200 dark:hover:bg-[#E8E3D2]/10 rounded-full transition-colors cursor-pointer shrink-0"><X className="w-5 h-5 text-slate-500 dark:text-[#E8E3D2]" /></button></div>
                 <div className="p-5 sm:p-6 overflow-y-auto flex-grow smart-scrollbar flex flex-col gap-6">
                   {APP_UPDATES.map((update, idx) => (
-                    <div key={idx} className="relative pl-4 border-l-2 border-slate-200 dark:border-white/10"><div className="absolute -left-[5px] top-1.5 w-2 h-2 rounded-full bg-slate-500 dark:bg-[#E2E8F0]" /><div className="flex items-baseline justify-between mb-2"><h3 className="font-mono font-bold text-base sm:text-lg text-slate-800 dark:text-slate-200">{update.version}</h3><span className="text-[10px] sm:text-xs font-mono text-slate-400">{update.date}</span></div><ul className="flex flex-col gap-2 sm:gap-3">{update.changes.map((change, cIdx) => <li key={cIdx} className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 flex items-start gap-2 leading-relaxed"><span className="text-slate-400 mt-0.5 font-bold">•</span><span>{change}</span></li>)}</ul></div>
+                    <div key={idx} className="relative pl-4 border-l-2 border-slate-200 dark:border-[#E8E3D2]/10"><div className="absolute -left-[5px] top-1.5 w-2 h-2 rounded-full bg-slate-500 dark:bg-[#E8E3D2]" /><div className="flex items-baseline justify-between mb-2"><h3 className="font-mono font-bold text-base sm:text-lg text-slate-800 dark:text-[#FDF8ED]">{update.version}</h3><span className="text-[10px] sm:text-xs font-mono text-slate-400 dark:text-[#E8E3D2]/60">{update.date}</span></div><ul className="flex flex-col gap-2 sm:gap-3">{update.changes.map((change, cIdx) => <li key={cIdx} className="text-xs sm:text-sm text-slate-600 dark:text-[#E8E3D2] flex items-start gap-2 leading-relaxed"><span className="text-slate-400 dark:text-[#E8E3D2]/50 mt-0.5 font-bold">•</span><span>{change}</span></li>)}</ul></div>
                   ))}
                 </div>
               </motion.div>
@@ -2344,21 +2342,21 @@ export default function App() {
         <AnimatePresence>
           {showInfo && (
             <div className="fixed inset-0 z-[2000] flex items-center justify-center pointer-events-auto p-4 sm:p-0">
-              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setShowInfo(false)} className="absolute inset-0 bg-[#050814]/80 backdrop-blur-md cursor-pointer" />
-              <motion.div initial={{ opacity: 0, scale: 0.95, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 20 }} className="relative bg-[#f8f9fa] dark:bg-[#0B101E] border border-slate-200 dark:border-white/10 w-full sm:w-[90vw] max-w-[600px] max-h-[85vh] flex flex-col shadow-2xl rounded-2xl z-[2001]">
-                <div className="flex justify-between items-center bg-white/50 dark:bg-white/5 backdrop-blur-xl pt-5 pb-4 px-5 z-10 border-b border-slate-200 dark:border-white/10 rounded-t-2xl shrink-0"><h2 className="text-lg sm:text-xl font-mono font-bold tracking-tight text-slate-800 dark:text-[#E2E8F0] flex items-center gap-2"><KisaLogo className="w-5 h-5 text-slate-400" />How to Use Kisa</h2><button onClick={() => setShowInfo(false)} className="p-2 hover:bg-slate-200 dark:hover:bg-white/10 rounded-full transition-colors cursor-pointer shrink-0"><X className="w-5 h-5 text-slate-500" /></button></div>
+              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setShowInfo(false)} className="absolute inset-0 bg-[#040F0B]/80 backdrop-blur-md cursor-pointer" />
+              <motion.div initial={{ opacity: 0, scale: 0.95, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 20 }} className="relative bg-slate-50 dark:bg-[#040F0B] border border-slate-200 dark:border-[#E8E3D2]/10 w-full sm:w-[90vw] max-w-[600px] max-h-[85vh] flex flex-col shadow-2xl rounded-2xl z-[2001]">
+                <div className="flex justify-between items-center bg-slate-50/90 dark:bg-[#E8E3D2]/5 backdrop-blur-xl pt-5 pb-4 px-5 z-10 border-b border-slate-200 dark:border-[#E8E3D2]/10 rounded-t-2xl shrink-0"><h2 className="text-lg sm:text-xl font-mono font-bold tracking-tight text-slate-800 dark:text-[#FDF8ED] flex items-center gap-2"><KisaLogo className="w-5 h-5 text-slate-400 dark:text-[#E8E3D2]" />How to Use Kisa</h2><button onClick={() => setShowInfo(false)} className="p-2 hover:bg-slate-200 dark:hover:bg-[#E8E3D2]/10 rounded-full transition-colors cursor-pointer shrink-0"><X className="w-5 h-5 text-slate-500 dark:text-[#E8E3D2]" /></button></div>
 
-                <div className="p-5 sm:p-6 overflow-y-auto flex-grow smart-scrollbar flex flex-col gap-6 text-slate-700 dark:text-slate-300">
+                <div className="p-5 sm:p-6 overflow-y-auto flex-grow smart-scrollbar flex flex-col gap-6 text-slate-700 dark:text-[#E8E3D2]">
                   <div>
-                    <h3 className="font-bold text-base sm:text-lg mb-2 text-slate-900 dark:text-white">Welcome to Kisa</h3>
+                    <h3 className="font-bold text-base sm:text-lg mb-2 text-slate-900 dark:text-[#FDF8ED]">Welcome to Kisa</h3>
                     <p className="leading-relaxed text-xs sm:text-sm">Kisa is a semantic search engine designed specifically to explore authentic Twelver Shia literature, prioritizing core texts like <i>al-Kafi</i>, <i>Bihar al-Anwar</i>, and <i>Basa'ir al-Darajat</i>. It maps verified texts mathematically so you can explore concepts without AI hallucinations.</p>
                   </div>
-                  <hr className="border-slate-200 dark:border-white/5" />
+                  <hr className="border-slate-200 dark:border-[#E8E3D2]/10" />
 
                   <div>
-                    <h3 className="font-bold text-base sm:text-lg flex items-center gap-2 mb-3 text-slate-900 dark:text-white"><LibraryIcon className="w-4 h-4 text-slate-400" /> Features</h3>
+                    <h3 className="font-bold text-base sm:text-lg flex items-center gap-2 mb-3 text-slate-900 dark:text-[#FDF8ED]"><LibraryIcon className="w-4 h-4 text-slate-400 dark:text-[#E8E3D2]" /> Features</h3>
                     <div className="mb-4">
-                      <h4 className="font-semibold text-sm sm:text-base flex items-center gap-1.5 mb-1"><Search className="w-3.5 h-3.5 text-slate-400" /> Dual Search Engine</h4>
+                      <h4 className="font-semibold text-sm sm:text-base flex items-center gap-1.5 mb-1"><Search className="w-3.5 h-3.5 text-slate-400 dark:text-[#E8E3D2]" /> Dual Search Engine</h4>
                       <ul className="flex flex-col gap-2 text-xs sm:text-sm pl-5 list-disc mb-2">
                         <li><b>Concept Mode:</b> Uses AI vector math to find underlying themes, even if exact words aren't used. Returns interactive thematic clusters.</li>
                         <li><b>Keyword Mode:</b> Strictly searches the exact English or Arabic text you type, functioning like a traditional database index.</li>
@@ -2370,33 +2368,33 @@ export default function App() {
                       <p className="leading-relaxed text-xs sm:text-sm mb-2">Read meticulously structured and translated transcripts of foundational scholarly series (e.g., The File of Fatima). Features a premium editorial UI with automatic section summaries, bold emphasis, and a persistent reading state.</p>
                     </div>
                   </div>
-                  <hr className="border-slate-200 dark:border-white/5" />
+                  <hr className="border-slate-200 dark:border-[#E8E3D2]/10" />
 
                   <div>
-                    <h3 className="font-bold text-base sm:text-lg flex items-center gap-2 mb-3 text-slate-900 dark:text-white"><Sparkles className="w-4 h-4 text-slate-400" /> Advanced Features</h3>
+                    <h3 className="font-bold text-base sm:text-lg flex items-center gap-2 mb-3 text-slate-900 dark:text-[#FDF8ED]"><Sparkles className="w-4 h-4 text-slate-400 dark:text-[#E8E3D2]" /> Advanced Features</h3>
                     <ul className="flex flex-col gap-4 text-xs sm:text-sm leading-relaxed">
                       <li>
-                        <b className="text-slate-900 dark:text-slate-200 flex items-center gap-1.5 mb-0.5"><Layout className="w-3.5 h-3.5 text-slate-400" /> Dynamic Concept Map</b>
+                        <b className="text-slate-900 dark:text-[#FDF8ED] flex items-center gap-1.5 mb-0.5"><Layout className="w-3.5 h-3.5 text-slate-400 dark:text-[#E8E3D2]" /> Dynamic Concept Map</b>
                         Concept searches generate a beautiful, non-overlapping orbital map of themes. The "Top Matches" node is highlighted, and you can switch to a traditional List View at any time.
                       </li>
                       <li>
-                        <b className="text-slate-900 dark:text-slate-200 flex items-center gap-1.5 mb-0.5"><Sparkles className="w-3.5 h-3.5 text-slate-400" /> Vector Hopping ("Find Similar")</b>
+                        <b className="text-slate-900 dark:text-[#FDF8ED] flex items-center gap-1.5 mb-0.5"><Sparkles className="w-3.5 h-3.5 text-slate-400 dark:text-[#E8E3D2]" /> Vector Hopping ("Find Similar")</b>
                         Click "Find Similar" on any hadith to use its mathematical signature to instantly discover related narrations. The original source is cleanly pinned to the top as an "Anchor" so you never lose your place.
                       </li>
                       <li>
-                        <b className="text-slate-900 dark:text-slate-200 flex items-center gap-1.5 mb-0.5"><BookOpen className="w-3.5 h-3.5 text-amber-500" /> Reverse Quran Tafsir</b>
+                        <b className="text-slate-900 dark:text-[#FDF8ED] flex items-center gap-1.5 mb-0.5"><BookOpen className="w-3.5 h-3.5 text-amber-500" /> Reverse Quran Tafsir</b>
                         Read all 114 Surahs. If Kisa detects narrations referencing a specific Ayah, a "Related Hadiths" button appears. Click it to open a seamless popup of contextual narrations.
                       </li>
                     </ul>
                   </div>
-                  <hr className="border-slate-200 dark:border-white/5" />
+                  <hr className="border-slate-200 dark:border-[#E8E3D2]/10" />
 
                   <div>
-                    <h3 className="font-bold text-base sm:text-lg flex items-center gap-2 mb-3 text-slate-900 dark:text-white"><Clock className="w-4 h-4 text-slate-500" /> Workflow & Study Tools</h3>
+                    <h3 className="font-bold text-base sm:text-lg flex items-center gap-2 mb-3 text-slate-900 dark:text-[#FDF8ED]"><Clock className="w-4 h-4 text-slate-500 dark:text-[#E8E3D2]" /> Workflow & Study Tools</h3>
                     <ul className="flex flex-col gap-3 text-xs sm:text-sm leading-relaxed list-disc pl-4">
-                      <li><b className="text-slate-900 dark:text-slate-200">Study History & Quick Resume:</b> Click the empty search bar to instantly resume your 5 most recent searches/recitations, or click the Clock icon to open your full History drawer.</li>
-                      <li><b className="text-slate-900 dark:text-slate-200">Source Filtering:</b> Use the Source dropdown to isolate searches strictly to specific books like <i>al-Kafi</i>.</li>
-                      <li><b className="text-slate-900 dark:text-slate-200">Smart Copy:</b> Click "Copy Text" on any Hadith or Anchored Source to instantly copy the full reference, Arabic text, Chain of Narrators, English translation, and a Kisa link to your clipboard.</li>
+                      <li><b className="text-slate-900 dark:text-[#FDF8ED]">Study History & Quick Resume:</b> Click the empty search bar to instantly resume your 5 most recent searches/recitations, or click the Clock icon to open your full History drawer.</li>
+                      <li><b className="text-slate-900 dark:text-[#FDF8ED]">Source Filtering:</b> Use the Source dropdown to isolate searches strictly to specific books like <i>al-Kafi</i>.</li>
+                      <li><b className="text-slate-900 dark:text-[#FDF8ED]">Smart Copy:</b> Click "Copy Text" on any Hadith or Anchored Source to instantly copy the full reference, Arabic text, Chain of Narrators, English translation, and a Kisa link to your clipboard.</li>
                     </ul>
                   </div>
 
