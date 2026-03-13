@@ -490,10 +490,11 @@ const TranscriptLibrary = ({ transcripts }) => {
 
   const [analytics, setAnalytics] = useState(() => {
     const saved = localStorage.getItem('kisa_analytics');
-    return saved ? JSON.parse(saved) : { totalCompleted: 0, totalMinutes: 0, history: {} };
+    return saved ? JSON.parse(saved) : { totalCompleted: 0, totalSeconds: 0, history: {} };
   });
 
   const [resumeToast, setResumeToast] = useState(false);
+  const [isExploding, setIsExploding] = useState(false);
 
   const maxScrollYRef = useRef(0);
   const returnDesktopRef = useRef(null);
@@ -538,9 +539,10 @@ const TranscriptLibrary = ({ transcripts }) => {
     return { resumeDoc: null, upNextDoc: null };
   }, [readingProgress, transcripts]);
 
+  // FIX: Heatmap now correctly places Today at index 0 (Top-Left)
   const heatmapDays = useMemo(() => {
     const days = [];
-    for (let i = 27; i >= 0; i--) {
+    for (let i = 0; i <= 27; i++) {
       const d = new Date();
       d.setDate(d.getDate() - i);
       const dateStr = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
@@ -635,41 +637,55 @@ const TranscriptLibrary = ({ transcripts }) => {
     setSearchQuery('');
   };
 
-  const readingTime = useMemo(() => {
-    if (!activeDoc) return 0;
-    const textString = activeDoc.content.map(b => b.text).join(' ');
-    const wordCount = textString.trim().split(/\s+/).length;
-    return Math.ceil(wordCount / 200);
-  }, [activeDoc]);
+  // NEW: Real-Time Active Study Tracker
+  useEffect(() => {
+    if (currentView !== 'reader' || !activeDoc) return;
 
-  // Handler for "Mark as Read"
+    const timer = setInterval(() => {
+      setAnalytics(prev => {
+        // Fallback for legacy analytics that used minutes
+        const currentSecs = prev.totalSeconds !== undefined ? prev.totalSeconds : (prev.totalMinutes * 60 || 0);
+        const updated = { ...prev, totalSeconds: currentSecs + 10 };
+        localStorage.setItem('kisa_analytics', JSON.stringify(updated));
+        return updated;
+      });
+    }, 10000); // Logs 10 seconds of study time every 10 seconds
+
+    return () => clearInterval(timer);
+  }, [currentView, activeDoc]);
+
+  // NEW: Dopamine Firework Handler
   const handleMarkAsRead = () => {
-    const now = Date.now();
-    const dateObj = new Date();
-    const today = dateObj.getFullYear() + '-' + String(dateObj.getMonth() + 1).padStart(2, '0') + '-' + String(dateObj.getDate()).padStart(2, '0');
+    setIsExploding(true);
 
-    const currentSavedData = JSON.parse(localStorage.getItem('kisa_progress') || '{}');
-    currentSavedData[activeDoc.id] = {
-      ...currentSavedData[activeDoc.id],
-      status: 'completed',
-      percentage: 100,
-      lastAccessed: now
-    };
-    localStorage.setItem('kisa_progress', JSON.stringify(currentSavedData));
-    setReadingProgress(currentSavedData);
+    setTimeout(() => {
+      setIsExploding(false);
+      const now = Date.now();
+      const dateObj = new Date();
+      const today = dateObj.getFullYear() + '-' + String(dateObj.getMonth() + 1).padStart(2, '0') + '-' + String(dateObj.getDate()).padStart(2, '0');
 
-    const newAnalytics = { ...analytics };
-    newAnalytics.totalCompleted += 1;
-    newAnalytics.totalMinutes += readingTime;
-    newAnalytics.history[today] = (newAnalytics.history[today] || 0) + 1;
+      const currentSavedData = JSON.parse(localStorage.getItem('kisa_progress') || '{}');
+      currentSavedData[activeDoc.id] = {
+        ...currentSavedData[activeDoc.id],
+        status: 'completed',
+        percentage: 100,
+        lastAccessed: now
+      };
+      localStorage.setItem('kisa_progress', JSON.stringify(currentSavedData));
+      setReadingProgress(currentSavedData);
 
-    localStorage.setItem('kisa_analytics', JSON.stringify(newAnalytics));
-    setAnalytics(newAnalytics);
+      setAnalytics(prev => {
+        const newAnalytics = { ...prev };
+        newAnalytics.totalCompleted += 1;
+        newAnalytics.history[today] = (newAnalytics.history[today] || 0) + 1;
+        localStorage.setItem('kisa_analytics', JSON.stringify(newAnalytics));
+        return newAnalytics;
+      });
 
-    window.scrollTo({ top: document.documentElement.scrollHeight, behavior: 'smooth' });
+      window.scrollTo({ top: document.documentElement.scrollHeight, behavior: 'smooth' });
+    }, 600); // Waits for the firework animation to finish before updating UI
   };
 
-  // NEW: Handler for Resetting Progress
   const handleResetProgress = () => {
     const currentSavedData = JSON.parse(localStorage.getItem('kisa_progress') || '{}');
     if (currentSavedData[activeDoc.id]) {
@@ -681,11 +697,12 @@ const TranscriptLibrary = ({ transcripts }) => {
       localStorage.setItem('kisa_progress', JSON.stringify(currentSavedData));
       setReadingProgress(currentSavedData);
 
-      // Safely deduct from analytics total so it stays accurate
-      const newAnalytics = { ...analytics };
-      newAnalytics.totalCompleted = Math.max(0, newAnalytics.totalCompleted - 1);
-      localStorage.setItem('kisa_analytics', JSON.stringify(newAnalytics));
-      setAnalytics(newAnalytics);
+      setAnalytics(prev => {
+        const newAnalytics = { ...prev };
+        newAnalytics.totalCompleted = Math.max(0, newAnalytics.totalCompleted - 1);
+        localStorage.setItem('kisa_analytics', JSON.stringify(newAnalytics));
+        return newAnalytics;
+      });
     }
   };
 
@@ -701,7 +718,6 @@ const TranscriptLibrary = ({ transcripts }) => {
     }
     return null;
   }, [activeDoc, transcripts, readingProgress]);
-
 
   let seriesTitle = activeDoc?.series;
   let mainTitle = activeDoc?.title;
@@ -943,6 +959,10 @@ const TranscriptLibrary = ({ transcripts }) => {
   // RENDER: DASHBOARD VIEW
   // ==========================================
   if (currentView === 'home') {
+    const totalSecs = analytics.totalSeconds !== undefined ? analytics.totalSeconds : (analytics.totalMinutes * 60 || 0);
+    const hrs = Math.floor(totalSecs / 3600);
+    const mins = Math.floor((totalSecs % 3600) / 60);
+
     return (
       <div className="w-full min-h-screen pt-24 sm:pt-32 pb-32 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto flex flex-col pointer-events-auto">
 
@@ -959,7 +979,10 @@ const TranscriptLibrary = ({ transcripts }) => {
             </div>
             <div>
               <p className="text-[10px] font-bold uppercase tracking-widest text-zinc-400 mb-1">Study Time</p>
-              <p className="text-3xl font-serif font-bold text-zinc-900 dark:text-white">{analytics.totalMinutes} <span className="text-sm font-sans text-zinc-500 font-normal">min</span></p>
+              <p className="text-3xl font-serif font-bold text-zinc-900 dark:text-white">
+                {hrs > 0 && <>{hrs}<span className="text-sm font-sans text-zinc-500 font-normal mr-1">h</span></>}
+                {mins}<span className="text-sm font-sans text-zinc-500 font-normal">m</span>
+              </p>
             </div>
           </div>
 
@@ -1328,13 +1351,8 @@ const TranscriptLibrary = ({ transcripts }) => {
             {/* MINIMALIST EDITORIAL: MARK AS READ & UP NEXT BUTTON SECTION */}
             <div className="mt-16 pt-12 border-t border-zinc-200 dark:border-zinc-800/80 flex flex-col items-center">
               {readingProgress[activeDoc.id]?.status === 'completed' ? (
-                <div className="flex flex-col items-center gap-5">
-                  <div className="flex items-center gap-2 text-[#c6a87c]">
-                    <Check className="w-4 h-4" />
-                    <span className="font-serif italic text-lg sm:text-xl text-zinc-600 dark:text-zinc-400">You have completed this transcript.</span>
-                  </div>
-
-                  <div className="flex flex-col sm:flex-row items-center gap-4 mt-2">
+                <div className="flex flex-col items-center gap-4">
+                  <div className="flex flex-col sm:flex-row items-center gap-4">
                     {nextDocInSeries && (
                       <button
                         onClick={() => openReader(nextDocInSeries)}
@@ -1355,10 +1373,44 @@ const TranscriptLibrary = ({ transcripts }) => {
               ) : (
                 <button
                   onClick={handleMarkAsRead}
-                  className="px-8 py-3 bg-transparent border border-zinc-300 dark:border-zinc-700 text-zinc-600 dark:text-zinc-400 hover:border-[#c6a87c] hover:text-[#c6a87c] hover:bg-[#c6a87c]/5 font-bold rounded-full transition-all duration-300 flex items-center gap-2 text-xs uppercase tracking-widest cursor-pointer"
+                  className={`relative overflow-hidden px-8 py-3 bg-transparent border ${isExploding ? 'border-[#10b981]' : 'border-zinc-300 dark:border-zinc-700 hover:border-[#c6a87c] hover:text-[#c6a87c]'} text-zinc-600 dark:text-zinc-400 font-bold rounded-full transition-all duration-300 flex items-center gap-2 text-xs uppercase tracking-widest cursor-pointer`}
                 >
-                  <Check className="w-4 h-4" />
-                  <span>Mark as Read</span>
+                  <AnimatePresence>
+                    {isExploding && (
+                      <motion.div
+                        initial={{ opacity: 1, backgroundColor: "#10b981" }}
+                        animate={{ opacity: 0 }}
+                        transition={{ duration: 0.6 }}
+                        className="absolute inset-0 z-0"
+                      />
+                    )}
+                  </AnimatePresence>
+
+                  {isExploding && (
+                    <div className="absolute inset-0 z-0 flex items-center justify-center">
+                      {[...Array(15)].map((_, i) => {
+                        const angle = (i / 15) * Math.PI * 2;
+                        const distance = 40 + Math.random() * 20;
+                        return (
+                          <motion.div
+                            key={i}
+                            initial={{ x: 0, y: 0, scale: 1, opacity: 1 }}
+                            animate={{
+                              x: Math.cos(angle) * distance,
+                              y: Math.sin(angle) * distance,
+                              scale: 0,
+                              opacity: 0
+                            }}
+                            transition={{ duration: 0.5, ease: "easeOut" }}
+                            className="absolute w-1.5 h-1.5 bg-white rounded-full"
+                          />
+                        );
+                      })}
+                    </div>
+                  )}
+
+                  <Check className={`w-4 h-4 relative z-10 transition-colors ${isExploding ? 'text-white' : ''}`} />
+                  <span className={`relative z-10 transition-colors ${isExploding ? 'text-white' : ''}`}>Mark as Read</span>
                 </button>
               )}
             </div>
