@@ -1792,19 +1792,20 @@ export default function App() {
           font-display: swap;
         }
 
-        /* FIX: Prevents Layout Shift by permanently reserving scrollbar space */
-        html, body { 
-          scrollbar-gutter: stable; 
-          overflow-x: hidden;
+        /* 1. THE JUTTER FIX: Forces the scrollbar to permanently exist */
+        html { 
+          overflow-y: scroll !important; 
         }
 
         .hide-scroll::-webkit-scrollbar { display: none; }
         .hide-scroll { -ms-overflow-style: none; scrollbar-width: none; -webkit-overflow-scrolling: touch; overscroll-behavior-y: contain; }
         .smart-scrollbar { --thumb-bg: transparent; scrollbar-width: thin; scrollbar-color: var(--thumb-bg) transparent; -webkit-overflow-scrolling: touch; overscroll-behavior-y: contain; }
-        .smart-scrollbar::-webkit-scrollbar { width: 8px; }
-        .smart-scrollbar::-webkit-scrollbar-track { background: transparent; }
-        .smart-scrollbar::-webkit-scrollbar-thumb { background-color: var(--thumb-bg); border-radius: 10px; }
-        .smart-scrollbar::-webkit-scrollbar-thumb:hover { background-color: rgba(198, 168, 124, 0.8) !important; }
+        
+        /* 2. THE PREMIUM INVISIBLE SCROLLBAR */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background-color: rgba(198, 168, 124, 0.1); border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background-color: rgba(198, 168, 124, 0.8) !important; }
         
         /* The Vellum Noise Overlay */
         .gilded-noise {
@@ -1817,6 +1818,27 @@ export default function App() {
           position: absolute; inset: 0;
           background: radial-gradient(circle at 50% 42%, rgba(198, 168, 124, 0.08) 0%, rgba(6, 33, 22, 0.75) 45%, rgba(2, 6, 4, 1) 100%);
           pointer-events: none; z-index: 0;
+        }
+
+        /* 3. THE UNBREAKABLE BRASS SHEEN */
+        .hover-sheen {
+          position: absolute !important;
+          overflow: hidden;
+        }
+        .hover-sheen::after {
+          content: "";
+          position: absolute;
+          top: 0;
+          left: -150%;
+          width: 50%;
+          height: 100%;
+          background: linear-gradient(to right, transparent, rgba(255, 255, 255, 0.85), transparent);
+          transform: skewX(-25deg);
+          transition: left 0.45s ease-in-out;
+          pointer-events: none;
+        }
+        .hover-sheen:hover::after {
+          left: 200%;
         }
       `}</style>
 
@@ -1928,9 +1950,8 @@ export default function App() {
                       placeholder={isKeyword ? "Enter an exact word or phrase..." : "Enter a phrase or concept (e.g. intellect)..."}
                       className="w-full bg-transparent appearance-none outline-none rounded-none py-3 sm:py-4 pl-3 sm:pl-4 pr-14 sm:pr-16 text-base font-sans text-slate-800 dark:text-[#FAFAFA] placeholder:text-slate-500/80 dark:placeholder:text-[#c6a87c]/40 cursor-text caret-[#c6a87c]"
                     />
-                    {/* FIX: SLEEK GOLD SUBMIT BUTTON WITH NATIVE TAILWIND SHEEN */}
-                    <button type="submit" className="absolute right-2 p-2 sm:p-2.5 rounded-xl shadow-sm cursor-pointer bg-slate-100 dark:bg-[#c6a87c]/10 hover:bg-slate-200 dark:hover:bg-[#c6a87c]/20 text-slate-600 dark:text-[#c6a87c] dark:hover:text-[#FAFAFA] border border-transparent dark:border-[#c6a87c]/20 overflow-hidden group/btn">
-                      <div className="absolute inset-0 -translate-x-[150%] skew-x-[-25deg] bg-gradient-to-r from-transparent via-white/60 to-transparent group-hover/btn:translate-x-[150%] transition-transform duration-700 ease-in-out z-0"></div>
+                    {/* BULLETPROOF SHEEN BUTTON */}
+                    <button type="submit" className="hover-sheen right-2 p-2 sm:p-2.5 rounded-xl shadow-sm cursor-pointer bg-slate-100 dark:bg-[#c6a87c]/10 hover:bg-slate-200 dark:hover:bg-[#c6a87c]/20 text-slate-600 dark:text-[#c6a87c] dark:hover:text-[#FAFAFA] border border-transparent dark:border-[#c6a87c]/20 transition-colors flex items-center justify-center z-10">
                       <Search className="w-4 h-4 sm:w-5 sm:h-5 relative z-10" />
                     </button>
                   </div>
