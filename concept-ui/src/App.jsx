@@ -1814,6 +1814,10 @@ export default function App() {
     return () => clearTimeout(timer);
   }, [ghostText, isDeleting, ghostIndex, activeTab, isKeyword]);
 
+  // --- MAGNETIC BUTTON PHYSICS ---
+  const [magneticPos, setMagneticPos] = useState({ x: 0, y: 0 });
+  const btnRef = useRef(null);
+
   const appBgClass = activeTab === 'quran' ? (theme === 'dark' ? 'bg-[#121212] text-slate-100' : 'bg-[#f4ecd8] text-slate-900') :
     (activeTab === 'library' ? (theme === 'dark' ? 'bg-[#1c1c1e] text-zinc-100' : 'bg-[#f4f4f5] text-zinc-900') :
       (theme === 'dark' ? 'bg-[#030A06] text-[#FAFAFA]' : 'bg-[#EAE4D3] text-[#2D241C]'));
@@ -1999,10 +2003,25 @@ export default function App() {
                       placeholder={isKeyword ? "Enter an exact word or phrase..." : ghostText}
                       className="w-full bg-transparent appearance-none outline-none rounded-none py-3 sm:py-4 pl-3 sm:pl-4 pr-14 sm:pr-16 text-base font-sans text-[#2D241C] dark:text-[#FAFAFA] placeholder:text-[#5C4A3D]/60 dark:placeholder:text-[#c6a87c]/40 cursor-text caret-[#c6a87c]"
                     />
-                    {/* BULLETPROOF BRASS SHEEN BUTTON */}
-                    <button type="submit" className="hover-sheen right-2 p-2 sm:p-2.5 rounded-xl shadow-sm cursor-pointer bg-[#FDFBF7]/80 dark:bg-[#c6a87c]/10 hover:bg-[#FDFBF7] dark:hover:bg-[#c6a87c]/20 text-[#c6a87c] dark:hover:text-[#FAFAFA] border border-[#5C4A3D]/5 dark:border-[#c6a87c]/20 transition-colors flex items-center justify-center z-10">
+
+                    {/* MAGNETIC BRASS SHEEN BUTTON */}
+                    <motion.button
+                      ref={btnRef}
+                      type="submit"
+                      animate={{ x: magneticPos.x, y: magneticPos.y }}
+                      transition={{ type: "spring", stiffness: 150, damping: 15, mass: 0.1 }}
+                      onMouseMove={(e) => {
+                        if (!btnRef.current) return;
+                        const { left, top, width, height } = btnRef.current.getBoundingClientRect();
+                        const x = (e.clientX - (left + width / 2)) * 0.4; // 0.4 is the magnetic pull strength
+                        const y = (e.clientY - (top + height / 2)) * 0.4;
+                        setMagneticPos({ x, y });
+                      }}
+                      onMouseLeave={() => setMagneticPos({ x: 0, y: 0 })}
+                      className="hover-sheen absolute right-2 p-2 sm:p-2.5 rounded-xl shadow-sm cursor-pointer bg-[#FDFBF7]/80 dark:bg-[#c6a87c]/10 hover:bg-[#FDFBF7] dark:hover:bg-[#c6a87c]/20 text-[#c6a87c] dark:hover:text-[#FAFAFA] border border-[#5C4A3D]/5 dark:border-[#c6a87c]/20 transition-colors flex items-center justify-center z-10"
+                    >
                       <Search className="w-4 h-4 sm:w-5 sm:h-5 relative z-10" />
-                    </button>
+                    </motion.button>
                   </div>
 
                   <AnimatePresence>
@@ -2121,17 +2140,22 @@ export default function App() {
                     </motion.div>
                   </div>
 
+                  {/* THE BRASS ORRERY: Orbital Background Rings */}
                   <svg className="absolute inset-0 w-full h-full pointer-events-none z-10">
+                    <circle cx={centerPos.x} cy={centerPos.y} r={180} fill="none" stroke={theme === 'dark' ? '#c6a87c' : '#5C4A3D'} strokeWidth="1" strokeOpacity="0.1" strokeDasharray="4 6" />
+                    <circle cx={centerPos.x} cy={centerPos.y} r={320} fill="none" stroke={theme === 'dark' ? '#c6a87c' : '#5C4A3D'} strokeWidth="1" strokeOpacity="0.05" />
+                    <circle cx={centerPos.x} cy={centerPos.y} r={460} fill="none" stroke={theme === 'dark' ? '#c6a87c' : '#5C4A3D'} strokeWidth="1" strokeOpacity="0.03" strokeDasharray="2 8" />
+
                     {(data.clusters || []).map((cluster, i) => {
                       const clusterCount = data.clusters ? Math.max(1, data.clusters.length) : 1;
                       const rx = Math.max(280, Math.min(centerPos.x - 150, 450));
                       const ry = Math.max(220, Math.min(centerPos.y - 140, 320));
                       const pos = getRadialPosition(i, clusterCount, rx, ry);
 
-                      // Map Lines
                       const color = theme === 'dark' ? '#c6a87c' : '#5C4A3D';
                       const isActive = activeCluster === i;
                       const isHovered = hoveredCluster === i;
+
                       return (<motion.line key={`line-${i}`} x1={centerPos.x} y1={centerPos.y} x2={centerPos.x + pos.x} y2={centerPos.y + pos.y} stroke={color} strokeWidth={isActive ? 2 : isHovered ? 1.5 : 1} strokeOpacity={isActive ? 0.6 : isHovered ? 0.3 : 0.15} initial={{ pathLength: 0 }} animate={{ pathLength: 1 }} transition={{ duration: 1, delay: i * 0.2 }} className="transition-all duration-300" />);
                     })}
                   </svg>
@@ -2157,22 +2181,28 @@ export default function App() {
                       <div key={`cluster-wrap-${i}`} className="absolute top-1/2 left-1/2 w-0 h-0 flex items-center justify-center z-20 pointer-events-none">
                         <motion.div initial={{ opacity: 0, scale: 0 }} animate={{ opacity: isFaded ? 0.2 : 1, x: pos.x, y: pos.y, scale: isActive ? baseScale * 1.05 : baseScale }} transition={{ type: "spring", stiffness: 60, delay: i * 0.1 }} className={`pointer-events-auto transition-all duration-300 mt-8 ${isFaded ? 'pointer-events-none grayscale' : ''}`} onMouseEnter={() => setHoveredCluster(i)} onMouseLeave={() => setHoveredCluster(null)}>
 
-                          <div className="flex flex-col cursor-pointer transition-all duration-300 shadow-lg relative group w-[240px] sm:w-[280px] bg-[#FDFBF7]/60 dark:bg-[#020805]/60 backdrop-blur-xl rounded-xl" style={{ border: `1px solid ${isActive || isHovered ? color : (theme === 'dark' ? 'rgba(198, 168, 124, 0.15)' : 'rgba(92, 74, 61, 0.15)')}`, boxShadow: isActive || isHovered ? `0 0 24px ${color}30` : '0 8px 32px rgba(45,36,28,0.05)' }}>
-                            <div onClick={() => setActiveCluster(isActive ? null : i)} className="px-4 py-3 sm:px-5 sm:py-4 flex items-center justify-between gap-3 text-[#2D241C] dark:text-[#FAFAFA]">
-                              <div className="absolute left-0 top-0 bottom-0 w-1.5 transition-all duration-300 group-hover:w-2 rounded-l-xl" style={{ backgroundColor: color }} />
-                              <div className="pl-2 pr-1 w-full">
-                                <h3 className="font-mono font-medium text-xs sm:text-sm lg:text-base leading-snug whitespace-normal break-words">{cluster.theme_label}</h3>
-                                <p className="text-[10px] sm:text-xs opacity-60 mt-1 text-[#c6a87c]">{itemsLength} Hadiths</p>
+                          {/* ASTROLABE NODE STYLING */}
+                          <div onClick={() => setActiveCluster(isActive ? null : i)} className="flex flex-col items-center justify-center cursor-pointer transition-all duration-500 shadow-xl relative group w-[220px] sm:w-[260px] bg-[#FDFBF7]/80 dark:bg-[#020805]/80 backdrop-blur-xl rounded-full px-6 py-4" style={{ border: `3px double ${isActive || isHovered ? color : (theme === 'dark' ? 'rgba(198, 168, 124, 0.3)' : 'rgba(92, 74, 61, 0.3)')}`, boxShadow: isActive || isHovered ? `0 0 30px ${color}30, inset 0 0 15px ${color}10` : '0 8px 32px rgba(45,36,28,0.1)' }}>
+
+                            {/* Inner glowing core on hover */}
+                            <div className={`absolute inset-0 rounded-full transition-opacity duration-500 ${isActive || isHovered ? 'opacity-100' : 'opacity-0'}`} style={{ background: `radial-gradient(circle at center, ${color}15 0%, transparent 70%)` }} />
+
+                            <div className="relative z-10 flex flex-col items-center text-center">
+                              <h3 className="font-serif text-sm sm:text-base leading-snug whitespace-normal break-words text-[#2D241C] dark:text-[#FAFAFA] group-hover:text-[#0F1A15] dark:group-hover:text-[#c6a87c] transition-colors">{cluster.theme_label}</h3>
+                              <div className="mt-2 flex items-center gap-1.5 opacity-80">
+                                <Sparkles className="w-3 h-3 text-[#c6a87c]" />
+                                <span className="font-mono text-[10px] tracking-widest uppercase font-bold text-[#5C4A3D] dark:text-[#c6a87c]">{itemsLength} Narrations</span>
                               </div>
-                              <div className="opacity-50 group-hover:opacity-100 transition-opacity shrink-0 text-[#c6a87c]">{isActive ? <X className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}</div>
                             </div>
                           </div>
+
                         </motion.div>
                       </div>
                     );
                   })}
                 </div>
               )}
+
 
               {viewMode === 'list' && (
                 <div className="z-30 w-full max-w-4xl mx-auto px-4 sm:px-6 pt-24 sm:pt-28 pb-12 pointer-events-auto">
