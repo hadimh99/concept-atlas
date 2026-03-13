@@ -652,6 +652,7 @@ const TranscriptLibrary = ({ transcripts }) => {
     return () => clearInterval(timer);
   }, [currentView, activeDoc]);
 
+  // Smoother, slower Firework Handler
   const handleMarkAsRead = () => {
     setIsExploding(true);
 
@@ -681,7 +682,7 @@ const TranscriptLibrary = ({ transcripts }) => {
       });
 
       window.scrollTo({ top: document.documentElement.scrollHeight, behavior: 'smooth' });
-    }, 600);
+    }, 1200); // Wait 1.2s for fireworks to complete
   };
 
   const handleResetProgress = () => {
@@ -961,9 +962,6 @@ const TranscriptLibrary = ({ transcripts }) => {
     </div>
   );
 
-  // ==========================================
-  // RENDER: DASHBOARD VIEW
-  // ==========================================
   if (currentView === 'home') {
     const totalSecs = analytics.totalSeconds !== undefined ? analytics.totalSeconds : (analytics.totalMinutes * 60 || 0);
     const hrs = Math.floor(totalSecs / 3600);
@@ -1026,7 +1024,7 @@ const TranscriptLibrary = ({ transcripts }) => {
           return (
             <div
               onClick={() => openReader(targetDoc)}
-              className={`w-full bg-gradient-to-r ${isUpNext ? 'from-emerald-500/10' : 'from-[#c6a87c]/10'} to-transparent border ${isUpNext ? 'border-emerald-500/30 hover:bg-emerald-500/20' : 'border-[#c6a87c]/30 hover:bg-[#c6a87c]/20'} rounded-2xl p-6 sm:p-8 mb-12 cursor-pointer transition-all duration-300 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6 shadow-sm group`}
+              className={`w-full bg-gradient-to-r ${isUpNext ? 'from-emerald-500/5' : 'from-[#c6a87c]/10'} to-transparent border ${isUpNext ? 'border-emerald-500/20 hover:border-emerald-500/50 hover:bg-emerald-500/5 hover:shadow-[0_0_15px_rgba(16,185,129,0.1)]' : 'border-[#c6a87c]/30 hover:bg-[#c6a87c]/20'} rounded-2xl p-6 sm:p-8 mb-12 cursor-pointer transition-all duration-300 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6 shadow-sm group`}
             >
               <div>
                 <div className="flex items-center flex-wrap gap-2 mb-3">
@@ -1191,10 +1189,6 @@ const TranscriptLibrary = ({ transcripts }) => {
     );
   }
 
-  // ==========================================
-  // RENDER: PREMIUM READER VIEW
-  // ==========================================
-
   // FIX: Safety guard to prevent blank screen crashes on transition
   if (!activeDoc) return null;
 
@@ -1358,71 +1352,94 @@ const TranscriptLibrary = ({ transcripts }) => {
               })}
             </div>
 
-            {/* MINIMALIST EDITORIAL: MARK AS READ & UP NEXT BUTTON SECTION */}
-            <div className="mt-16 pt-12 border-t border-zinc-200 dark:border-zinc-800/80 flex flex-col items-center">
-              {readingProgress[activeDoc.id]?.status === 'completed' ? (
-                <div className="flex flex-col items-center gap-4">
-                  <div className="flex flex-col sm:flex-row items-center gap-4">
-                    {nextDocInSeries && (
-                      <button
-                        onClick={() => openReader(nextDocInSeries)}
-                        className="px-6 py-2.5 bg-zinc-50 dark:bg-[#1c1c1e] text-zinc-800 dark:text-zinc-200 font-bold rounded-full border border-zinc-200 dark:border-zinc-800 shadow-sm hover:border-[#c6a87c] hover:text-[#c6a87c] transition-all duration-300 flex items-center gap-2 text-xs uppercase tracking-widest cursor-pointer"
-                      >
-                        <span>Start Next Episode</span>
-                        <ChevronRight className="w-4 h-4" />
-                      </button>
-                    )}
-                  </div>
-                  <button
-                    onClick={handleResetProgress}
-                    className="text-[10px] uppercase tracking-widest text-zinc-400 hover:text-red-500 dark:hover:text-red-400 transition-colors mt-2 cursor-pointer"
+            {/* MINIMALIST EDITORIAL: MARK AS READ & UP NEXT BUTTON SECTION WITH JUTTER FIX */}
+            <div className="mt-16 pt-12 border-t border-zinc-200 dark:border-zinc-800/80 flex flex-col items-center min-h-[140px] justify-center">
+              <AnimatePresence mode="wait">
+                {readingProgress[activeDoc.id]?.status === 'completed' ? (
+                  <motion.div
+                    key="completed-state"
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -10 }}
+                    transition={{ duration: 0.4 }}
+                    className="flex flex-col items-center gap-4"
                   >
-                    Reset Progress
-                  </button>
-                </div>
-              ) : (
-                <button
-                  onClick={handleMarkAsRead}
-                  className={`relative overflow-hidden px-8 py-3 bg-transparent border ${isExploding ? 'border-[#10b981]' : 'border-zinc-300 dark:border-zinc-700 hover:border-[#c6a87c] hover:text-[#c6a87c]'} text-zinc-600 dark:text-zinc-400 font-bold rounded-full transition-all duration-300 flex items-center gap-2 text-xs uppercase tracking-widest cursor-pointer`}
-                >
-                  <AnimatePresence>
-                    {isExploding && (
-                      <motion.div
-                        initial={{ opacity: 1, backgroundColor: "#10b981" }}
-                        animate={{ opacity: 0 }}
-                        transition={{ duration: 0.6 }}
-                        className="absolute inset-0 z-0"
-                      />
-                    )}
-                  </AnimatePresence>
-
-                  {isExploding && (
-                    <div className="absolute inset-0 z-0 flex items-center justify-center">
-                      {Array.from({ length: 15 }).map((_, i) => {
-                        const angle = (i / 15) * Math.PI * 2;
-                        const distance = 40 + Math.random() * 20;
-                        return (
-                          <motion.div
-                            key={i}
-                            initial={{ x: 0, y: 0, scale: 1, opacity: 1 }}
-                            animate={{
-                              x: Math.cos(angle) * distance,
-                              y: Math.sin(angle) * distance,
-                              scale: 0,
-                              opacity: 0
-                            }}
-                            transition={{ duration: 0.5, ease: "easeOut" }}
-                            className="absolute w-1.5 h-1.5 bg-white rounded-full"
-                          />
-                        );
-                      })}
+                    <div className="flex flex-col sm:flex-row items-center gap-4">
+                      {nextDocInSeries ? (
+                        <button
+                          onClick={() => openReader(nextDocInSeries)}
+                          className="px-6 py-2.5 bg-zinc-50 dark:bg-[#1c1c1e] text-zinc-800 dark:text-zinc-200 font-bold rounded-full border border-zinc-200 dark:border-zinc-800 shadow-sm hover:border-[#c6a87c] hover:text-[#c6a87c] transition-all duration-300 flex items-center gap-2 text-xs uppercase tracking-widest cursor-pointer"
+                        >
+                          <span>Start Next Episode</span>
+                          <ChevronRight className="w-4 h-4" />
+                        </button>
+                      ) : (
+                        <div className="flex items-center gap-2 text-[#c6a87c]">
+                          <Check className="w-4 h-4" />
+                          <span className="font-serif italic text-lg sm:text-xl text-zinc-600 dark:text-zinc-400">Series Completed.</span>
+                        </div>
+                      )}
                     </div>
-                  )}
+                    <button
+                      onClick={handleResetProgress}
+                      className="text-[10px] uppercase tracking-widest text-zinc-400 hover:text-red-500 dark:hover:text-red-400 transition-colors mt-2 cursor-pointer"
+                    >
+                      Reset Progress
+                    </button>
+                  </motion.div>
+                ) : (
+                  <motion.div
+                    key="unread-state"
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -10 }}
+                    transition={{ duration: 0.4 }}
+                  >
+                    <button
+                      onClick={handleMarkAsRead}
+                      className={`relative overflow-hidden px-8 py-3 bg-transparent border ${isExploding ? 'border-[#10b981]' : 'border-zinc-300 dark:border-zinc-700 hover:border-[#c6a87c] hover:text-[#c6a87c]'} text-zinc-600 dark:text-zinc-400 font-bold rounded-full transition-all duration-300 flex items-center gap-2 text-xs uppercase tracking-widest cursor-pointer`}
+                    >
+                      <AnimatePresence>
+                        {isExploding && (
+                          <motion.div
+                            initial={{ opacity: 0.8, backgroundColor: "#10b981" }}
+                            animate={{ opacity: 0 }}
+                            transition={{ duration: 1.2, ease: "easeOut" }}
+                            className="absolute inset-0 z-0"
+                          />
+                        )}
+                      </AnimatePresence>
 
-                  <Check className={`w-4 h-4 relative z-10 transition-colors ${isExploding ? 'text-white' : ''}`} />
-                  <span className={`relative z-10 transition-colors ${isExploding ? 'text-white' : ''}`}>Mark as Read</span>
-                </button>
-              )}
+                      {isExploding && (
+                        <div className="absolute inset-0 z-0 flex items-center justify-center">
+                          {Array.from({ length: 25 }).map((_, i) => {
+                            const angle = (i / 25) * Math.PI * 2;
+                            const distance = 30 + Math.random() * 40;
+                            const isGold = Math.random() > 0.5;
+                            return (
+                              <motion.div
+                                key={i}
+                                initial={{ x: 0, y: 0, scale: 1, opacity: 1 }}
+                                animate={{
+                                  x: Math.cos(angle) * distance,
+                                  y: Math.sin(angle) * distance,
+                                  scale: 0,
+                                  opacity: 0
+                                }}
+                                transition={{ duration: 1.2, ease: "easeOut" }}
+                                className={`absolute w-1 h-1 sm:w-1.5 sm:h-1.5 rounded-full ${isGold ? 'bg-[#c6a87c]' : 'bg-white'}`}
+                              />
+                            );
+                          })}
+                        </div>
+                      )}
+
+                      <Check className={`w-4 h-4 relative z-10 transition-colors ${isExploding ? 'text-white' : ''}`} />
+                      <span className={`relative z-10 transition-colors ${isExploding ? 'text-white' : ''}`}>Mark as Read</span>
+                    </button>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
 
           </div>
