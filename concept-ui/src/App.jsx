@@ -1452,6 +1452,7 @@ const TranscriptLibrary = ({ transcripts }) => {
 
 export default function App() {
   const [query, setQuery] = useState('');
+
   const [searchMode, setSearchMode] = useState('concept');
   const [sourceFilter, setSourceFilter] = useState(SOURCES[0]);
 
@@ -1773,6 +1774,46 @@ export default function App() {
   const uniqueBooks = data && data.clusters ? Array.from(new Set(data.clusters.flatMap(c => c.items ? c.items.map(item => item.book) : []))) : [];
   const isKeyword = searchMode === 'keyword';
 
+  // --- GHOST SCHOLAR TYPING EFFECT ---
+  const [ghostText, setGhostText] = useState('');
+  const [ghostIndex, setGhostIndex] = useState(0);
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  useEffect(() => {
+    // Only run the typing effect if we are on the Search tab and in Concept mode
+    if (activeTab !== 'search' || isKeyword) return;
+
+    const ghostPhrases = [
+      "Search the concept of Bada'...",
+      "Importance of knowing your Imam...",
+      "Find hadiths regarding the intellect...",
+      "Trace the attributes of the Ahl al-Bayt...",
+      "Find rulings for the traveller's prayer..."
+    ];
+
+    const currentPhrase = ghostPhrases[ghostIndex];
+    let timer;
+
+    if (isDeleting) {
+      timer = setTimeout(() => {
+        setGhostText(currentPhrase.substring(0, ghostText.length - 1));
+        if (ghostText.length <= 1) {
+          setIsDeleting(false);
+          setGhostIndex((prev) => (prev + 1) % ghostPhrases.length);
+        }
+      }, 35); // Erasing speed
+    } else {
+      if (ghostText.length === currentPhrase.length) {
+        timer = setTimeout(() => setIsDeleting(true), 3000); // Pause for 3 seconds when finished
+      } else {
+        timer = setTimeout(() => {
+          setGhostText(currentPhrase.substring(0, ghostText.length + 1));
+        }, 65); // Typing speed
+      }
+    }
+    return () => clearTimeout(timer);
+  }, [ghostText, isDeleting, ghostIndex, activeTab, isKeyword]);
+
   const appBgClass = activeTab === 'quran' ? (theme === 'dark' ? 'bg-[#121212] text-slate-100' : 'bg-[#f4ecd8] text-slate-900') :
     (activeTab === 'library' ? (theme === 'dark' ? 'bg-[#1c1c1e] text-zinc-100' : 'bg-[#f4f4f5] text-zinc-900') :
       (theme === 'dark' ? 'bg-[#030A06] text-[#FAFAFA]' : 'bg-[#EAE4D3] text-[#2D241C]'));
@@ -1899,6 +1940,7 @@ export default function App() {
                 <Menu className="w-5 h-5" />
               </button>
               <AnimatePresence>
+
                 {showMobileMenu && (
                   <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className={`absolute right-0 top-full mt-2 w-48 rounded-xl shadow-xl p-2 flex flex-col gap-1 z-[75] border ${activeTab === 'library' ? 'bg-white dark:bg-[#1c1c1e] border-zinc-200 dark:border-zinc-800' : (activeTab === 'quran' ? 'bg-[#f4ecd8] dark:bg-[#1a1a1a] border-slate-300 dark:border-slate-700' : 'bg-[#FDFBF7]/95 dark:bg-[#030A06] border-[#5C4A3D]/15 dark:border-[#c6a87c]/20 backdrop-blur-2xl')}`}>
                     {activeTab === 'search' && data && <button onClick={() => { handleHomeClick(); setShowMobileMenu(false); }} className="w-full text-left flex items-center gap-3 p-3 rounded-lg text-sm text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 cursor-pointer"><Home className="w-4 h-4 shrink-0" /> Reset Search</button>}
@@ -1954,7 +1996,7 @@ export default function App() {
                       value={query}
                       onFocus={() => setShowSearchDropdown(true)}
                       onChange={(e) => setQuery(e.target.value)}
-                      placeholder={isKeyword ? "Enter an exact word or phrase..." : "Enter a phrase or concept (e.g. intellect)..."}
+                      placeholder={isKeyword ? "Enter an exact word or phrase..." : ghostText}
                       className="w-full bg-transparent appearance-none outline-none rounded-none py-3 sm:py-4 pl-3 sm:pl-4 pr-14 sm:pr-16 text-base font-sans text-[#2D241C] dark:text-[#FAFAFA] placeholder:text-[#5C4A3D]/60 dark:placeholder:text-[#c6a87c]/40 cursor-text caret-[#c6a87c]"
                     />
                     {/* BULLETPROOF BRASS SHEEN BUTTON */}
