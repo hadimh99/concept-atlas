@@ -2140,12 +2140,8 @@ export default function App() {
                     </motion.div>
                   </div>
 
-                  {/* THE BRASS ORRERY: Orbital Background Rings */}
+                  {/* THE APPLE VISION MAP: Clean, highly legible, glassmorphic nodes */}
                   <svg className="absolute inset-0 w-full h-full pointer-events-none z-10">
-                    <circle cx={centerPos.x} cy={centerPos.y} r={180} fill="none" stroke={theme === 'dark' ? '#c6a87c' : '#5C4A3D'} strokeWidth="1" strokeOpacity="0.1" strokeDasharray="4 6" />
-                    <circle cx={centerPos.x} cy={centerPos.y} r={320} fill="none" stroke={theme === 'dark' ? '#c6a87c' : '#5C4A3D'} strokeWidth="1" strokeOpacity="0.05" />
-                    <circle cx={centerPos.x} cy={centerPos.y} r={460} fill="none" stroke={theme === 'dark' ? '#c6a87c' : '#5C4A3D'} strokeWidth="1" strokeOpacity="0.03" strokeDasharray="2 8" />
-
                     {(data.clusters || []).map((cluster, i) => {
                       const clusterCount = data.clusters ? Math.max(1, data.clusters.length) : 1;
                       const rx = Math.max(280, Math.min(centerPos.x - 150, 450));
@@ -2156,7 +2152,7 @@ export default function App() {
                       const isActive = activeCluster === i;
                       const isHovered = hoveredCluster === i;
 
-                      return (<motion.line key={`line-${i}`} x1={centerPos.x} y1={centerPos.y} x2={centerPos.x + pos.x} y2={centerPos.y + pos.y} stroke={color} strokeWidth={isActive ? 2 : isHovered ? 1.5 : 1} strokeOpacity={isActive ? 0.6 : isHovered ? 0.3 : 0.15} initial={{ pathLength: 0 }} animate={{ pathLength: 1 }} transition={{ duration: 1, delay: i * 0.2 }} className="transition-all duration-300" />);
+                      return (<motion.line key={`line-${i}`} x1={centerPos.x} y1={centerPos.y} x2={centerPos.x + pos.x} y2={centerPos.y + pos.y} stroke={color} strokeWidth={isActive ? 2 : isHovered ? 1.5 : 1} strokeOpacity={isActive ? 0.5 : isHovered ? 0.3 : 0.1} initial={{ pathLength: 0 }} animate={{ pathLength: 1 }} transition={{ duration: 1, delay: i * 0.2 }} className="transition-all duration-300" />);
                     })}
                   </svg>
 
@@ -2179,18 +2175,18 @@ export default function App() {
 
                     return (
                       <div key={`cluster-wrap-${i}`} className="absolute top-1/2 left-1/2 w-0 h-0 flex items-center justify-center z-20 pointer-events-none">
-                        <motion.div initial={{ opacity: 0, scale: 0 }} animate={{ opacity: isFaded ? 0.2 : 1, x: pos.x, y: pos.y, scale: isActive ? baseScale * 1.05 : baseScale }} transition={{ type: "spring", stiffness: 60, delay: i * 0.1 }} className={`pointer-events-auto transition-all duration-300 mt-8 ${isFaded ? 'pointer-events-none grayscale' : ''}`} onMouseEnter={() => setHoveredCluster(i)} onMouseLeave={() => setHoveredCluster(null)}>
+                        <motion.div initial={{ opacity: 0, scale: 0 }} animate={{ opacity: isFaded ? 0.2 : 1, x: pos.x, y: pos.y, scale: isActive ? baseScale * 1.05 : baseScale }} transition={{ type: "spring", stiffness: 60, delay: i * 0.1 }} className={`pointer-events-auto transition-all duration-300 mt-8 ${isFaded ? 'pointer-events-none grayscale blur-[2px]' : ''}`} onMouseEnter={() => setHoveredCluster(i)} onMouseLeave={() => setHoveredCluster(null)}>
 
-                          {/* ASTROLABE NODE STYLING */}
-                          <div onClick={() => setActiveCluster(isActive ? null : i)} className="flex flex-col items-center justify-center cursor-pointer transition-all duration-500 shadow-xl relative group w-[220px] sm:w-[260px] bg-[#FDFBF7]/80 dark:bg-[#020805]/80 backdrop-blur-xl rounded-full px-6 py-4" style={{ border: `3px double ${isActive || isHovered ? color : (theme === 'dark' ? 'rgba(198, 168, 124, 0.3)' : 'rgba(92, 74, 61, 0.3)')}`, boxShadow: isActive || isHovered ? `0 0 30px ${color}30, inset 0 0 15px ${color}10` : '0 8px 32px rgba(45,36,28,0.1)' }}>
+                          {/* APPLE VISION WIDGET STYLING: High legibility, crisp sans-serif, sleek glass */}
+                          <div onClick={() => setActiveCluster(isActive ? null : i)} className="flex flex-col justify-center cursor-pointer transition-all duration-400 relative group w-[220px] sm:w-[260px] bg-[#FDFBF7]/90 dark:bg-[#030A06]/90 backdrop-blur-2xl rounded-2xl px-5 py-4" style={{ border: `1px solid ${isActive || isHovered ? color : (theme === 'dark' ? 'rgba(198, 168, 124, 0.2)' : 'rgba(92, 74, 61, 0.15)')}`, boxShadow: isActive || isHovered ? `0 4px 20px ${theme === 'dark' ? 'rgba(198, 168, 124, 0.15)' : 'rgba(92, 74, 61, 0.15)'}` : '0 8px 32px rgba(0,0,0,0.08)' }}>
 
-                            {/* Inner glowing core on hover */}
-                            <div className={`absolute inset-0 rounded-full transition-opacity duration-500 ${isActive || isHovered ? 'opacity-100' : 'opacity-0'}`} style={{ background: `radial-gradient(circle at center, ${color}15 0%, transparent 70%)` }} />
+                            {/* Accent line indicator (iOS Notification style) */}
+                            <div className="absolute left-0 top-4 bottom-4 w-[3px] rounded-r-md transition-all duration-300" style={{ backgroundColor: isActive || isHovered ? color : 'transparent' }} />
 
-                            <div className="relative z-10 flex flex-col items-center text-center">
-                              <h3 className="font-serif text-sm sm:text-base leading-snug whitespace-normal break-words text-[#2D241C] dark:text-[#FAFAFA] group-hover:text-[#0F1A15] dark:group-hover:text-[#c6a87c] transition-colors">{cluster.theme_label}</h3>
-                              <div className="mt-2 flex items-center gap-1.5 opacity-80">
-                                <Sparkles className="w-3 h-3 text-[#c6a87c]" />
+                            <div className="pl-2 relative z-10 flex flex-col text-left">
+                              <h3 className="font-sans font-semibold text-sm sm:text-base leading-snug whitespace-normal break-words text-[#2D241C] dark:text-[#FAFAFA] group-hover:opacity-80 transition-opacity">{cluster.theme_label}</h3>
+                              <div className="mt-2.5 flex items-center gap-1.5 opacity-70 group-hover:opacity-100 transition-opacity">
+                                <BookOpen className="w-3.5 h-3.5 text-[#5C4A3D] dark:text-[#c6a87c]" />
                                 <span className="font-mono text-[10px] tracking-widest uppercase font-bold text-[#5C4A3D] dark:text-[#c6a87c]">{itemsLength} Narrations</span>
                               </div>
                             </div>
