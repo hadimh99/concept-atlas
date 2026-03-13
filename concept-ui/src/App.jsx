@@ -539,20 +539,20 @@ const TranscriptLibrary = ({ transcripts }) => {
     return { resumeDoc: null, upNextDoc: null };
   }, [readingProgress, transcripts]);
 
-  // FIX: Heatmap now correctly places Today at index 0 (Top-Left)
   const heatmapDays = useMemo(() => {
     const days = [];
+    const historyData = analytics?.history || {};
     for (let i = 0; i <= 27; i++) {
       const d = new Date();
       d.setDate(d.getDate() - i);
       const dateStr = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
       days.push({
         date: dateStr,
-        count: analytics.history[dateStr] || 0
+        count: historyData[dateStr] || 0
       });
     }
     return days;
-  }, [analytics.history]);
+  }, [analytics]);
 
   const [expandedSeries, setExpandedSeries] = useState({});
   const [dashExpanded, setDashExpanded] = useState({});
@@ -576,12 +576,12 @@ const TranscriptLibrary = ({ transcripts }) => {
 
     transcripts.forEach(doc => {
       const matches = [];
-      doc.content.forEach(block => {
+      (doc.content || []).forEach(block => {
         if (block.text && block.text.toLowerCase().includes(query)) {
           matches.push(block.text);
         }
       });
-      const titleMatch = doc.title.toLowerCase().includes(query);
+      const titleMatch = (doc.title || '').toLowerCase().includes(query);
       const seriesMatch = (doc.series || '').toLowerCase().includes(query);
 
       if (matches.length > 0 || titleMatch || seriesMatch) {
@@ -637,24 +637,21 @@ const TranscriptLibrary = ({ transcripts }) => {
     setSearchQuery('');
   };
 
-  // NEW: Real-Time Active Study Tracker
   useEffect(() => {
     if (currentView !== 'reader' || !activeDoc) return;
 
     const timer = setInterval(() => {
       setAnalytics(prev => {
-        // Fallback for legacy analytics that used minutes
         const currentSecs = prev.totalSeconds !== undefined ? prev.totalSeconds : (prev.totalMinutes * 60 || 0);
         const updated = { ...prev, totalSeconds: currentSecs + 10 };
         localStorage.setItem('kisa_analytics', JSON.stringify(updated));
         return updated;
       });
-    }, 10000); // Logs 10 seconds of study time every 10 seconds
+    }, 10000);
 
     return () => clearInterval(timer);
   }, [currentView, activeDoc]);
 
-  // NEW: Dopamine Firework Handler
   const handleMarkAsRead = () => {
     setIsExploding(true);
 
@@ -676,6 +673,7 @@ const TranscriptLibrary = ({ transcripts }) => {
 
       setAnalytics(prev => {
         const newAnalytics = { ...prev };
+        newAnalytics.history = { ...(prev.history || {}) };
         newAnalytics.totalCompleted += 1;
         newAnalytics.history[today] = (newAnalytics.history[today] || 0) + 1;
         localStorage.setItem('kisa_analytics', JSON.stringify(newAnalytics));
@@ -683,7 +681,7 @@ const TranscriptLibrary = ({ transcripts }) => {
       });
 
       window.scrollTo({ top: document.documentElement.scrollHeight, behavior: 'smooth' });
-    }, 600); // Waits for the firework animation to finish before updating UI
+    }, 600);
   };
 
   const handleResetProgress = () => {
@@ -699,6 +697,7 @@ const TranscriptLibrary = ({ transcripts }) => {
 
       setAnalytics(prev => {
         const newAnalytics = { ...prev };
+        newAnalytics.history = { ...(prev.history || {}) };
         newAnalytics.totalCompleted = Math.max(0, newAnalytics.totalCompleted - 1);
         localStorage.setItem('kisa_analytics', JSON.stringify(newAnalytics));
         return newAnalytics;
@@ -719,6 +718,13 @@ const TranscriptLibrary = ({ transcripts }) => {
     return null;
   }, [activeDoc, transcripts, readingProgress]);
 
+  const readingTime = useMemo(() => {
+    if (!activeDoc) return 0;
+    const textString = (activeDoc.content || []).map(b => b.text || '').join(' ');
+    const wordCount = textString.trim().split(/\s+/).length;
+    return Math.ceil(wordCount / 200);
+  }, [activeDoc]);
+
   let seriesTitle = activeDoc?.series;
   let mainTitle = activeDoc?.title;
   if (activeDoc && !seriesTitle && activeDoc.title.includes(' - ')) {
@@ -729,7 +735,7 @@ const TranscriptLibrary = ({ transcripts }) => {
     mainTitle = activeDoc.title.replace(seriesTitle + ' - ', '');
   }
 
-  const tocItems = activeDoc ? activeDoc.content
+  const tocItems = activeDoc ? (activeDoc.content || [])
     .map((block, index) => ({ ...block, index }))
     .filter(block => block.type === 'h2') : [];
 
@@ -1188,6 +1194,10 @@ const TranscriptLibrary = ({ transcripts }) => {
   // ==========================================
   // RENDER: PREMIUM READER VIEW
   // ==========================================
+
+  // FIX: Safety guard to prevent blank screen crashes on transition
+  if (!activeDoc) return null;
+
   return (
     <div className="w-full min-h-screen pt-20 sm:pt-32 pb-32 flex flex-col items-center font-sans relative px-0 sm:px-6 lg:px-8">
 
@@ -1332,7 +1342,7 @@ const TranscriptLibrary = ({ transcripts }) => {
             )}
 
             <div className={`text-zinc-800 dark:text-zinc-300 antialiased ${fontFamily === 'serif' ? 'font-serif' : 'font-sans'}`} style={{ fontSize: `${fontSize}px`, lineHeight: 1.85 }}>
-              {activeDoc.content.map((block, idx) => {
+              {(activeDoc.content || []).map((block, idx) => {
                 if (block.type === 'h2') return <h2 id={`segment-${idx}`} key={idx} className="segment-header font-bold text-zinc-900 dark:text-white mt-14 mb-6 tracking-tight scroll-mt-24 font-sans" style={{ fontSize: `${fontSize * 1.3}px`, lineHeight: 1.3 }}>{block.text}</h2>;
                 if (block.type === 'summary') return (
                   <div key={idx} className="bg-zinc-50 dark:bg-[#1c1c1e] border-l-4 border-[#c6a87c] p-6 sm:p-8 my-10 rounded-r-xl shadow-sm">
@@ -1388,7 +1398,7 @@ const TranscriptLibrary = ({ transcripts }) => {
 
                   {isExploding && (
                     <div className="absolute inset-0 z-0 flex items-center justify-center">
-                      {[...Array(15)].map((_, i) => {
+                      {Array.from({ length: 15 }).map((_, i) => {
                         const angle = (i / 15) * Math.PI * 2;
                         const distance = 40 + Math.random() * 20;
                         return (
