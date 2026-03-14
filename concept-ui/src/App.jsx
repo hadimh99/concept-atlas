@@ -228,9 +228,15 @@ const HadithCard = ({ item, handleCopyHadith, searchMode, onVerseClick, onFindSi
           <Sparkles className="w-3.5 h-3.5" /><span>Find Similar</span>
         </button>
 
-        <button onClick={handleSaveClick} className={`flex items-center gap-1.5 text-xs font-mono transition-colors px-3 py-1.5 rounded-md cursor-pointer ${isSaved ? 'text-[#c6a87c] bg-[#c6a87c]/10 border border-[#c6a87c]/20 shadow-sm' : (isKeyword ? 'text-slate-500 hover:text-[#c6a87c] hover:bg-[#c6a87c]/10 dark:hover:bg-[#c6a87c]/10 border border-transparent hover:border-[#c6a87c]/20' : 'text-slate-400 hover:text-[#c6a87c] hover:bg-[#c6a87c]/10 dark:hover:bg-[#c6a87c]/10 border border-transparent hover:border-[#c6a87c]/20')}`}>
-          {isSaved ? <Check className="w-3.5 h-3.5" /> : <Bookmark className="w-3.5 h-3.5" />}<span>{isSaved ? 'Saved' : 'Save'}</span>
-        </button>
+        <div className="flex items-center gap-2">
+          <button onClick={handleSaveClick} className={`flex items-center gap-1.5 text-xs font-mono transition-colors px-3 py-1.5 rounded-md cursor-pointer ${isSaved ? 'text-[#c6a87c] bg-[#c6a87c]/10 border border-[#c6a87c]/20 shadow-sm' : (isKeyword ? 'text-slate-500 hover:text-[#c6a87c] hover:bg-[#c6a87c]/10 dark:hover:bg-[#c6a87c]/10 border border-transparent hover:border-[#c6a87c]/20' : 'text-slate-400 hover:text-[#c6a87c] hover:bg-[#c6a87c]/10 dark:hover:bg-[#c6a87c]/10 border border-transparent hover:border-[#c6a87c]/20')}`}>
+            {isSaved ? <Check className="w-3.5 h-3.5" /> : <Bookmark className="w-3.5 h-3.5" />}<span>{isSaved ? 'Saved' : 'Save'}</span>
+          </button>
+
+          <button onClick={handleCopyClick} className={`flex items-center gap-2 text-xs font-mono transition-colors px-3 py-1.5 rounded-md cursor-pointer ${copied ? 'text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-500/10' : (isKeyword ? 'text-slate-500 hover:text-blue-500 hover:bg-slate-200/50 dark:hover:bg-slate-700/50' : 'text-slate-400 hover:text-indigo-500 hover:bg-slate-100 dark:hover:bg-slate-700/50')}`}>
+            {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}<span>{copied ? 'Copied!' : 'Copy Text'}</span>
+          </button>
+        </div>
 
         <button onClick={handleCopyClick} className={`flex items-center gap-2 text-xs font-mono transition-colors px-3 py-1.5 rounded-md cursor-pointer ${copied ? 'text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-500/10' : (isKeyword ? 'text-slate-500 hover:text-blue-500 hover:bg-slate-200/50 dark:hover:bg-slate-700/50' : 'text-slate-400 hover:text-indigo-500 hover:bg-slate-100 dark:hover:bg-slate-700/50')}`}>
           {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}<span>{copied ? 'Copied!' : 'Copy Text'}</span>
