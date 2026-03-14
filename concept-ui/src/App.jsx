@@ -1484,6 +1484,15 @@ export default function App() {
 
   const handleMagicLinkLogin = async (e) => {
     e.preventDefault();
+
+    // 1. Intercept bad emails instantly (Stops the jitter)
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(authEmail)) {
+      setAuthMessage({ text: 'Enter a valid email address.', type: 'error' });
+      return;
+    }
+
+    // 2. Proceed with secure login
     setAuthLoading(true);
     setAuthMessage({ text: '', type: '' });
 
