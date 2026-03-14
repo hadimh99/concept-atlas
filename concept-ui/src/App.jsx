@@ -1538,10 +1538,15 @@ export default function App() {
   const toggleVaultExpand = (id) => setExpandedVaultItems(prev => ({ ...prev, [id]: !prev[id] }));
 
   const assignToFolder = async (itemId, folderName) => {
+    // 1. Optimistic Update (Instantly reflects in your UI and creates the folder)
+    setVaultItems(prev => prev.map(item => item.id === itemId ? { ...item, folder_name: folderName } : item));
+    setMovingItemId(null); // Instantly closes the popup
+
+    // 2. Background Sync (Talks to Supabase silently)
     const { error } = await supabase.from('vault_items').update({ folder_name: folderName }).eq('id', itemId);
-    if (!error) {
-      fetchVaultItems();
-      setMovingItemId(null);
+    if (error) {
+      console.error("Failed to sync folder to cloud:", error);
+      fetchVaultItems(); // Reverts the UI if your internet drops
     }
   };
 
@@ -2149,25 +2154,31 @@ export default function App() {
                                   <List className="w-4 h-4" /> <span className="hidden sm:inline">Folder</span>
                                 </button>
 
-                                {/* THE POP-UP MENU (Anchors bottom-full to push UP, Added Explicit Add Button) */}
+                                {/* THE POP-UP MENU */}
                                 <AnimatePresence>
                                   {movingItemId === item.id && (
-                                    <motion.div initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 5 }} transition={{ duration: 0.15 }} className="absolute right-0 bottom-full mb-3 w-64 bg-neutral-800 border-2 border-neutral-600 rounded-md shadow-[0_15px_50px_rgba(0,0,0,0.9)] z-50 overflow-hidden">
-                                      <div className="flex items-center gap-2 px-3 py-3 border-b-2 border-neutral-900 bg-neutral-900">
-                                        <input type="text" value={newFolderInput} onChange={(e) => setNewFolderInput(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter' && newFolderInput.trim()) { assignToFolder(item.id, newFolderInput.trim()); setNewFolderInput(''); } }} placeholder="New folder..." className="w-full text-xs font-mono bg-neutral-950 border border-neutral-700 rounded px-3 py-2.5 outline-none text-neutral-100 placeholder-neutral-600 focus:border-[#B56D43] focus:ring-1 focus:ring-[#B56D43] transition-all shadow-inner" />
-                                        <button onClick={() => { if (newFolderInput.trim()) { assignToFolder(item.id, newFolderInput.trim()); setNewFolderInput(''); } }} className="p-2.5 bg-neutral-800 text-[#B56D43] rounded border border-neutral-700 hover:border-[#B56D43] transition-colors shadow-[0_2px_5px_rgba(0,0,0,0.5)] cursor-pointer">
-                                          <Check className="w-4 h-4" />
-                                        </button>
-                                      </div>
-                                      <div className="max-h-40 overflow-y-auto smart-scrollbar py-1">
-                                        {customFolders.map(f => (
-                                          <button key={f} onClick={() => assignToFolder(item.id, f)} className="w-full text-left px-4 py-3 text-[11px] font-bold uppercase tracking-widest text-neutral-400 hover:bg-neutral-700 hover:text-white transition-colors truncate flex items-center gap-3 cursor-pointer">
-                                            <Layout className="w-3.5 h-3.5 opacity-60 text-[#B56D43]" /> {f}
+                                    <>
+                                      {/* Invisible Overlay: Clicking anywhere outside closes the menu */}
+                                      <div className="fixed inset-0 z-40" onClick={(e) => { e.stopPropagation(); setMovingItemId(null); }} />
+
+                                      {/* Mobile-aligned popup window */}
+                                      <motion.div initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 5 }} transition={{ duration: 0.15 }} className="absolute right-[-60px] sm:right-0 bottom-full mb-3 w-[260px] max-w-[85vw] bg-neutral-800 border-2 border-neutral-600 rounded-md shadow-[0_15px_50px_rgba(0,0,0,0.9)] z-50 overflow-hidden">
+                                        <div className="flex items-center gap-2 px-3 py-3 border-b-2 border-neutral-900 bg-neutral-900 relative z-10">
+                                          <input type="text" value={newFolderInput} onChange={(e) => setNewFolderInput(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter' && newFolderInput.trim()) { assignToFolder(item.id, newFolderInput.trim()); setNewFolderInput(''); } }} placeholder="New folder..." className="w-full text-xs font-mono bg-neutral-950 border border-neutral-700 rounded px-3 py-2.5 outline-none text-neutral-100 placeholder-neutral-600 focus:border-[#B56D43] focus:ring-1 focus:ring-[#B56D43] transition-all shadow-inner" />
+                                          <button onClick={() => { if (newFolderInput.trim()) { assignToFolder(item.id, newFolderInput.trim()); setNewFolderInput(''); } }} className="p-2.5 bg-neutral-800 text-[#B56D43] rounded border border-neutral-700 hover:border-[#B56D43] transition-colors shadow-[0_2px_5px_rgba(0,0,0,0.5)] cursor-pointer">
+                                            <Check className="w-4 h-4" />
                                           </button>
-                                        ))}
-                                      </div>
-                                      {item.folder_name && <button onClick={() => assignToFolder(item.id, null)} className="w-full text-left px-4 py-3 text-[10px] font-bold uppercase tracking-widest text-red-500 hover:bg-red-500/10 hover:text-red-400 transition-colors border-t-2 border-neutral-900 cursor-pointer">Remove from Folder</button>}
-                                    </motion.div>
+                                        </div>
+                                        <div className="max-h-40 overflow-y-auto smart-scrollbar py-1 relative z-10">
+                                          {customFolders.map(f => (
+                                            <button key={f} onClick={() => assignToFolder(item.id, f)} className="w-full text-left px-4 py-3 text-[11px] font-bold uppercase tracking-widest text-neutral-400 hover:bg-neutral-700 hover:text-white transition-colors truncate flex items-center gap-3 cursor-pointer">
+                                              <Layout className="w-3.5 h-3.5 opacity-60 text-[#B56D43]" /> {f}
+                                            </button>
+                                          ))}
+                                        </div>
+                                        {item.folder_name && <button onClick={() => assignToFolder(item.id, null)} className="w-full text-left px-4 py-3 text-[10px] font-bold uppercase tracking-widest text-red-500 hover:bg-red-500/10 hover:text-red-400 transition-colors border-t-2 border-neutral-900 cursor-pointer relative z-10">Remove from Folder</button>}
+                                      </motion.div>
+                                    </>
                                   )}
                                 </AnimatePresence>
                               </div>
