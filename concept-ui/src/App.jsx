@@ -153,46 +153,7 @@ const HadithCard = ({ item, handleCopyHadith, searchMode, onVerseClick, onFindSi
 
   return (
     <div className={`rounded-xl p-5 sm:p-6 relative shadow-sm border ${isKeyword ? 'bg-slate-50 dark:bg-slate-800/80 border-slate-200 dark:border-slate-700' : 'bg-white dark:bg-slate-800 border-slate-100 dark:border-slate-700'}`}>
-      {/* --- PREMIUM AUTHENTICATION MODAL --- */}
-      <AnimatePresence>
-        {showAuthModal && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#FDFBF7]/40 dark:bg-[#020805]/60 backdrop-blur-md">
-            <motion.div initial={{ scale: 0.95, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.95, y: 20 }} className="relative w-full max-w-md p-8 bg-[#FDFBF7] dark:bg-[#0A120E] border border-[#5C4A3D]/10 dark:border-[#c6a87c]/20 rounded-[2rem] shadow-2xl">
 
-              {/* Close Button */}
-              <button onClick={() => setShowAuthModal(false)} className="absolute top-5 right-5 p-2 text-[#5C4A3D]/60 dark:text-[#FAFAFA]/60 hover:text-[#2D241C] dark:hover:text-[#c6a87c] transition-colors rounded-full hover:bg-[#5C4A3D]/5 dark:hover:bg-[#c6a87c]/10">
-                <X className="w-5 h-5" />
-              </button>
-
-              {/* Header */}
-              <div className="text-center mb-8">
-                <div className="w-12 h-12 mx-auto mb-4 rounded-full bg-[#c6a87c]/10 flex items-center justify-center border border-[#c6a87c]/20">
-                  <Bookmark className="w-5 h-5 text-[#c6a87c]" />
-                </div>
-                <h2 className="text-2xl font-serif text-[#2D241C] dark:text-[#FAFAFA] mb-2">The Scholar's Vault</h2>
-                <p className="text-sm text-[#5C4A3D]/80 dark:text-[#FAFAFA]/60">Secure your research globally with a magic link. No passwords required.</p>
-              </div>
-
-              {/* Form */}
-              <form onSubmit={handleMagicLinkLogin} className="space-y-4">
-                <div>
-                  <input type="email" value={authEmail} onChange={(e) => setAuthEmail(e.target.value)} placeholder="name@example.com" required className="w-full bg-transparent appearance-none outline-none rounded-xl py-3 px-4 text-base font-sans text-[#2D241C] dark:text-[#FAFAFA] placeholder:text-[#5C4A3D]/40 dark:placeholder:text-[#c6a87c]/40 border border-[#5C4A3D]/20 dark:border-[#c6a87c]/30 focus:border-[#c6a87c] focus:ring-1 focus:ring-[#c6a87c] transition-all" />
-                </div>
-                <button type="submit" disabled={authLoading} className="w-full flex items-center justify-center py-3.5 rounded-xl font-medium text-[#FDFBF7] dark:text-[#0A120E] bg-[#2D241C] dark:bg-[#c6a87c] hover:bg-[#1A1510] dark:hover:bg-[#d4ba96] transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
-                  {authLoading ? 'Securing link...' : 'Send Secure Link'}
-                </button>
-              </form>
-
-              {/* Feedback Message */}
-              {authMessage.text && (
-                <div className={`mt-5 p-3.5 rounded-xl text-sm text-center font-medium ${authMessage.type === 'error' ? 'bg-red-500/10 text-red-600 dark:text-red-400 border border-red-500/20' : 'bg-[#c6a87c]/10 text-[#5C4A3D] dark:text-[#c6a87c] border border-[#c6a87c]/20'}`}>
-                  {authMessage.text}
-                </div>
-              )}
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
 
       <div className={`mb-5 border-b pb-3 ${isKeyword ? 'border-slate-200 dark:border-slate-700' : 'border-slate-100 dark:border-slate-700'}`}>
         <span className="text-xs sm:text-sm md:text-base font-medium text-slate-500 dark:text-slate-400 leading-relaxed block">Book: {item.book}, Vol: {item.volume}, {item.sub_book}, Chapter: {item.chapter}{(displayNum && displayNum !== "Unknown") && `, Hadith: ${displayNum}`}</span>
@@ -1973,6 +1934,46 @@ export default function App() {
       `}</style>
 
       {showMobileMenu && <div className="fixed inset-0 z-[70] pointer-events-auto" onClick={() => setShowMobileMenu(false)} />}
+      {/* --- PREMIUM AUTHENTICATION MODAL --- */}
+      <AnimatePresence>
+        {showAuthModal && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#FDFBF7]/40 dark:bg-[#020805]/60 backdrop-blur-md">
+            <motion.div initial={{ scale: 0.95, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.95, y: 20 }} className="relative w-full max-w-md p-8 bg-[#FDFBF7] dark:bg-[#0A120E] border border-[#5C4A3D]/10 dark:border-[#c6a87c]/20 rounded-[2rem] shadow-2xl">
+
+              {/* Close Button */}
+              <button onClick={() => setShowAuthModal(false)} className="absolute top-5 right-5 p-2 text-[#5C4A3D]/60 dark:text-[#FAFAFA]/60 hover:text-[#2D241C] dark:hover:text-[#c6a87c] transition-colors rounded-full hover:bg-[#5C4A3D]/5 dark:hover:bg-[#c6a87c]/10">
+                <X className="w-5 h-5" />
+              </button>
+
+              {/* Header */}
+              <div className="text-center mb-8">
+                <div className="w-12 h-12 mx-auto mb-4 rounded-full bg-[#c6a87c]/10 flex items-center justify-center border border-[#c6a87c]/20">
+                  <Bookmark className="w-5 h-5 text-[#c6a87c]" />
+                </div>
+                <h2 className="text-2xl font-serif text-[#2D241C] dark:text-[#FAFAFA] mb-2">The Scholar's Vault</h2>
+                <p className="text-sm text-[#5C4A3D]/80 dark:text-[#FAFAFA]/60">Secure your research globally with a magic link. No passwords required.</p>
+              </div>
+
+              {/* Form */}
+              <form onSubmit={handleMagicLinkLogin} className="space-y-4">
+                <div>
+                  <input type="email" value={authEmail} onChange={(e) => setAuthEmail(e.target.value)} placeholder="name@example.com" required className="w-full bg-transparent appearance-none outline-none rounded-xl py-3 px-4 text-base font-sans text-[#2D241C] dark:text-[#FAFAFA] placeholder:text-[#5C4A3D]/40 dark:placeholder:text-[#c6a87c]/40 border border-[#5C4A3D]/20 dark:border-[#c6a87c]/30 focus:border-[#c6a87c] focus:ring-1 focus:ring-[#c6a87c] transition-all" />
+                </div>
+                <button type="submit" disabled={authLoading} className="w-full flex items-center justify-center py-3.5 rounded-xl font-medium text-[#FDFBF7] dark:text-[#0A120E] bg-[#2D241C] dark:bg-[#c6a87c] hover:bg-[#1A1510] dark:hover:bg-[#d4ba96] transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                  {authLoading ? 'Securing link...' : 'Send Secure Link'}
+                </button>
+              </form>
+
+              {/* Feedback Message */}
+              {authMessage.text && (
+                <div className={`mt-5 p-3.5 rounded-xl text-sm text-center font-medium ${authMessage.type === 'error' ? 'bg-red-500/10 text-red-600 dark:text-red-400 border border-red-500/20' : 'bg-[#c6a87c]/10 text-[#5C4A3D] dark:text-[#c6a87c] border border-[#c6a87c]/20'}`}>
+                  {authMessage.text}
+                </div>
+              )}
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {activeTab === 'search' && (
         <>
@@ -2029,6 +2030,18 @@ export default function App() {
           </div>
 
           <div className="md:hidden flex items-center gap-1 sm:gap-2 relative">
+
+            {/* MOBILE VAULT / AUTH BUTTON */}
+            {user ? (
+              <button onClick={() => alert('Vault coming!')} className={`w-10 h-10 rounded-full flex items-center justify-center transition-all duration-300 cursor-pointer border shadow-sm ${activeTab === 'library' ? 'bg-[#c6a87c]/10 text-[#c6a87c] border-zinc-700/50' : (activeTab === 'quran' ? 'bg-white/40 dark:bg-slate-800/50 backdrop-blur-md border-slate-300/30 dark:border-slate-700 text-amber-600 dark:text-amber-500' : 'bg-[#FDFBF7]/60 dark:bg-[#020604]/40 border-[#5C4A3D]/15 dark:border-[#c6a87c]/20 backdrop-blur-xl text-[#c6a87c]')}`}>
+                <Bookmark className="w-5 h-5" />
+              </button>
+            ) : (
+              <button onClick={() => setShowAuthModal(true)} className={`w-10 h-10 rounded-full flex items-center justify-center transition-all duration-300 cursor-pointer border shadow-sm ${activeTab === 'library' ? 'bg-[#c6a87c]/10 text-[#c6a87c] border-zinc-700/50' : (activeTab === 'quran' ? 'bg-white/40 dark:bg-slate-800/50 backdrop-blur-md border-slate-300/30 dark:border-slate-700 text-slate-600 dark:text-slate-300' : 'bg-[#FDFBF7]/60 dark:bg-[#020604]/40 border-[#5C4A3D]/15 dark:border-[#c6a87c]/20 backdrop-blur-xl text-[#2D241C] dark:text-[#c6a87c]')}`}>
+                <User className="w-5 h-5" />
+              </button>
+            )}
+
             <button onClick={() => setShowHistoryDrawer(true)} className={`w-10 h-10 rounded-full flex items-center justify-center transition-all duration-300 cursor-pointer border shadow-sm ${activeTab === 'library' ? 'bg-[#c6a87c]/10 text-[#c6a87c] border-zinc-700/50' : (activeTab === 'quran' ? 'bg-white/40 dark:bg-slate-800/50 backdrop-blur-md border-slate-300/30 dark:border-slate-700 text-slate-600 dark:text-slate-300' : 'bg-[#FDFBF7]/60 dark:bg-[#020604]/40 border-[#5C4A3D]/15 dark:border-[#c6a87c]/20 backdrop-blur-xl text-[#2D241C] dark:text-[#c6a87c]')}`}>
               <Clock className="w-5 h-5" />
             </button>
