@@ -2139,7 +2139,7 @@ export default function App() {
             <button onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')} className="w-10 h-10 sm:w-11 sm:h-11 rounded-full flex items-center justify-center group transition-all duration-300 hover:scale-110 cursor-pointer">{theme === 'dark' ? <Sun className="w-5 h-5 text-[#c6a87c]/60 group-hover:text-yellow-400" /> : <Moon className="w-5 h-5 text-[#5C4A3D]/80 group-hover:text-[#2D241C]" />}</button>
             {/* VAULT / AUTH BUTTON */}
             {user ? (
-              <button onClick={() => alert('Vault coming in the next step!')} className="flex items-center gap-2 text-sm font-medium text-[#c6a87c] bg-[#c6a87c]/10 px-4 py-2 rounded-full hover:bg-[#c6a87c]/20 transition-colors border border-[#c6a87c]/20">
+              <button onClick={() => setShowVault(true)} className="flex items-center gap-2 text-sm font-medium text-[#c6a87c] bg-[#c6a87c]/10 px-4 py-2 rounded-full hover:bg-[#c6a87c]/20 transition-colors border border-[#c6a87c]/20">
                 <Bookmark className="w-4 h-4" />
                 <span className="hidden sm:inline">Vault</span>
               </button>
@@ -2155,7 +2155,7 @@ export default function App() {
 
             {/* MOBILE VAULT / AUTH BUTTON */}
             {user ? (
-              <button onClick={() => alert('Vault coming!')} className={`w-10 h-10 rounded-full flex items-center justify-center transition-all duration-300 cursor-pointer border shadow-sm ${activeTab === 'library' ? 'bg-[#c6a87c]/10 text-[#c6a87c] border-zinc-700/50' : (activeTab === 'quran' ? 'bg-white/40 dark:bg-slate-800/50 backdrop-blur-md border-slate-300/30 dark:border-slate-700 text-amber-600 dark:text-amber-500' : 'bg-[#FDFBF7]/60 dark:bg-[#020604]/40 border-[#5C4A3D]/15 dark:border-[#c6a87c]/20 backdrop-blur-xl text-[#c6a87c]')}`}>
+              <button onClick={() => setShowVault(true)} className={`w-10 h-10 rounded-full flex items-center justify-center transition-all duration-300 cursor-pointer border shadow-sm ${activeTab === 'library' ? 'bg-[#c6a87c]/10 text-[#c6a87c] border-zinc-700/50' : (activeTab === 'quran' ? 'bg-white/40 dark:bg-slate-800/50 backdrop-blur-md border-slate-300/30 dark:border-slate-700 text-amber-600 dark:text-amber-500' : 'bg-[#FDFBF7]/60 dark:bg-[#020604]/40 border-[#5C4A3D]/15 dark:border-[#c6a87c]/20 backdrop-blur-xl text-[#c6a87c]')}`}>
                 <Bookmark className="w-5 h-5" />
               </button>
             ) : (
