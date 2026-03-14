@@ -2043,21 +2043,21 @@ export default function App() {
             {/* The Heavy Metal Lockbox */}
             <motion.div initial={{ scale: 0.98, y: 10 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.98, y: 10 }} transition={{ duration: 0.2 }} className="relative w-full max-w-6xl h-[90vh] flex flex-col md:flex-row bg-neutral-900 border border-neutral-700 rounded-xl shadow-[0_30px_60px_rgba(0,0,0,0.9)] overflow-hidden">
 
-              {/* LEFT SIDEBAR: FOLDERS (Raised Carbon Panel) */}
-              <div className="w-full md:w-64 lg:w-72 bg-neutral-800 border-r-2 border-neutral-950 flex flex-col shrink-0 z-20 shadow-[8px_0_30px_rgba(0,0,0,0.6)] relative">
-                <div className="p-6 border-b-2 border-neutral-950 flex justify-between items-center bg-neutral-800">
-                  <h2 className="font-serif text-xl font-bold text-neutral-100 flex items-center gap-3 tracking-wide">
-                    <Bookmark className="w-5 h-5 text-[#B56D43]" /> THE VAULT
+              {/* SIDEBAR: FOLDERS (Horizontal Tabs on Mobile, Vertical Panel on Desktop) */}
+              <div className="w-full md:w-64 lg:w-72 bg-neutral-800 border-b-2 md:border-b-0 md:border-r-2 border-neutral-950 flex flex-col shrink-0 z-20 shadow-[0_8px_30px_rgba(0,0,0,0.6)] md:shadow-[8px_0_30px_rgba(0,0,0,0.6)] relative">
+                <div className="p-4 md:p-6 flex justify-between items-center bg-neutral-800 shrink-0">
+                  <h2 className="font-serif text-lg md:text-xl font-bold text-neutral-100 flex items-center gap-2 md:gap-3 tracking-wide">
+                    <Bookmark className="w-4 h-4 md:w-5 md:h-5 text-[#B56D43]" /> THE VAULT
                   </h2>
-                  <button onClick={() => setShowVault(false)} className="md:hidden p-1.5 text-neutral-400 hover:text-white transition-colors"><X className="w-5 h-5" /></button>
+                  <button onClick={() => setShowVault(false)} className="md:hidden p-1.5 text-neutral-400 hover:text-white bg-neutral-900 rounded-md border border-neutral-700 transition-colors shadow-inner"><X className="w-4 h-4" /></button>
                 </div>
 
-                <div className="p-4 overflow-y-auto smart-scrollbar flex-grow">
+                {/* Desktop Vertical Folder List */}
+                <div className="hidden md:block p-4 overflow-y-auto smart-scrollbar flex-grow">
                   <div className="text-[10px] font-bold text-neutral-500 uppercase tracking-widest mb-3 px-3">Library</div>
                   <button onClick={() => setActiveFolder('All')} className={`w-full text-left px-4 py-3 rounded-md text-sm font-bold transition-all mb-2 flex items-center gap-3 ${activeFolder === 'All' ? 'bg-neutral-900 text-[#B56D43] border-l-4 border-[#B56D43] shadow-inner' : 'text-neutral-400 hover:bg-neutral-700 hover:text-neutral-200 border-l-4 border-transparent'}`}>All Records</button>
                   <button onClick={() => setActiveFolder('Uncategorized')} className={`w-full text-left px-4 py-3 rounded-md text-sm font-bold transition-all mb-8 flex items-center gap-3 ${activeFolder === 'Uncategorized' ? 'bg-neutral-900 text-[#B56D43] border-l-4 border-[#B56D43] shadow-inner' : 'text-neutral-400 hover:bg-neutral-700 hover:text-neutral-200 border-l-4 border-transparent'}`}>Uncategorized</button>
 
-                  {/* INTERACTIVE ACCORDION HEADER */}
                   <button onClick={() => setIsCollectionsOpen(!isCollectionsOpen)} className="w-full flex justify-between items-center text-[10px] font-bold text-neutral-500 hover:text-neutral-300 uppercase tracking-widest mb-3 px-3 transition-colors cursor-pointer group">
                     <span>Collections</span>
                     {isCollectionsOpen ? <ChevronUp className="w-3.5 h-3.5 opacity-50 group-hover:opacity-100 transition-opacity" /> : <ChevronDown className="w-3.5 h-3.5 opacity-50 group-hover:opacity-100 transition-opacity" />}
@@ -2075,29 +2075,40 @@ export default function App() {
                     )}
                   </AnimatePresence>
                 </div>
+
+                {/* Mobile Horizontal Folder Row */}
+                <div className="md:hidden flex items-center overflow-x-auto hide-scroll px-4 pb-4 gap-2 shrink-0 border-b border-neutral-900">
+                  <button onClick={() => setActiveFolder('All')} className={`whitespace-nowrap px-4 py-2 rounded-full text-xs font-bold transition-all border shadow-[0_4px_10px_rgba(0,0,0,0.3)] ${activeFolder === 'All' ? 'bg-neutral-950 text-[#B56D43] border-[#B56D43]' : 'bg-neutral-800 text-neutral-400 border-neutral-600 hover:bg-neutral-700'}`}>All Records</button>
+                  <button onClick={() => setActiveFolder('Uncategorized')} className={`whitespace-nowrap px-4 py-2 rounded-full text-xs font-bold transition-all border shadow-[0_4px_10px_rgba(0,0,0,0.3)] ${activeFolder === 'Uncategorized' ? 'bg-neutral-950 text-[#B56D43] border-[#B56D43]' : 'bg-neutral-800 text-neutral-400 border-neutral-600 hover:bg-neutral-700'}`}>Uncategorized</button>
+                  {customFolders.map(folder => (
+                    <button key={folder} onClick={() => setActiveFolder(folder)} className={`whitespace-nowrap px-4 py-2 rounded-full text-xs font-bold transition-all border shadow-[0_4px_10px_rgba(0,0,0,0.3)] flex items-center gap-2 ${activeFolder === folder ? 'bg-neutral-950 text-[#B56D43] border-[#B56D43]' : 'bg-neutral-800 text-neutral-400 border-neutral-600 hover:bg-neutral-700'}`}>
+                      <Layout className="w-3 h-3 opacity-70" /> {folder}
+                    </button>
+                  ))}
+                </div>
               </div>
 
               {/* MAIN CONTENT AREA (Recessed Chamber) */}
-              <div className="flex-grow flex flex-col min-w-0 bg-neutral-950 relative shadow-[inset_15px_15px_40px_rgba(0,0,0,0.8)]">
+              <div className="flex-grow flex flex-col min-w-0 bg-neutral-950 relative shadow-[inset_15px_15px_40px_rgba(0,0,0,0.8)] overflow-hidden">
 
                 {/* Header & Search */}
-                <div className="px-6 py-5 border-b-2 border-neutral-900 flex items-center justify-between gap-4 shrink-0 z-10 relative bg-neutral-950/80 backdrop-blur-md shadow-[0_10px_20px_rgba(0,0,0,0.4)]">
+                <div className="px-6 py-4 md:py-5 border-b-2 border-neutral-900 flex items-center justify-between gap-4 shrink-0 z-10 relative bg-neutral-950/80 backdrop-blur-md shadow-[0_10px_20px_rgba(0,0,0,0.4)]">
                   <div className="relative flex-grow max-w-md group">
                     <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-500 group-focus-within:text-[#B56D43] transition-colors" />
-                    <input type="text" value={vaultSearch} onChange={(e) => setVaultSearch(e.target.value)} placeholder="Search lockbox..." className="w-full pl-11 pr-4 py-3 bg-neutral-900 border border-neutral-700 rounded-md text-sm font-mono text-neutral-100 placeholder-neutral-600 focus:border-[#B56D43] focus:ring-1 focus:ring-[#B56D43] outline-none transition-all shadow-inner" />
+                    <input type="text" value={vaultSearch} onChange={(e) => setVaultSearch(e.target.value)} placeholder="Search lockbox..." className="w-full pl-11 pr-4 py-2.5 md:py-3 bg-neutral-900 border border-neutral-700 rounded-md text-sm font-mono text-neutral-100 placeholder-neutral-600 focus:border-[#B56D43] focus:ring-1 focus:ring-[#B56D43] outline-none transition-all shadow-inner" />
                   </div>
                   <button onClick={() => setShowVault(false)} className="hidden md:flex items-center justify-center p-2.5 text-neutral-500 hover:text-white bg-neutral-800 border border-neutral-600 hover:border-neutral-400 rounded-md transition-all cursor-pointer shadow-[0_4px_10px_rgba(0,0,0,0.5)]"><X className="w-5 h-5" /></button>
                 </div>
 
-                {/* Items List */}
-                <div className="flex-grow overflow-y-auto p-6 sm:p-8 smart-scrollbar relative z-10">
+                {/* Items List (Now safely scrollable) */}
+                <div className="flex-grow overflow-y-auto p-4 sm:p-6 md:p-8 smart-scrollbar relative z-10">
                   {filteredVaultItems.length === 0 ? (
                     <div className="absolute inset-0 flex flex-col items-center justify-center text-center px-4 opacity-40">
                       <Bookmark className="w-16 h-16 mb-4 text-[#B56D43] opacity-50" />
                       <p className="text-xl font-serif text-neutral-400">Lockbox is empty.</p>
                     </div>
                   ) : (
-                    <div className="flex flex-col gap-8 max-w-4xl mx-auto pb-20">
+                    <div className="flex flex-col gap-6 md:gap-8 max-w-4xl mx-auto pb-24 md:pb-20">
                       {filteredVaultItems.map((item) => {
                         const isExpanded = expandedVaultItems[item.id];
                         const needsExpansion = item.content.length > 400;
@@ -2105,10 +2116,10 @@ export default function App() {
 
                         return (
                           // Individual Record Card (Machined Metal Plate)
-                          <div key={item.id} className="bg-neutral-800 border-t border-l border-neutral-600 border-b-2 border-r-2 border-neutral-950 rounded-lg p-6 sm:p-8 shadow-[8px_8px_20px_rgba(0,0,0,0.6)] transition-all group relative flex flex-col">
+                          <div key={item.id} className="bg-neutral-800 border-t border-l border-neutral-600 border-b-2 border-r-2 border-neutral-950 rounded-lg p-5 sm:p-8 shadow-[4px_4px_15px_rgba(0,0,0,0.6)] md:shadow-[8px_8px_20px_rgba(0,0,0,0.6)] transition-all group relative flex flex-col">
 
                             {/* Top Metadata Row (Stenciled tags) */}
-                            <div className="flex flex-wrap justify-between items-start gap-4 mb-6 pb-5 border-b border-neutral-700/50">
+                            <div className="flex flex-wrap justify-between items-start gap-3 mb-5 pb-4 border-b border-neutral-700/50">
                               <div className="flex flex-wrap items-center gap-2">
                                 <span className="px-3 py-1.5 bg-neutral-900 text-neutral-300 rounded text-[10px] font-mono uppercase tracking-widest font-bold border border-neutral-700 shadow-inner">{item.source}</span>
                                 {item.folder_name && <span className="px-3 py-1.5 bg-neutral-900 text-[#B56D43] rounded text-[10px] font-mono uppercase tracking-widest font-bold border border-[#B56D43]/40 shadow-inner flex items-center gap-1.5"><Layout className="w-3 h-3" />{item.folder_name}</span>}
@@ -2118,7 +2129,7 @@ export default function App() {
 
                             {/* Content */}
                             <div className="flex-grow">
-                              <p className="text-base sm:text-lg font-serif leading-[1.85] text-neutral-100 whitespace-pre-wrap antialiased">
+                              <p className="text-sm sm:text-base md:text-lg font-serif leading-[1.85] text-neutral-100 whitespace-pre-wrap antialiased">
                                 {displayContent}
                               </p>
 
@@ -2130,22 +2141,25 @@ export default function App() {
                             </div>
 
                             {/* BOTTOM ACTION ROW (Copper Accented Mechanical Footer) */}
-                            <div className="mt-8 pt-5 border-t border-neutral-700/50 flex justify-end items-center gap-3">
+                            <div className="mt-6 md:mt-8 pt-4 md:pt-5 border-t border-neutral-700/50 flex justify-end items-center gap-2 md:gap-3">
 
                               {/* Folder Movement Dropdown (POPS UP) */}
                               <div className="relative">
-                                <button onClick={() => setMovingItemId(movingItemId === item.id ? null : item.id)} className={`flex items-center gap-2 px-4 py-2.5 text-[10px] uppercase tracking-widest font-bold rounded shadow-[0_4px_10px_rgba(0,0,0,0.3)] transition-all border cursor-pointer ${movingItemId === item.id ? 'bg-neutral-900 text-[#B56D43] border-[#B56D43]/50 shadow-inner' : 'bg-neutral-800 text-neutral-400 hover:text-white border-neutral-600 hover:border-neutral-400 hover:bg-neutral-700'}`} title="Move to Folder">
+                                <button onClick={() => setMovingItemId(movingItemId === item.id ? null : item.id)} className={`flex items-center gap-2 px-3 md:px-4 py-2.5 text-[10px] uppercase tracking-widest font-bold rounded shadow-[0_4px_10px_rgba(0,0,0,0.3)] transition-all border cursor-pointer ${movingItemId === item.id ? 'bg-neutral-900 text-[#B56D43] border-[#B56D43]/50 shadow-inner' : 'bg-neutral-800 text-neutral-400 hover:text-white border-neutral-600 hover:border-neutral-400 hover:bg-neutral-700'}`} title="Move to Folder">
                                   <List className="w-4 h-4" /> <span className="hidden sm:inline">Folder</span>
                                 </button>
 
-                                {/* THE POP-UP MENU (Anchors bottom-full to push UP) */}
+                                {/* THE POP-UP MENU (Anchors bottom-full to push UP, Added Explicit Add Button) */}
                                 <AnimatePresence>
                                   {movingItemId === item.id && (
                                     <motion.div initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 5 }} transition={{ duration: 0.15 }} className="absolute right-0 bottom-full mb-3 w-64 bg-neutral-800 border-2 border-neutral-600 rounded-md shadow-[0_15px_50px_rgba(0,0,0,0.9)] z-50 overflow-hidden">
-                                      <div className="px-3 py-3 border-b-2 border-neutral-900 bg-neutral-900">
-                                        <input type="text" value={newFolderInput} onChange={(e) => setNewFolderInput(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter' && newFolderInput.trim()) { assignToFolder(item.id, newFolderInput.trim()); setNewFolderInput(''); } }} placeholder="New folder name... (Enter)" className="w-full text-xs font-mono bg-neutral-950 border border-neutral-700 rounded px-3 py-2 outline-none text-neutral-100 placeholder-neutral-600 focus:border-[#B56D43] focus:ring-1 focus:ring-[#B56D43] transition-all shadow-inner" />
+                                      <div className="flex items-center gap-2 px-3 py-3 border-b-2 border-neutral-900 bg-neutral-900">
+                                        <input type="text" value={newFolderInput} onChange={(e) => setNewFolderInput(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter' && newFolderInput.trim()) { assignToFolder(item.id, newFolderInput.trim()); setNewFolderInput(''); } }} placeholder="New folder..." className="w-full text-xs font-mono bg-neutral-950 border border-neutral-700 rounded px-3 py-2.5 outline-none text-neutral-100 placeholder-neutral-600 focus:border-[#B56D43] focus:ring-1 focus:ring-[#B56D43] transition-all shadow-inner" />
+                                        <button onClick={() => { if (newFolderInput.trim()) { assignToFolder(item.id, newFolderInput.trim()); setNewFolderInput(''); } }} className="p-2.5 bg-neutral-800 text-[#B56D43] rounded border border-neutral-700 hover:border-[#B56D43] transition-colors shadow-[0_2px_5px_rgba(0,0,0,0.5)] cursor-pointer">
+                                          <Check className="w-4 h-4" />
+                                        </button>
                                       </div>
-                                      <div className="max-h-48 overflow-y-auto smart-scrollbar py-1">
+                                      <div className="max-h-40 overflow-y-auto smart-scrollbar py-1">
                                         {customFolders.map(f => (
                                           <button key={f} onClick={() => assignToFolder(item.id, f)} className="w-full text-left px-4 py-3 text-[11px] font-bold uppercase tracking-widest text-neutral-400 hover:bg-neutral-700 hover:text-white transition-colors truncate flex items-center gap-3 cursor-pointer">
                                             <Layout className="w-3.5 h-3.5 opacity-60 text-[#B56D43]" /> {f}
@@ -2169,13 +2183,13 @@ export default function App() {
                                   btn.innerHTML = originalHtml;
                                   btn.classList.remove('bg-neutral-900', 'border-emerald-500/50', 'shadow-inner');
                                 }, 2000);
-                              }} className="flex items-center gap-2 px-4 py-2.5 text-[10px] uppercase tracking-widest font-bold text-neutral-400 hover:text-white bg-neutral-800 hover:bg-neutral-700 shadow-[0_4px_10px_rgba(0,0,0,0.3)] rounded transition-all border border-neutral-600 hover:border-neutral-400 cursor-pointer" title="Copy Text">
+                              }} className="flex items-center gap-2 px-3 md:px-4 py-2.5 text-[10px] uppercase tracking-widest font-bold text-neutral-400 hover:text-white bg-neutral-800 hover:bg-neutral-700 shadow-[0_4px_10px_rgba(0,0,0,0.3)] rounded transition-all border border-neutral-600 hover:border-neutral-400 cursor-pointer" title="Copy Text">
                                 <Copy className="w-4 h-4" /> <span className="hidden sm:inline">Copy</span>
                               </button>
 
                               {/* Delete */}
-                              <button onClick={async () => { await supabase.from('vault_items').delete().eq('id', item.id); fetchVaultItems(); }} className="flex items-center justify-center p-2.5 text-neutral-500 hover:text-red-400 hover:bg-red-500/10 hover:border-red-500/30 rounded border border-transparent transition-all cursor-pointer ml-1" title="Delete Record">
-                                <Trash2 className="w-4 h-4" />
+                              <button onClick={async () => { await supabase.from('vault_items').delete().eq('id', item.id); fetchVaultItems(); }} className="flex items-center justify-center p-2.5 text-neutral-500 hover:text-red-400 hover:bg-red-500/10 hover:border-red-500/30 rounded border border-transparent transition-all cursor-pointer md:ml-1" title="Delete Record">
+                                <Trash2 className="w-4 h-4 md:w-5 md:h-5" />
                               </button>
 
                             </div>
