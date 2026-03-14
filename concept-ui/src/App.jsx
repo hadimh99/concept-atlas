@@ -47,6 +47,35 @@ const HadithCard = ({ item, handleCopyHadith, searchMode, onVerseClick, onFindSi
   const [showArabic, setShowArabic] = useState(false);
   const [showChain, setShowChain] = useState(false);
   const [copied, setCopied] = useState(false);
+
+  const [isSaved, setIsSaved] = useState(false);
+
+  const handleSaveClick = async (e) => {
+    e.stopPropagation();
+    const { data: { session } } = await supabase.auth.getSession();
+
+    if (!session?.user) {
+      alert("Please Sign In from the top menu to save to your Vault.");
+      return;
+    }
+
+    const sourceRef = `Book: ${item.book}, Vol: ${item.volume}, ${item.sub_book}, Chapter: ${item.chapter} ${displayNum !== "Unknown" ? `Hadith ${displayNum}` : ''}`;
+
+    const { error } = await supabase.from('vault_items').insert([{
+      user_id: session.user.id,
+      content: textToCopy,
+      source: sourceRef,
+      type: 'hadith',
+      note: ''
+    }]);
+
+    if (!error) {
+      setIsSaved(true);
+      setTimeout(() => setIsSaved(false), 2000);
+      window.dispatchEvent(new Event('vault-updated')); // Instantly updates the Vault UI!
+    }
+  };
+
   const isKeyword = searchMode === 'keyword';
 
   const getCleanData = () => {
@@ -198,6 +227,11 @@ const HadithCard = ({ item, handleCopyHadith, searchMode, onVerseClick, onFindSi
         <button onClick={(e) => { e.stopPropagation(); onFindSimilar && onFindSimilar(item); }} className={`flex items-center gap-1.5 text-xs font-mono transition-colors px-3 py-1.5 rounded-md cursor-pointer shadow-sm border ${isKeyword ? 'bg-blue-50/50 border-blue-200 text-blue-600 hover:bg-blue-100 dark:bg-blue-900/20 dark:border-blue-800 dark:text-blue-400 dark:hover:bg-blue-900/40' : 'bg-indigo-50/50 border-indigo-200 text-indigo-600 hover:bg-indigo-100 dark:bg-indigo-900/20 dark:border-indigo-800 dark:text-indigo-400 dark:hover:bg-indigo-900/40'}`}>
           <Sparkles className="w-3.5 h-3.5" /><span>Find Similar</span>
         </button>
+
+        <button onClick={handleSaveClick} className={`flex items-center gap-1.5 text-xs font-mono transition-colors px-3 py-1.5 rounded-md cursor-pointer ${isSaved ? 'text-[#c6a87c] bg-[#c6a87c]/10 border border-[#c6a87c]/20 shadow-sm' : (isKeyword ? 'text-slate-500 hover:text-[#c6a87c] hover:bg-[#c6a87c]/10 dark:hover:bg-[#c6a87c]/10 border border-transparent hover:border-[#c6a87c]/20' : 'text-slate-400 hover:text-[#c6a87c] hover:bg-[#c6a87c]/10 dark:hover:bg-[#c6a87c]/10 border border-transparent hover:border-[#c6a87c]/20')}`}>
+          {isSaved ? <Check className="w-3.5 h-3.5" /> : <Bookmark className="w-3.5 h-3.5" />}<span>{isSaved ? 'Saved' : 'Save'}</span>
+        </button>
+
         <button onClick={handleCopyClick} className={`flex items-center gap-2 text-xs font-mono transition-colors px-3 py-1.5 rounded-md cursor-pointer ${copied ? 'text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-500/10' : (isKeyword ? 'text-slate-500 hover:text-blue-500 hover:bg-slate-200/50 dark:hover:bg-slate-700/50' : 'text-slate-400 hover:text-indigo-500 hover:bg-slate-100 dark:hover:bg-slate-700/50')}`}>
           {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}<span>{copied ? 'Copied!' : 'Copy Text'}</span>
         </button>
@@ -1470,6 +1504,25 @@ export default function App() {
   const [authLoading, setAuthLoading] = useState(false);
   const [authMessage, setAuthMessage] = useState({ text: '', type: '' });
 
+  const [showVault, setShowVault] = useState(false);
+  const [vaultItems, setVaultItems] = useState([]);
+
+  const fetchVaultItems = async () => {
+    if (!user) return;
+    const { data } = await supabase.from('vault_items').select('*').order('created_at', { ascending: false });
+    if (data) setVaultItems(data);
+  };
+
+  useEffect(() => {
+    if (user) fetchVaultItems();
+    else setVaultItems([]);
+
+    // Listen for custom save events from anywhere in the app to instantly refresh!
+    const handleVaultUpdate = () => fetchVaultItems();
+    window.addEventListener('vault-updated', handleVaultUpdate);
+    return () => window.removeEventListener('vault-updated', handleVaultUpdate);
+  }, [user]);
+
   useEffect(() => {
     // 1. Check for an active session when the app loads
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -1943,6 +1996,63 @@ export default function App() {
       `}</style>
 
       {showMobileMenu && <div className="fixed inset-0 z-[70] pointer-events-auto" onClick={() => setShowMobileMenu(false)} />}
+
+      {/* --- THE SCHOLAR'S VAULT MODAL --- */}
+      <AnimatePresence>
+        {showVault && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[6000] flex items-center justify-center p-4 sm:p-6 bg-[#FDFBF7]/60 dark:bg-[#020805]/80 backdrop-blur-md">
+            <motion.div initial={{ scale: 0.95, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.95, y: 20 }} className="relative w-full max-w-4xl h-[85vh] flex flex-col bg-[#FDFBF7] dark:bg-[#0A120E] border border-[#5C4A3D]/20 dark:border-[#c6a87c]/30 rounded-[2rem] shadow-2xl overflow-hidden">
+
+              <div className="flex justify-between items-center px-6 sm:px-8 py-5 sm:py-6 border-b border-[#5C4A3D]/10 dark:border-[#c6a87c]/20 bg-[#F8F5EE]/50 dark:bg-[#c6a87c]/5 shrink-0">
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 rounded-full bg-[#c6a87c]/10 flex items-center justify-center border border-[#c6a87c]/20">
+                    <Bookmark className="w-5 h-5 text-[#c6a87c]" />
+                  </div>
+                  <div>
+                    <h2 className="text-xl sm:text-2xl font-serif text-[#2D241C] dark:text-[#FAFAFA] leading-none mb-1.5">The Scholar's Vault</h2>
+                    <p className="text-[10px] sm:text-xs text-[#5C4A3D]/80 dark:text-[#c6a87c]/80 font-mono uppercase tracking-widest">{vaultItems.length} Saved Records</p>
+                  </div>
+                </div>
+                <button onClick={() => setShowVault(false)} className="p-2 text-[#5C4A3D]/60 dark:text-[#FAFAFA]/60 hover:text-[#2D241C] dark:hover:text-[#c6a87c] transition-colors rounded-full hover:bg-[#5C4A3D]/5 dark:hover:bg-[#c6a87c]/10">
+                  <X className="w-6 h-6" />
+                </button>
+              </div>
+
+              <div className="flex-grow overflow-y-auto p-6 sm:p-8 smart-scrollbar bg-[#FDFBF7] dark:bg-[#0A120E]">
+                {vaultItems.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center h-full text-center opacity-60">
+                    <Bookmark className="w-16 h-16 mb-4 text-[#5C4A3D] dark:text-[#c6a87c]" />
+                    <p className="text-xl font-serif text-[#2D241C] dark:text-[#FAFAFA]">Your Vault is empty.</p>
+                    <p className="text-sm text-[#5C4A3D] dark:text-[#c6a87c]/80 mt-2 max-w-sm">Search the database and click the "Save" button on any record to build your personal archive.</p>
+                  </div>
+                ) : (
+                  <div className="flex flex-col gap-6">
+                    {vaultItems.map((item) => (
+                      <div key={item.id} className="p-6 sm:p-8 rounded-2xl border border-[#5C4A3D]/15 dark:border-[#c6a87c]/20 bg-[#F8F5EE]/40 dark:bg-[#c6a87c]/5 hover:border-[#c6a87c]/50 transition-colors group">
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4 pb-4 border-b border-[#5C4A3D]/10 dark:border-[#c6a87c]/10">
+                          <span className="text-[10px] sm:text-xs font-bold uppercase tracking-widest text-[#5C4A3D]/80 dark:text-[#c6a87c] bg-[#FDFBF7] dark:bg-[#c6a87c]/10 border border-[#5C4A3D]/10 dark:border-[#c6a87c]/20 px-3 py-1.5 rounded-md shadow-sm">
+                            {item.source}
+                          </span>
+                          <div className="flex items-center gap-3 self-end sm:self-auto">
+                            <span className="text-[10px] font-mono text-[#5C4A3D]/50 dark:text-[#c6a87c]/40">{new Date(item.created_at).toLocaleDateString()}</span>
+                            <button onClick={async () => { await supabase.from('vault_items').delete().eq('id', item.id); fetchVaultItems(); }} className="flex items-center gap-1.5 text-[10px] uppercase tracking-widest font-bold text-[#5C4A3D]/40 dark:text-[#c6a87c]/40 hover:text-red-500 dark:hover:text-red-400 transition-colors cursor-pointer bg-transparent hover:bg-red-50 dark:hover:bg-red-500/10 px-2 py-1 rounded">
+                              <Trash2 className="w-3.5 h-3.5" /> Remove
+                            </button>
+                          </div>
+                        </div>
+                        <p className="text-sm sm:text-base font-serif leading-relaxed text-[#2D241C] dark:text-[#FAFAFA] whitespace-pre-wrap">
+                          {item.content}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* --- PREMIUM AUTHENTICATION MODAL --- */}
       <AnimatePresence>
         {showAuthModal && (
