@@ -1510,6 +1510,41 @@ export default function App() {
   const [showVault, setShowVault] = useState(false);
   const [vaultItems, setVaultItems] = useState([]);
 
+  const [vaultSearch, setVaultSearch] = useState('');
+  const [activeFolder, setActiveFolder] = useState('All');
+  const [expandedVaultItems, setExpandedVaultItems] = useState({});
+  const [newFolderInput, setNewFolderInput] = useState('');
+  const [movingItemId, setMovingItemId] = useState(null);
+
+  // Extract unique folders from user's saved items
+  const customFolders = useMemo(() => {
+    const folders = new Set(vaultItems.map(item => item.folder_name).filter(Boolean));
+    return Array.from(folders).sort();
+  }, [vaultItems]);
+
+  const filteredVaultItems = useMemo(() => {
+    let filtered = vaultItems;
+    if (activeFolder === 'Uncategorized') filtered = filtered.filter(item => !item.folder_name);
+    else if (activeFolder !== 'All') filtered = filtered.filter(item => item.folder_name === activeFolder);
+
+    if (vaultSearch.trim()) {
+      const q = vaultSearch.toLowerCase();
+      filtered = filtered.filter(item => (item.content && item.content.toLowerCase().includes(q)) || (item.source && item.source.toLowerCase().includes(q)));
+    }
+    return filtered;
+  }, [vaultItems, activeFolder, vaultSearch]);
+
+  const toggleVaultExpand = (id) => setExpandedVaultItems(prev => ({ ...prev, [id]: !prev[id] }));
+
+  const assignToFolder = async (itemId, folderName) => {
+    const { error } = await supabase.from('vault_items').update({ folder_name: folderName }).eq('id', itemId);
+    if (!error) {
+      fetchVaultItems();
+      setMovingItemId(null);
+    }
+  };
+
+
   const fetchVaultItems = async () => {
     if (!user) return;
     const { data } = await supabase.from('vault_items').select('*').order('created_at', { ascending: false });
@@ -2003,53 +2038,110 @@ export default function App() {
       {/* --- THE SCHOLAR'S VAULT MODAL --- */}
       <AnimatePresence>
         {showVault && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[6000] flex items-center justify-center p-4 sm:p-6 bg-[#FDFBF7]/60 dark:bg-[#020805]/80 backdrop-blur-md">
-            <motion.div initial={{ scale: 0.95, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.95, y: 20 }} className="relative w-full max-w-4xl h-[85vh] flex flex-col bg-[#FDFBF7] dark:bg-[#0A120E] border border-[#5C4A3D]/20 dark:border-[#c6a87c]/30 rounded-[2rem] shadow-2xl overflow-hidden">
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[6000] flex items-center justify-center p-4 sm:p-6 bg-slate-900/40 dark:bg-black/60 backdrop-blur-sm pointer-events-auto">
+            <motion.div initial={{ scale: 0.97, y: 10 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.97, y: 10 }} className="relative w-full max-w-6xl h-[90vh] flex flex-col md:flex-row bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xl overflow-hidden">
 
-              <div className="flex justify-between items-center px-6 sm:px-8 py-5 sm:py-6 border-b border-[#5C4A3D]/10 dark:border-[#c6a87c]/20 bg-[#F8F5EE]/50 dark:bg-[#c6a87c]/5 shrink-0">
-                <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 rounded-full bg-[#c6a87c]/10 flex items-center justify-center border border-[#c6a87c]/20">
-                    <Bookmark className="w-5 h-5 text-[#c6a87c]" />
-                  </div>
-                  <div>
-                    <h2 className="text-xl sm:text-2xl font-serif text-[#2D241C] dark:text-[#FAFAFA] leading-none mb-1.5">The Scholar's Vault</h2>
-                    <p className="text-[10px] sm:text-xs text-[#5C4A3D]/80 dark:text-[#c6a87c]/80 font-mono uppercase tracking-widest">{vaultItems.length} Saved Records</p>
-                  </div>
+              {/* LEFT SIDEBAR: FOLDERS */}
+              <div className="w-full md:w-64 lg:w-72 bg-slate-50 dark:bg-slate-900/50 border-r border-slate-200 dark:border-slate-800 flex flex-col shrink-0">
+                <div className="p-5 border-b border-slate-200 dark:border-slate-800 flex justify-between items-center bg-white dark:bg-slate-900">
+                  <h2 className="font-serif text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                    <Bookmark className="w-5 h-5 text-indigo-500" /> Vault
+                  </h2>
+                  <button onClick={() => setShowVault(false)} className="md:hidden p-1.5 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-colors"><X className="w-5 h-5" /></button>
                 </div>
-                <button onClick={() => setShowVault(false)} className="p-2 text-[#5C4A3D]/60 dark:text-[#FAFAFA]/60 hover:text-[#2D241C] dark:hover:text-[#c6a87c] transition-colors rounded-full hover:bg-[#5C4A3D]/5 dark:hover:bg-[#c6a87c]/10">
-                  <X className="w-6 h-6" />
-                </button>
+
+                <div className="p-3 overflow-y-auto smart-scrollbar flex-grow">
+                  <div className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-2 px-3 mt-2">Library</div>
+                  <button onClick={() => setActiveFolder('All')} className={`w-full text-left px-3 py-2 rounded-lg text-sm font-medium transition-colors mb-1 ${activeFolder === 'All' ? 'bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800/50'}`}>All Records</button>
+                  <button onClick={() => setActiveFolder('Uncategorized')} className={`w-full text-left px-3 py-2 rounded-lg text-sm font-medium transition-colors mb-4 ${activeFolder === 'Uncategorized' ? 'bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800/50'}`}>Uncategorized</button>
+
+                  <div className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-2 px-3 flex justify-between items-center">
+                    <span>Collections</span>
+                  </div>
+
+                  {customFolders.map(folder => (
+                    <button key={folder} onClick={() => setActiveFolder(folder)} className={`w-full text-left px-3 py-2 rounded-lg text-sm font-medium transition-colors mb-1 flex items-center gap-2 ${activeFolder === folder ? 'bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800/50'}`}>
+                      <Layout className="w-3.5 h-3.5 opacity-70" /> {folder}
+                    </button>
+                  ))}
+                </div>
               </div>
 
-              <div className="flex-grow overflow-y-auto p-6 sm:p-8 smart-scrollbar bg-[#FDFBF7] dark:bg-[#0A120E]">
-                {vaultItems.length === 0 ? (
-                  <div className="flex flex-col items-center justify-center h-full text-center opacity-60">
-                    <Bookmark className="w-16 h-16 mb-4 text-[#5C4A3D] dark:text-[#c6a87c]" />
-                    <p className="text-xl font-serif text-[#2D241C] dark:text-[#FAFAFA]">Your Vault is empty.</p>
-                    <p className="text-sm text-[#5C4A3D] dark:text-[#c6a87c]/80 mt-2 max-w-sm">Search the database and click the "Save" button on any record to build your personal archive.</p>
+              {/* MAIN CONTENT AREA */}
+              <div className="flex-grow flex flex-col min-w-0 bg-white dark:bg-[#0B1120]">
+                {/* Header & Search */}
+                <div className="px-6 py-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between gap-4 shrink-0 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md">
+                  <div className="relative flex-grow max-w-md">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                    <input type="text" value={vaultSearch} onChange={(e) => setVaultSearch(e.target.value)} placeholder="Search your vault..." className="w-full pl-9 pr-4 py-2 bg-slate-100 dark:bg-slate-800 border-none rounded-lg text-sm text-slate-900 dark:text-white placeholder-slate-400 focus:ring-2 focus:ring-indigo-500 outline-none" />
                   </div>
-                ) : (
-                  <div className="flex flex-col gap-6">
-                    {vaultItems.map((item) => (
-                      <div key={item.id} className="p-6 sm:p-8 rounded-2xl border border-[#5C4A3D]/15 dark:border-[#c6a87c]/20 bg-[#F8F5EE]/40 dark:bg-[#c6a87c]/5 hover:border-[#c6a87c]/50 transition-colors group">
-                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4 pb-4 border-b border-[#5C4A3D]/10 dark:border-[#c6a87c]/10">
-                          <span className="text-[10px] sm:text-xs font-bold uppercase tracking-widest text-[#5C4A3D]/80 dark:text-[#c6a87c] bg-[#FDFBF7] dark:bg-[#c6a87c]/10 border border-[#5C4A3D]/10 dark:border-[#c6a87c]/20 px-3 py-1.5 rounded-md shadow-sm">
-                            {item.source}
-                          </span>
-                          <div className="flex items-center gap-3 self-end sm:self-auto">
-                            <span className="text-[10px] font-mono text-[#5C4A3D]/50 dark:text-[#c6a87c]/40">{new Date(item.created_at).toLocaleDateString()}</span>
-                            <button onClick={async () => { await supabase.from('vault_items').delete().eq('id', item.id); fetchVaultItems(); }} className="flex items-center gap-1.5 text-[10px] uppercase tracking-widest font-bold text-[#5C4A3D]/40 dark:text-[#c6a87c]/40 hover:text-red-500 dark:hover:text-red-400 transition-colors cursor-pointer bg-transparent hover:bg-red-50 dark:hover:bg-red-500/10 px-2 py-1 rounded">
-                              <Trash2 className="w-3.5 h-3.5" /> Remove
-                            </button>
+                  <button onClick={() => setShowVault(false)} className="hidden md:block p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-colors"><X className="w-5 h-5" /></button>
+                </div>
+
+                {/* Items List */}
+                <div className="flex-grow overflow-y-auto p-6 smart-scrollbar relative">
+                  {filteredVaultItems.length === 0 ? (
+                    <div className="absolute inset-0 flex flex-col items-center justify-center text-center px-4 opacity-50">
+                      <LibraryBig className="w-12 h-12 mb-4 text-slate-400" />
+                      <p className="text-lg font-serif text-slate-600 dark:text-slate-300">No records found.</p>
+                    </div>
+                  ) : (
+                    <div className="flex flex-col gap-6 max-w-3xl mx-auto">
+                      {filteredVaultItems.map((item) => {
+                        const isExpanded = expandedVaultItems[item.id];
+                        const needsExpansion = item.content.length > 400;
+                        const displayContent = !needsExpansion || isExpanded ? item.content : item.content.substring(0, 400) + '...';
+
+                        return (
+                          <div key={item.id} className="bg-white dark:bg-slate-800/40 border border-slate-200 dark:border-slate-700/60 rounded-xl p-5 shadow-sm hover:shadow-md transition-shadow group">
+
+                            {/* Top Metadata Row */}
+                            <div className="flex flex-wrap justify-between items-start gap-4 mb-4 pb-4 border-b border-slate-100 dark:border-slate-700/50">
+                              <div className="flex flex-wrap items-center gap-2">
+                                <span className="px-2.5 py-1 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 rounded text-[10px] font-mono uppercase tracking-widest font-bold border border-slate-200 dark:border-slate-700">{item.source}</span>
+                                {item.folder_name && <span className="px-2.5 py-1 bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 rounded text-[10px] font-mono uppercase tracking-widest font-bold border border-indigo-100 dark:border-indigo-500/20">{item.folder_name}</span>}
+                              </div>
+
+                              <div className="flex items-center gap-2 relative">
+                                {/* Folder Movement Dropdown */}
+                                <div className="relative">
+                                  <button onClick={() => setMovingItemId(movingItemId === item.id ? null : item.id)} className="p-1.5 text-slate-400 hover:text-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-500/10 rounded transition-colors" title="Move to Folder">
+                                    <List className="w-4 h-4" />
+                                  </button>
+                                  {movingItemId === item.id && (
+                                    <div className="absolute right-0 top-full mt-1 w-48 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg shadow-xl z-10 py-1 overflow-hidden">
+                                      <div className="px-3 py-2 border-b border-slate-100 dark:border-slate-700">
+                                        <input type="text" value={newFolderInput} onChange={(e) => setNewFolderInput(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter' && newFolderInput.trim()) { assignToFolder(item.id, newFolderInput.trim()); setNewFolderInput(''); } }} placeholder="New folder name..." className="w-full text-xs bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded px-2 py-1 outline-none" />
+                                      </div>
+                                      {customFolders.map(f => (
+                                        <button key={f} onClick={() => assignToFolder(item.id, f)} className="w-full text-left px-3 py-2 text-xs text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors truncate">{f}</button>
+                                      ))}
+                                      {item.folder_name && <button onClick={() => assignToFolder(item.id, null)} className="w-full text-left px-3 py-2 text-xs text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors border-t border-slate-100 dark:border-slate-700 mt-1">Remove from Folder</button>}
+                                    </div>
+                                  )}
+                                </div>
+
+                                <button onClick={() => { navigator.clipboard.writeText(`${item.source}\n\n${item.content}`); }} className="p-1.5 text-slate-400 hover:text-emerald-500 hover:bg-emerald-50 dark:hover:bg-emerald-500/10 rounded transition-colors" title="Copy Text"><Copy className="w-4 h-4" /></button>
+                                <button onClick={async () => { await supabase.from('vault_items').delete().eq('id', item.id); fetchVaultItems(); }} className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 rounded transition-colors" title="Delete"><Trash2 className="w-4 h-4" /></button>
+                              </div>
+                            </div>
+
+                            {/* Content */}
+                            <p className="text-sm sm:text-base font-serif leading-[1.8] text-slate-800 dark:text-slate-200 whitespace-pre-wrap">
+                              {displayContent}
+                            </p>
+
+                            {needsExpansion && (
+                              <button onClick={() => toggleVaultExpand(item.id)} className="mt-3 text-xs font-bold uppercase tracking-widest text-indigo-500 hover:text-indigo-600 dark:text-indigo-400 transition-colors flex items-center gap-1">
+                                {isExpanded ? 'Show Less' : 'Read Full Text'} {isExpanded ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+                              </button>
+                            )}
                           </div>
-                        </div>
-                        <p className="text-sm sm:text-base font-serif leading-relaxed text-[#2D241C] dark:text-[#FAFAFA] whitespace-pre-wrap">
-                          {item.content}
-                        </p>
-                      </div>
-                    ))}
-                  </div>
-                )}
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
               </div>
             </motion.div>
           </motion.div>
