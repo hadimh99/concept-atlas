@@ -1538,15 +1538,15 @@ export default function App() {
   const toggleVaultExpand = (id) => setExpandedVaultItems(prev => ({ ...prev, [id]: !prev[id] }));
 
   const assignToFolder = async (itemId, folderName) => {
-    // 1. Optimistic Update (Instantly reflects in your UI and creates the folder)
+    // 1. Optimistic Update
     setVaultItems(prev => prev.map(item => item.id === itemId ? { ...item, folder_name: folderName } : item));
-    setMovingItemId(null); // Instantly closes the popup
+    setMovingItemId(null);
 
-    // 2. Background Sync (Talks to Supabase silently)
+    // 2. Cloud Sync
     const { error } = await supabase.from('vault_items').update({ folder_name: folderName }).eq('id', itemId);
     if (error) {
-      console.error("Failed to sync folder to cloud:", error);
-      fetchVaultItems(); // Reverts the UI if your internet drops
+      alert(`Supabase Error: ${error.message}`);
+      fetchVaultItems(); // Reverts the UI
     }
   };
 
