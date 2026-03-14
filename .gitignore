@@ -18,3 +18,5 @@ thaqalayn_complete.json
 .npm_cache/
 **/.npm_cache/
 !thaqalayn.db
+kisa_architecture.md
+embed_ontology.py
