@@ -580,19 +580,28 @@ const TranscriptLibrary = ({ transcripts }) => {
   }, [readingProgress, transcripts]);
 
   const heatmapDays = useMemo(() => {
-    const days = [];
-    const historyData = analytics?.history || {};
-    // Reversed loop: 27 days ago starts on the left, Today (0) ends on the right!
-    for (let i = 27; i >= 0; i--) {
+    const dailyTimeData = analytics?.dailyTime || {};
+    let successfulDays = 0;
+
+    // Count how many days in the current 28-day window met the 10-minute (600 seconds) goal
+    for (let i = 0; i <= 27; i++) {
       const d = new Date();
       d.setDate(d.getDate() - i);
       const dateStr = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
-      days.push({
-        date: dateStr,
-        count: historyData[dateStr] || 0
+
+      if ((dailyTimeData[dateStr] || 0) >= 600) {
+        successfulDays++;
+      }
+    }
+
+    // Generate an array of 28 blocks, filling them with green from left to right based on the count
+    const blocks = [];
+    for (let i = 0; i <= 27; i++) {
+      blocks.push({
+        metGoal: i < successfulDays
       });
     }
-    return days;
+    return blocks;
   }, [analytics]);
 
   const [expandedSeries, setExpandedSeries] = useState({});
@@ -693,10 +702,24 @@ const TranscriptLibrary = ({ transcripts }) => {
   useEffect(() => {
     if (currentView !== 'reader' || !activeDoc) return;
 
+    // This timer ticks every 10 seconds you are actively reading
     const timer = setInterval(() => {
       setAnalytics(prev => {
         const currentSecs = prev.totalSeconds !== undefined ? prev.totalSeconds : (prev.totalMinutes * 60 || 0);
-        const updated = { ...prev, totalSeconds: currentSecs + 10 };
+
+        // Get today's exact date string
+        const dateObj = new Date();
+        const todayStr = dateObj.getFullYear() + '-' + String(dateObj.getMonth() + 1).padStart(2, '0') + '-' + String(dateObj.getDate()).padStart(2, '0');
+
+        // Add 10 seconds to today's specific tracking log
+        const dailyTimeData = prev.dailyTime || {};
+        const todaySecs = (dailyTimeData[todayStr] || 0) + 10;
+
+        const updated = {
+          ...prev,
+          totalSeconds: currentSecs + 10,
+          dailyTime: { ...dailyTimeData, [todayStr]: todaySecs } // Saves today's progress
+        };
         localStorage.setItem('kisa_analytics', JSON.stringify(updated));
         return updated;
       });
@@ -1046,13 +1069,12 @@ const TranscriptLibrary = ({ transcripts }) => {
           <div className="flex flex-col items-start md:items-end w-full md:w-auto">
             <p className="text-[10px] font-bold uppercase tracking-widest text-zinc-400 mb-2 flex items-center gap-1.5"><History className="w-3 h-3" /> 28-Day Activity</p>
             <div className="flex gap-1 flex-wrap">
-              {heatmapDays.map((day, i) => (
+              {heatmapDays.map((block, i) => (
                 <div
                   key={i}
-                  title={`${day.count} reads on ${day.date}`}
-                  className={`w-3 h-3 sm:w-4 sm:h-4 rounded-sm transition-colors ${day.count > 1 ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.4)]' :
-                    day.count === 1 ? 'bg-[#c6a87c] shadow-[0_0_8px_rgba(198,168,124,0.4)]' :
-                      'bg-zinc-100 dark:bg-zinc-800'
+                  className={`w-3 h-3 sm:w-4 sm:h-4 rounded-sm transition-colors ${block.metGoal
+                      ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.4)]'
+                      : 'bg-zinc-100 dark:bg-zinc-800'
                     }`}
                 />
               ))}
