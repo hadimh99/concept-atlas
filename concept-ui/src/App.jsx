@@ -2038,42 +2038,33 @@ export default function App() {
           font-display: swap;
         }
 
-        /* FIX: Prevents Layout Shift by permanently reserving scrollbar space */
-        html { 
-          overflow-y: scroll !important; 
-        }
-
+        html { overflow-y: scroll !important; }
         .hide-scroll::-webkit-scrollbar { display: none; }
         .hide-scroll { -ms-overflow-style: none; scrollbar-width: none; -webkit-overflow-scrolling: touch; overscroll-behavior-y: contain; }
         .smart-scrollbar { --thumb-bg: transparent; scrollbar-width: thin; scrollbar-color: var(--thumb-bg) transparent; -webkit-overflow-scrolling: touch; overscroll-behavior-y: contain; }
         
-        /* PREMIUM INVISIBLE SCROLLBAR */
         ::-webkit-scrollbar { width: 8px; }
         ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb { background-color: rgba(198, 168, 124, 0.15); border-radius: 10px; }
         ::-webkit-scrollbar-thumb:hover { background-color: rgba(198, 168, 124, 0.8) !important; }
         
-        /* The Vellum Noise Overlay */
         .gilded-noise {
           position: absolute; inset: 0; z-index: 0; opacity: 0.04; pointer-events: none; mix-blend-mode: overlay;
           background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
         }
         
-        /* The Banker's Lamp Spotlight (Dark Mode) */
         .gilded-halo {
           position: absolute; inset: 0;
           background: radial-gradient(circle at 50% 42%, rgba(198, 168, 124, 0.08) 0%, rgba(6, 33, 22, 0.75) 45%, rgba(2, 6, 4, 1) 100%);
           pointer-events: none; z-index: 0;
         }
 
-        /* The Oxford Parchment Spotlight (Light Mode) */
         .parchment-halo {
           position: absolute; inset: 0;
           background: radial-gradient(circle at 50% 40%, rgba(253, 251, 247, 0.4) 0%, rgba(234, 228, 211, 0) 70%);
           pointer-events: none; z-index: 0;
         }
 
-        /* THE UNBREAKABLE BRASS SHEEN */
         .hover-sheen {
           position: absolute !important;
           overflow: hidden;
@@ -2161,7 +2152,7 @@ export default function App() {
                   <button onClick={() => setShowVault(false)} className="hidden md:flex items-center justify-center p-2.5 text-neutral-500 hover:text-white bg-neutral-800 border border-neutral-600 hover:border-neutral-400 rounded-md transition-all cursor-pointer shadow-[0_4px_10px_rgba(0,0,0,0.5)]"><X className="w-5 h-5" /></button>
                 </div>
 
-                {/* Items List (Now safely scrollable) */}
+                {/* Items List */}
                 <div className="flex-grow overflow-y-auto p-4 sm:p-6 md:p-8 smart-scrollbar relative z-10">
                   {filteredVaultItems.length === 0 ? (
                     <div className="absolute inset-0 flex flex-col items-center justify-center text-center px-4 opacity-40">
@@ -2176,10 +2167,8 @@ export default function App() {
                         const displayContent = !needsExpansion || isExpanded ? item.content : item.content.substring(0, 400) + '...';
 
                         return (
-                          // Individual Record Card (Machined Metal Plate)
                           <div key={item.id} className="bg-neutral-800 border-t border-l border-neutral-600 border-b-2 border-r-2 border-neutral-950 rounded-lg p-5 sm:p-8 shadow-[4px_4px_15px_rgba(0,0,0,0.6)] md:shadow-[8px_8px_20px_rgba(0,0,0,0.6)] transition-all group relative flex flex-col">
 
-                            {/* Top Metadata Row (Stenciled tags) */}
                             <div className="flex flex-wrap justify-between items-start gap-3 mb-5 pb-4 border-b border-neutral-700/50">
                               <div className="flex flex-wrap items-center gap-2">
                                 <span className="px-3 py-1.5 bg-neutral-900 text-neutral-300 rounded text-[10px] font-mono uppercase tracking-widest font-bold border border-neutral-700 shadow-inner">{item.source}</span>
@@ -2188,7 +2177,6 @@ export default function App() {
                               <span className="text-[10px] font-mono text-neutral-500 pt-1.5 font-bold">{new Date(item.created_at).toLocaleDateString()}</span>
                             </div>
 
-                            {/* Content */}
                             <div className="flex-grow">
                               <p className="text-sm sm:text-base md:text-lg font-serif leading-[1.85] text-neutral-100 whitespace-pre-wrap antialiased">
                                 {displayContent}
@@ -2201,7 +2189,6 @@ export default function App() {
                               )}
                             </div>
 
-                            {/* BOTTOM ACTION ROW (Copper Accented Mechanical Footer) */}
                             <div className="mt-6 md:mt-8 pt-4 md:pt-5 border-t border-neutral-700/50 flex justify-end items-center gap-2 md:gap-3">
 
                               {/* Folder Movement Dropdown (POPS UP) */}
@@ -2210,14 +2197,10 @@ export default function App() {
                                   <List className="w-4 h-4" /> <span className="hidden sm:inline">Folder</span>
                                 </button>
 
-                                {/* THE POP-UP MENU */}
                                 <AnimatePresence>
                                   {movingItemId === item.id && (
                                     <>
-                                      {/* Invisible Overlay: Clicking anywhere outside closes the menu */}
                                       <div className="fixed inset-0 z-40" onClick={(e) => { e.stopPropagation(); setMovingItemId(null); }} />
-
-                                      {/* Mobile-aligned popup window */}
                                       <motion.div initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 5 }} transition={{ duration: 0.15 }} className="absolute right-[-60px] sm:right-0 bottom-full mb-3 w-[260px] max-w-[85vw] bg-neutral-800 border-2 border-neutral-600 rounded-md shadow-[0_15px_50px_rgba(0,0,0,0.9)] z-50 overflow-hidden">
                                         <div className="flex items-center gap-2 px-3 py-3 border-b-2 border-neutral-900 bg-neutral-900 relative z-10">
                                           <input type="text" value={newFolderInput} onChange={(e) => setNewFolderInput(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter' && newFolderInput.trim()) { assignToFolder(item.id, newFolderInput.trim()); setNewFolderInput(''); } }} placeholder="New folder..." className="w-full text-xs font-mono bg-neutral-950 border border-neutral-700 rounded px-3 py-2.5 outline-none text-neutral-100 placeholder-neutral-600 focus:border-[#B56D43] focus:ring-1 focus:ring-[#B56D43] transition-all shadow-inner" />
@@ -2239,7 +2222,6 @@ export default function App() {
                                 </AnimatePresence>
                               </div>
 
-                              {/* Smart Copy */}
                               <button onClick={(e) => {
                                 navigator.clipboard.writeText(`${item.source}\n\n${item.content}`);
                                 const btn = e.currentTarget;
@@ -2254,7 +2236,6 @@ export default function App() {
                                 <Copy className="w-4 h-4" /> <span className="hidden sm:inline">Copy</span>
                               </button>
 
-                              {/* Delete */}
                               <button onClick={async () => { await supabase.from('vault_items').delete().eq('id', item.id); fetchVaultItems(); }} className="flex items-center justify-center p-2.5 text-neutral-500 hover:text-red-400 hover:bg-red-500/10 hover:border-red-500/30 rounded border border-transparent transition-all cursor-pointer md:ml-1" title="Delete Record">
                                 <Trash2 className="w-4 h-4 md:w-5 md:h-5" />
                               </button>
@@ -2277,42 +2258,24 @@ export default function App() {
         {showAuthModal && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#FDFBF7]/40 dark:bg-[#020805]/60 backdrop-blur-md">
             <motion.div initial={{ scale: 0.95, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.95, y: 20 }} className="relative w-full max-w-md p-8 bg-[#FDFBF7] dark:bg-[#0A120E] border border-[#5C4A3D]/10 dark:border-[#c6a87c]/20 rounded-[2rem] shadow-2xl">
-
-              {/* Close Button */}
-              <button onClick={() => setShowAuthModal(false)} className="absolute top-5 right-5 p-2 text-[#5C4A3D]/60 dark:text-[#FAFAFA]/60 hover:text-[#2D241C] dark:hover:text-[#c6a87c] transition-colors rounded-full hover:bg-[#5C4A3D]/5 dark:hover:bg-[#c6a87c]/10">
-                <X className="w-5 h-5" />
-              </button>
-
-              {/* Header */}
+              <button onClick={() => setShowAuthModal(false)} className="absolute top-5 right-5 p-2 text-[#5C4A3D]/60 dark:text-[#FAFAFA]/60 hover:text-[#2D241C] dark:hover:text-[#c6a87c] transition-colors rounded-full hover:bg-[#5C4A3D]/5 dark:hover:bg-[#c6a87c]/10"><X className="w-5 h-5" /></button>
               <div className="text-center mb-8">
-                <div className="w-12 h-12 mx-auto mb-4 rounded-full bg-[#c6a87c]/10 flex items-center justify-center border border-[#c6a87c]/20">
-                  <Bookmark className="w-5 h-5 text-[#c6a87c]" />
-                </div>
+                <div className="w-12 h-12 mx-auto mb-4 rounded-full bg-[#c6a87c]/10 flex items-center justify-center border border-[#c6a87c]/20"><Bookmark className="w-5 h-5 text-[#c6a87c]" /></div>
                 <h2 className="text-2xl font-serif text-[#2D241C] dark:text-[#FAFAFA] mb-2">The Scholar's Vault</h2>
-                <p className="text-sm text-[#5C4A3D]/80 dark:text-[#FAFAFA]/60">Secure your research globally with a magic link. No passwords required.</p>
+                <p className="text-sm text-[#5C4A3D]/80 dark:text-[#FAFAFA]/60">Secure your research globally. No magic links required.</p>
               </div>
-
-              {/* Form */}
               <form onSubmit={handleEmailAuth} className="space-y-4">
-                <div>
-                  <input type="email" value={authEmail} onChange={(e) => setAuthEmail(e.target.value)} placeholder="name@example.com" required className="w-full bg-transparent appearance-none outline-none rounded-xl py-3 px-4 text-base font-sans text-[#2D241C] dark:text-[#FAFAFA] placeholder:text-[#5C4A3D]/40 dark:placeholder:text-[#c6a87c]/40 border border-[#5C4A3D]/20 dark:border-[#c6a87c]/30 focus:border-[#c6a87c] focus:ring-1 focus:ring-[#c6a87c] transition-all" />
-                </div>
-                <div>
-                  <input type="password" value={authPassword} onChange={(e) => setAuthPassword(e.target.value)} placeholder="Password (min 6 chars)" required className="w-full bg-transparent appearance-none outline-none rounded-xl py-3 px-4 text-base font-sans text-[#2D241C] dark:text-[#FAFAFA] placeholder:text-[#5C4A3D]/40 dark:placeholder:text-[#c6a87c]/40 border border-[#5C4A3D]/20 dark:border-[#c6a87c]/30 focus:border-[#c6a87c] focus:ring-1 focus:ring-[#c6a87c] transition-all" />
-                </div>
+                <div><input type="email" value={authEmail} onChange={(e) => setAuthEmail(e.target.value)} placeholder="name@example.com" required className="w-full bg-transparent appearance-none outline-none rounded-xl py-3 px-4 text-base font-sans text-[#2D241C] dark:text-[#FAFAFA] placeholder:text-[#5C4A3D]/40 dark:placeholder:text-[#c6a87c]/40 border border-[#5C4A3D]/20 dark:border-[#c6a87c]/30 focus:border-[#c6a87c] focus:ring-1 focus:ring-[#c6a87c] transition-all" /></div>
+                <div><input type="password" value={authPassword} onChange={(e) => setAuthPassword(e.target.value)} placeholder="Password (min 6 chars)" required className="w-full bg-transparent appearance-none outline-none rounded-xl py-3 px-4 text-base font-sans text-[#2D241C] dark:text-[#FAFAFA] placeholder:text-[#5C4A3D]/40 dark:placeholder:text-[#c6a87c]/40 border border-[#5C4A3D]/20 dark:border-[#c6a87c]/30 focus:border-[#c6a87c] focus:ring-1 focus:ring-[#c6a87c] transition-all" /></div>
                 <button type="submit" disabled={authLoading} className="w-full flex items-center justify-center py-3.5 rounded-xl font-medium text-[#FDFBF7] dark:text-[#0A120E] bg-[#2D241C] dark:bg-[#c6a87c] hover:bg-[#1A1510] dark:hover:bg-[#d4ba96] transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
                   {authLoading ? 'Authenticating...' : (isSignUp ? 'Create Account' : 'Sign In')}
                 </button>
               </form>
-
-              {/* Toggle Sign In / Sign Up */}
               <div className="mt-5 text-center">
                 <button onClick={() => { setIsSignUp(!isSignUp); setAuthMessage({ text: '', type: '' }); }} className="text-sm font-medium text-[#5C4A3D]/80 dark:text-[#c6a87c]/80 hover:text-[#2D241C] dark:hover:text-[#FAFAFA] transition-colors cursor-pointer">
                   {isSignUp ? 'Already have an account? Sign In' : "Don't have an account? Create one"}
                 </button>
               </div>
-
-              {/* Feedback Message */}
               {authMessage.text && (
                 <div className={`mt-5 p-3.5 rounded-xl text-sm text-center font-medium ${authMessage.type === 'error' ? 'bg-red-500/10 text-red-600 dark:text-red-400 border border-red-500/20' : 'bg-[#c6a87c]/10 text-[#5C4A3D] dark:text-[#c6a87c] border border-[#c6a87c]/20'}`}>
                   {authMessage.text}
@@ -2360,8 +2323,6 @@ export default function App() {
             <button onClick={() => setShowHistoryDrawer(true)} className="w-10 h-10 sm:w-11 sm:h-11 rounded-full flex items-center justify-center group transition-all duration-300 hover:scale-110 cursor-pointer"><Clock className={`w-5 h-5 text-[#5C4A3D]/80 dark:text-[#c6a87c]/60 ${activeTab === 'library' ? 'group-hover:text-[#c6a87c]' : (activeTab === 'quran' ? 'group-hover:text-amber-500' : 'group-hover:text-[#2D241C] dark:group-hover:text-[#c6a87c]')}`} /></button>
             <button onClick={() => setShowInfo(true)} className="w-10 h-10 sm:w-11 sm:h-11 rounded-full flex items-center justify-center group transition-all duration-300 hover:scale-110 cursor-pointer"><HelpCircle className={`w-5 h-5 text-[#5C4A3D]/80 dark:text-[#c6a87c]/60 ${activeTab === 'library' ? 'group-hover:text-[#c6a87c]' : (activeTab === 'quran' ? 'group-hover:text-amber-500' : 'group-hover:text-[#2D241C] dark:group-hover:text-[#c6a87c]')}`} /></button>
 
-
-
             <button onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')} className="w-10 h-10 sm:w-11 sm:h-11 rounded-full flex items-center justify-center group transition-all duration-300 hover:scale-110 cursor-pointer">{theme === 'dark' ? <Sun className="w-5 h-5 text-[#c6a87c]/60 group-hover:text-yellow-400" /> : <Moon className="w-5 h-5 text-[#5C4A3D]/80 group-hover:text-[#2D241C]" />}</button>
 
             {/* VAULT / AUTH BUTTON */}
@@ -2404,7 +2365,6 @@ export default function App() {
                 <Menu className="w-5 h-5" />
               </button>
               <AnimatePresence>
-
                 {showMobileMenu && (
                   <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className={`absolute right-0 top-full mt-2 w-48 rounded-xl shadow-xl p-2 flex flex-col gap-1 z-[75] border ${activeTab === 'library' ? 'bg-white dark:bg-[#1c1c1e] border-zinc-200 dark:border-zinc-800' : (activeTab === 'quran' ? 'bg-[#f4ecd8] dark:bg-[#1a1a1a] border-slate-300 dark:border-slate-700' : 'bg-[#FDFBF7]/95 dark:bg-[#030A06] border-[#5C4A3D]/15 dark:border-[#c6a87c]/20 backdrop-blur-2xl')}`}>
                     {activeTab === 'search' && data && <button onClick={() => { handleHomeClick(); setShowMobileMenu(false); }} className="w-full text-left flex items-center gap-3 p-3 rounded-lg text-sm text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 cursor-pointer"><Home className="w-4 h-4 shrink-0" /> Reset Search</button>}
@@ -2426,7 +2386,6 @@ export default function App() {
       </header>
 
       <main ref={containerRef} className={`relative w-full flex-grow flex flex-col z-10 ${lockMainScreen ? 'items-center justify-center h-screen overflow-hidden' : 'min-h-screen'}`}>
-
         {activeTab === 'quran' && <QuranReader activeFontFamily={activeFontFamily} fontStyle={fontStyle} setFontStyle={setFontStyle} handleSurahSelectHook={(id, name) => saveToHistory({ type: 'quran', surahId: id, surahName: name, timestamp: Date.now() })} externalSurahTarget={quranTarget} onTafsirClick={handleTafsirClick} />}
 
         {activeTab === 'library' && <TranscriptLibrary transcripts={transcriptData} />}
@@ -2434,18 +2393,10 @@ export default function App() {
         <AnimatePresence>
           {activeTab === 'search' && !data && !loading && (
             <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.9, filter: "blur(10px)" }} className="z-10 flex flex-col items-center justify-center w-full max-w-2xl px-4 sm:px-6 mx-auto absolute top-[45%] left-1/2 transform -translate-x-1/2 -translate-y-1/2">
-
               <h2 className="font-serif text-3xl sm:text-4xl md:text-5xl font-normal mb-4 text-center leading-tight text-[#2D241C] dark:text-[#FAFAFA] drop-shadow-sm dark:drop-shadow-md">
                 Explore the Depths of <br /><span className="italic text-[#c6a87c] drop-shadow-sm dark:drop-shadow-lg">Twelver Literature</span>
               </h2>
-
-              {/* ULTRA-PREMIUM SUB-HEADLINE STATS */}
-              <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.3, duration: 0.8, ease: "easeOut" }}
-                className="flex flex-wrap justify-center items-center gap-3 sm:gap-4 mb-10 sm:mb-12 text-[9px] sm:text-[10px] uppercase tracking-[0.25em] font-semibold text-[#5C4A3D] dark:text-[#c6a87c]/80"
-              >
+              <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3, duration: 0.8, ease: "easeOut" }} className="flex flex-wrap justify-center items-center gap-3 sm:gap-4 mb-10 sm:mb-12 text-[9px] sm:text-[10px] uppercase tracking-[0.25em] font-semibold text-[#5C4A3D] dark:text-[#c6a87c]/80">
                 <span className="flex items-center gap-1.5 cursor-default"><BookOpen className="w-3 h-3 opacity-80 text-[#c6a87c]" /> <span className="text-[#2D241C] dark:text-[#FAFAFA]">14,500+</span> Narrations</span>
                 <span className="opacity-40 text-[#c6a87c]">•</span>
                 <span className="flex items-center gap-1.5 cursor-default"><Sparkles className="w-3 h-3 opacity-80 text-[#c6a87c]" /> <span className="text-[#2D241C] dark:text-[#FAFAFA]">2.4M</span> Semantic Links</span>
@@ -2454,41 +2405,14 @@ export default function App() {
               </motion.div>
 
               <div className="w-full relative group pointer-events-auto" ref={searchInputContainerRef}>
-
-                {/* SAFARI-SAFE IVORY GLASS CAPSULE WITH BREATHING BORDER */}
                 <div className="absolute inset-0 w-full h-full rounded-2xl border pointer-events-none z-0 transition-all duration-700 bg-[#F8F5EE]/50 dark:bg-[#020805]/40 border-[#5C4A3D]/15 dark:border-[#c6a87c]/20 shadow-[0_8px_32px_rgba(45,36,28,0.05)] dark:shadow-[0_8px_32px_rgba(0,0,0,0.6)] backdrop-blur-xl group-focus-within:border-[#c6a87c]/60 group-focus-within:shadow-[0_0_40px_rgba(198,168,124,0.15)]"></div>
-
                 <form onSubmit={handleSearchSubmit} className="relative z-10 flex flex-col p-2">
                   <div className="flex items-center border-b relative border-[#5C4A3D]/15 dark:border-[#c6a87c]/20 transition-colors duration-500 group-focus-within:border-[#c6a87c]/50">
-                    <input
-                      type="text"
-                      value={query}
-                      onFocus={() => setShowSearchDropdown(true)}
-                      onChange={(e) => setQuery(e.target.value)}
-                      placeholder={isKeyword ? "Enter an exact word or phrase..." : ghostText}
-                      className="w-full bg-transparent appearance-none outline-none rounded-none py-3 sm:py-4 pl-3 sm:pl-4 pr-14 sm:pr-16 text-base font-sans text-[#2D241C] dark:text-[#FAFAFA] placeholder:text-[#5C4A3D]/60 dark:placeholder:text-[#c6a87c]/40 cursor-text caret-[#c6a87c]"
-                    />
-
-                    {/* MAGNETIC BRASS SHEEN BUTTON */}
-                    <motion.button
-                      ref={btnRef}
-                      type="submit"
-                      animate={{ x: magneticPos.x, y: magneticPos.y }}
-                      transition={{ type: "spring", stiffness: 150, damping: 15, mass: 0.1 }}
-                      onMouseMove={(e) => {
-                        if (!btnRef.current) return;
-                        const { left, top, width, height } = btnRef.current.getBoundingClientRect();
-                        const x = (e.clientX - (left + width / 2)) * 0.4; // 0.4 is the magnetic pull strength
-                        const y = (e.clientY - (top + height / 2)) * 0.4;
-                        setMagneticPos({ x, y });
-                      }}
-                      onMouseLeave={() => setMagneticPos({ x: 0, y: 0 })}
-                      className="hover-sheen absolute right-2 p-2 sm:p-2.5 rounded-xl shadow-sm cursor-pointer bg-[#FDFBF7]/80 dark:bg-[#c6a87c]/10 hover:bg-[#FDFBF7] dark:hover:bg-[#c6a87c]/20 text-[#c6a87c] dark:hover:text-[#FAFAFA] border border-[#5C4A3D]/5 dark:border-[#c6a87c]/20 transition-colors flex items-center justify-center z-10"
-                    >
+                    <input type="text" value={query} onFocus={() => setShowSearchDropdown(true)} onChange={(e) => setQuery(e.target.value)} placeholder={isKeyword ? "Enter an exact word or phrase..." : ghostText} className="w-full bg-transparent appearance-none outline-none rounded-none py-3 sm:py-4 pl-3 sm:pl-4 pr-14 sm:pr-16 text-base font-sans text-[#2D241C] dark:text-[#FAFAFA] placeholder:text-[#5C4A3D]/60 dark:placeholder:text-[#c6a87c]/40 cursor-text caret-[#c6a87c]" />
+                    <motion.button ref={btnRef} type="submit" animate={{ x: magneticPos.x, y: magneticPos.y }} transition={{ type: "spring", stiffness: 150, damping: 15, mass: 0.1 }} onMouseMove={(e) => { if (!btnRef.current) return; const { left, top, width, height } = btnRef.current.getBoundingClientRect(); const x = (e.clientX - (left + width / 2)) * 0.4; const y = (e.clientY - (top + height / 2)) * 0.4; setMagneticPos({ x, y }); }} onMouseLeave={() => setMagneticPos({ x: 0, y: 0 })} className="hover-sheen absolute right-2 p-2 sm:p-2.5 rounded-xl shadow-sm cursor-pointer bg-[#FDFBF7]/80 dark:bg-[#c6a87c]/10 hover:bg-[#FDFBF7] dark:hover:bg-[#c6a87c]/20 text-[#c6a87c] dark:hover:text-[#FAFAFA] border border-[#5C4A3D]/5 dark:border-[#c6a87c]/20 transition-colors flex items-center justify-center z-10">
                       <Search className="w-4 h-4 sm:w-5 sm:h-5 relative z-10" />
                     </motion.button>
                   </div>
-
                   <AnimatePresence>
                     {showSearchDropdown && appHistory.length > 0 && query.trim() === '' && (
                       <motion.div initial={{ opacity: 0, y: -5 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -5 }} className="absolute left-0 right-0 top-full mt-2 rounded-xl shadow-2xl overflow-hidden z-50 border bg-[#FDFBF7]/95 dark:bg-[#030A06]/95 border-[#5C4A3D]/15 dark:border-[#c6a87c]/20 backdrop-blur-2xl">
@@ -2500,9 +2424,7 @@ export default function App() {
                             <div key={i} onClick={() => handleHistoryClick(item)} className="px-4 py-3 sm:py-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-1 sm:gap-3 cursor-pointer transition-colors border-b last:border-b-0 group hover:bg-[#EAE4D3]/40 dark:hover:bg-[#c6a87c]/10 border-[#5C4A3D]/10 dark:border-[#c6a87c]/10">
                               <div className="flex items-center gap-3 min-w-0 flex-1 pr-2">
                                 {item.type === 'quran' ? <BookOpen className="w-4 h-4 text-amber-600 shrink-0" /> : (item.mode === 'keyword' ? <Database className="w-4 h-4 text-[#5C4A3D]/60 dark:text-[#c6a87c]/60 shrink-0" /> : <Sparkles className="w-4 h-4 text-[#c6a87c] shrink-0" />)}
-                                <span className="font-medium truncate w-full text-sm sm:text-base transition-colors text-[#2D241C] dark:text-[#c6a87c] group-hover:dark:text-[#FAFAFA]">
-                                  {item.type === 'quran' ? `Surah ${item.surahName}` : item.query}
-                                </span>
+                                <span className="font-medium truncate w-full text-sm sm:text-base transition-colors text-[#2D241C] dark:text-[#c6a87c] group-hover:dark:text-[#FAFAFA]">{item.type === 'quran' ? `Surah ${item.surahName}` : item.query}</span>
                               </div>
                               <span className="text-[10px] sm:text-xs font-mono text-[#5C4A3D]/60 dark:text-[#c6a87c]/50 shrink-0 pl-7 sm:pl-0 opacity-70 group-hover:opacity-100 transition-opacity">{timeAgo(item.timestamp)}</span>
                             </div>
@@ -2511,14 +2433,11 @@ export default function App() {
                       </motion.div>
                     )}
                   </AnimatePresence>
-
                   <div className="relative py-3 px-2 flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
-                    {/* MUTED BRASS TOGGLE BUTTONS */}
                     <div className="flex items-center rounded-lg p-1 border bg-[#F8F5EE]/60 dark:bg-[#020805]/60 border-[#5C4A3D]/15 dark:border-[#c6a87c]/10 shadow-inner">
                       <button type="button" onClick={() => { setSearchMode('concept'); setViewMode(window.innerWidth < 800 ? 'list' : 'map'); }} className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[10px] sm:text-xs font-bold uppercase tracking-wider transition-all duration-300 flex-1 sm:flex-none justify-center cursor-pointer ${!isKeyword ? 'bg-[#FDFBF7] dark:bg-[#c6a87c]/15 text-[#2D241C] dark:text-[#c6a87c] shadow-sm border border-[#5C4A3D]/15 dark:border-[#c6a87c]/30' : 'text-[#5C4A3D]/80 hover:text-[#2D241C] dark:text-[#c6a87c]/50 dark:hover:text-[#c6a87c] border border-transparent'}`}><Sparkles className="w-3.5 h-3.5 opacity-70" /> Concept</button>
                       <button type="button" onClick={() => { setSearchMode('keyword'); setViewMode('list'); }} className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[10px] sm:text-xs font-bold uppercase tracking-wider transition-all duration-300 flex-1 sm:flex-none justify-center cursor-pointer ${isKeyword ? 'bg-[#FDFBF7] dark:bg-[#c6a87c]/15 text-[#2D241C] dark:text-[#c6a87c] shadow-sm border border-[#5C4A3D]/15 dark:border-[#c6a87c]/30' : 'text-[#5C4A3D]/80 hover:text-[#2D241C] dark:text-[#c6a87c]/50 dark:hover:text-[#c6a87c] border border-transparent'}`}><Database className="w-3.5 h-3.5 opacity-70" /> Keyword</button>
                     </div>
-
                     <div className="flex items-center w-full sm:w-auto">
                       <div className="flex items-center gap-2 text-[#5C4A3D]/80 dark:text-[#c6a87c]/70 mr-3 hidden sm:flex"><BookOpen className="w-4 h-4 opacity-70" /><span className="text-xs uppercase tracking-wider font-semibold">Source:</span></div>
                       <button type="button" onClick={() => setShowDropdown(!showDropdown)} className="flex items-center justify-between w-full sm:w-[220px] px-3 py-1.5 sm:py-2 rounded-lg transition-colors text-xs sm:text-sm font-medium border border-transparent cursor-pointer bg-[#F8F5EE]/60 dark:bg-[#020805]/60 text-[#2D241C] dark:text-[#c6a87c]/80 hover:bg-[#FDFBF7] dark:hover:bg-[#c6a87c]/10 dark:hover:text-[#c6a87c] dark:hover:border-[#c6a87c]/20"><span className="truncate">{sourceFilter}</span><ChevronDown className="w-4 h-4 opacity-50 shrink-0 ml-2" /></button>
@@ -2526,11 +2445,7 @@ export default function App() {
                         {showDropdown && (
                           <motion.div initial={{ opacity: 0, y: -5 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -5 }} className="absolute top-[100px] sm:top-14 right-2 sm:right-0 w-[calc(100%-16px)] sm:w-[220px] rounded-xl border shadow-xl overflow-hidden z-50 backdrop-blur-2xl bg-[#FDFBF7]/95 dark:bg-[#040F0B]/95 border-[#5C4A3D]/15 dark:border-[#c6a87c]/20">
                             {SOURCES.map((source) => (
-                              <div
-                                key={source}
-                                onClick={() => { setSourceFilter(source); setShowDropdown(false); }}
-                                className={`px-4 py-3 text-sm cursor-pointer transition-colors ${sourceFilter === source ? 'bg-[#EAE4D3]/60 dark:bg-[#c6a87c]/15 text-[#2D241C] dark:text-[#FAFAFA] font-bold' : 'text-[#5C4A3D] dark:text-[#c6a87c]/80 hover:bg-[#F8F5EE] dark:hover:bg-[#c6a87c]/10 dark:hover:text-[#c6a87c]'}`}
-                              >
+                              <div key={source} onClick={() => { setSourceFilter(source); setShowDropdown(false); }} className={`px-4 py-3 text-sm cursor-pointer transition-colors ${sourceFilter === source ? 'bg-[#EAE4D3]/60 dark:bg-[#c6a87c]/15 text-[#2D241C] dark:text-[#FAFAFA] font-bold' : 'text-[#5C4A3D] dark:text-[#c6a87c]/80 hover:bg-[#F8F5EE] dark:hover:bg-[#c6a87c]/10 dark:hover:text-[#c6a87c]'}`}>
                                 {source}
                               </div>
                             ))}
@@ -2578,15 +2493,11 @@ export default function App() {
         <AnimatePresence>
           {activeTab === 'search' && data && !loading && (
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="absolute inset-0 w-full h-full pointer-events-none">
-
-
-
               {viewMode === 'map' && !isKeyword && (
                 <div className="absolute inset-0 w-full h-full overflow-hidden">
                   <div className="absolute top-1/2 left-1/2 w-0 h-0 flex items-center justify-center z-30 pointer-events-none">
                     <motion.div layoutId="search-node" className="flex flex-col items-center justify-center pointer-events-auto cursor-pointer" onClick={() => setActiveCluster(null)}>
                       <div className="bg-[#FDFBF7]/80 dark:bg-[#020805]/60 px-6 sm:px-8 py-3 sm:py-4 flex flex-col items-center gap-2 backdrop-blur-xl border border-[#5C4A3D]/15 dark:border-[#c6a87c]/20 rounded-2xl shadow-[0_0_50px_rgba(45,36,28,0.06)] dark:shadow-[0_0_50px_rgba(198,168,124,0.1)] group hover:scale-105 transition-transform mt-8">
-                        {/* MAP VIEW: DYNAMIC CENTER NODE FOR ANCHORS */}
                         {anchorHadith ? (
                           <div className="flex flex-col items-center text-[#2D241C] dark:text-[#FAFAFA]">
                             <div className="flex items-center gap-3">
@@ -2607,36 +2518,28 @@ export default function App() {
                       </div>
                     </motion.div>
                   </div>
-
-                  {/* THE APPLE VISION MAP: Clean, highly legible, glassmorphic nodes */}
                   <svg className="absolute inset-0 w-full h-full pointer-events-none z-10">
                     {(data.clusters || []).map((cluster, i) => {
                       const clusterCount = data.clusters ? Math.max(1, data.clusters.length) : 1;
                       const rx = Math.max(280, Math.min(centerPos.x - 150, 450));
                       const ry = Math.max(220, Math.min(centerPos.y - 140, 320));
                       const pos = getRadialPosition(i, clusterCount, rx, ry);
-
                       const color = theme === 'dark' ? '#c6a87c' : '#5C4A3D';
                       const isActive = activeCluster === i;
                       const isHovered = hoveredCluster === i;
-
                       return (<motion.line key={`line-${i}`} x1={centerPos.x} y1={centerPos.y} x2={centerPos.x + pos.x} y2={centerPos.y + pos.y} stroke={color} strokeWidth={isActive ? 2 : isHovered ? 1.5 : 1} strokeOpacity={isActive ? 0.5 : isHovered ? 0.3 : 0.1} initial={{ pathLength: 0 }} animate={{ pathLength: 1 }} transition={{ duration: 1, delay: i * 0.2 }} className="transition-all duration-300" />);
                     })}
                   </svg>
-
                   {(data.clusters || []).map((cluster, i) => {
                     const clusterCount = data.clusters ? Math.max(1, data.clusters.length) : 1;
                     const itemsLength = cluster.items ? cluster.items.length : 0;
-
                     const rx = Math.max(280, Math.min(centerPos.x - 150, 450));
                     const ry = Math.max(220, Math.min(centerPos.y - 140, 320));
                     const pos = getRadialPosition(i, clusterCount, rx, ry);
-
                     const color = theme === 'dark' ? '#c6a87c' : '#5C4A3D';
                     const isActive = activeCluster === i;
                     const isHovered = hoveredCluster === i;
                     const isFaded = activeCluster !== null && !isActive;
-
                     const isTopMatches = cluster.theme_label && cluster.theme_label.includes("Top Matches");
                     const screenScale = Math.min(1, windowWidth / 1200);
                     const baseScale = (isTopMatches ? 1.15 : 0.95) * screenScale;
@@ -2644,13 +2547,8 @@ export default function App() {
                     return (
                       <div key={`cluster-wrap-${i}`} className="absolute top-1/2 left-1/2 w-0 h-0 flex items-center justify-center z-20 pointer-events-none">
                         <motion.div initial={{ opacity: 0, scale: 0 }} animate={{ opacity: isFaded ? 0.2 : 1, x: pos.x, y: pos.y, scale: isActive ? baseScale * 1.05 : baseScale }} transition={{ type: "spring", stiffness: 60, delay: i * 0.1 }} className={`pointer-events-auto transition-all duration-300 mt-8 ${isFaded ? 'pointer-events-none grayscale blur-[2px]' : ''}`} onMouseEnter={() => setHoveredCluster(i)} onMouseLeave={() => setHoveredCluster(null)}>
-
-                          {/* APPLE VISION WIDGET STYLING: High legibility, crisp sans-serif, sleek glass */}
                           <div onClick={() => setActiveCluster(isActive ? null : i)} className="flex flex-col justify-center cursor-pointer transition-all duration-400 relative group w-[220px] sm:w-[260px] bg-[#FDFBF7]/90 dark:bg-[#030A06]/90 backdrop-blur-2xl rounded-2xl px-5 py-4" style={{ border: `1px solid ${isActive || isHovered ? color : (theme === 'dark' ? 'rgba(198, 168, 124, 0.2)' : 'rgba(92, 74, 61, 0.15)')}`, boxShadow: isActive || isHovered ? `0 4px 20px ${theme === 'dark' ? 'rgba(198, 168, 124, 0.15)' : 'rgba(92, 74, 61, 0.15)'}` : '0 8px 32px rgba(0,0,0,0.08)' }}>
-
-                            {/* Accent line indicator (iOS Notification style) */}
                             <div className="absolute left-0 top-4 bottom-4 w-[3px] rounded-r-md transition-all duration-300" style={{ backgroundColor: isActive || isHovered ? color : 'transparent' }} />
-
                             <div className="pl-2 relative z-10 flex flex-col text-left">
                               <h3 className="font-sans font-semibold text-sm sm:text-base leading-snug whitespace-normal break-words text-[#2D241C] dark:text-[#FAFAFA] group-hover:opacity-80 transition-opacity">{cluster.theme_label}</h3>
                               <div className="mt-2.5 flex items-center gap-1.5 opacity-70 group-hover:opacity-100 transition-opacity">
@@ -2659,14 +2557,12 @@ export default function App() {
                               </div>
                             </div>
                           </div>
-
                         </motion.div>
                       </div>
                     );
                   })}
                 </div>
               )}
-
 
               {viewMode === 'list' && (
                 <div className="z-30 w-full max-w-4xl mx-auto px-4 sm:px-6 pt-24 sm:pt-28 pb-12 pointer-events-auto">
@@ -2681,7 +2577,6 @@ export default function App() {
                       <div className={`flex gap-6 sm:border-l sm:pl-6 shrink-0 ${isKeyword ? 'border-[#5C4A3D]/15 dark:border-[#c6a87c]/20' : 'border-[#5C4A3D]/15 dark:border-[#c6a87c]/20'}`}>{!isKeyword && (<div><p className="text-[10px] uppercase tracking-widest text-[#5C4A3D]/70 dark:text-[#c6a87c]/60 font-semibold mb-1">Themes</p><p className="font-mono text-xl text-[#2D241C] dark:text-[#FAFAFA]">{data.clusters ? data.clusters.length : 0}</p></div>)}<div><p className="text-[10px] uppercase tracking-widest text-[#5C4A3D]/70 dark:text-[#c6a87c]/60 font-semibold mb-1">{isKeyword ? 'Matches' : 'Hadiths'}</p><p className="font-mono text-xl text-[#2D241C] dark:text-[#FAFAFA]">{data.total_results}</p></div></div>
                     </div>
 
-                    {/* LIST VIEW: EMBEDDED ANCHOR ACCORDION */}
                     {anchorHadith && (
                       <div className={`mt-5 pt-4 border-t ${isKeyword ? 'border-[#5C4A3D]/15 dark:border-[#c6a87c]/20' : 'border-[#5C4A3D]/15 dark:border-[#c6a87c]/20'}`}>
                         <div className="flex items-center justify-between cursor-pointer group" onClick={() => setShowAnchor(!showAnchor)}>
@@ -2701,8 +2596,6 @@ export default function App() {
                               <div className="pt-4 pb-2 text-sm sm:text-base font-serif leading-relaxed text-[#2D241C] dark:text-[#c6a87c]">
                                 {anchorHadith.english_text}
                               </div>
-
-                              {/* ANCHOR LIST VIEW: COPY BUTTON */}
                               <div className="mt-3 flex justify-end">
                                 <button onClick={(e) => {
                                   e.stopPropagation();
@@ -2713,7 +2606,6 @@ export default function App() {
                                   {anchorCopied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}<span>{anchorCopied ? 'Copied!' : 'Copy Text'}</span>
                                 </button>
                               </div>
-
                             </motion.div>
                           )}
                         </AnimatePresence>
@@ -2734,42 +2626,42 @@ export default function App() {
                   </div>
                 </div>
               )}
-
-              <AnimatePresence>
-                {activeCluster !== null && data.clusters && data.clusters[activeCluster] && (() => {
-                  const clusterItems = data.clusters[activeCluster].items || [];
-                  const filteredItems = clusterItems.filter(item => { if (lengthFilter === 'All') return true; const len = String(item.english_text || '').length; if (lengthFilter === 'Short') return len < 300; if (lengthFilter === 'Medium') return len >= 300 && len <= 1000; if (lengthFilter === 'Long') return len > 1000; return true; });
-                  const totalPages = Math.ceil(filteredItems.length / ITEMS_PER_PAGE) || 1, safeCurrentPage = Math.min(currentPage, totalPages), startIndex = (safeCurrentPage - 1) * ITEMS_PER_PAGE, paginatedItems = filteredItems.slice(startIndex, startIndex + ITEMS_PER_PAGE);
-                  return (
-                    <div className="fixed inset-0 z-[1000] flex items-center justify-center pointer-events-auto p-4 sm:p-0">
-                      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setActiveCluster(null)} className="absolute inset-0 bg-[#2D241C]/60 dark:bg-[#020604]/80 backdrop-blur-md cursor-pointer" />
-                      <motion.div initial={{ opacity: 0, scale: 0.95, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 20 }} className={`relative w-full sm:w-[90vw] max-w-[700px] h-[85vh] flex flex-col shadow-2xl rounded-2xl z-[1001] border bg-[#EAE4D3] dark:bg-[#030A06] border-[#5C4A3D]/20 dark:border-[#c6a87c]/20`}>
-                        <div className={`flex justify-between items-center backdrop-blur-xl pt-5 pb-4 px-4 sm:px-6 z-10 border-b rounded-t-2xl shrink-0 bg-[#FDFBF7]/60 dark:bg-[#c6a87c]/5 border-[#5C4A3D]/15 dark:border-[#c6a87c]/20`}>
-                          <h2 className="text-lg sm:text-xl md:text-2xl font-mono font-normal tracking-tight truncate pr-4 text-[#2D241C] dark:text-[#FAFAFA]">{data.clusters[activeCluster].theme_label}</h2>
-                          <button onClick={() => setActiveCluster(null)} className="p-2 hover:bg-[#FDFBF7] dark:hover:bg-[#c6a87c]/10 rounded-full transition-colors cursor-pointer shrink-0"><X className="w-5 h-5 sm:w-6 sm:h-6 text-[#5C4A3D] dark:text-[#c6a87c]" /></button>
-                        </div>
-                        <div className={`px-4 sm:px-6 py-3 border-b shrink-0 flex flex-wrap gap-2 items-center bg-[#F8F5EE]/40 dark:bg-black/20 border-[#5C4A3D]/15 dark:border-[#c6a87c]/20`}>
-                          <div className="flex items-center gap-1.5 text-[#5C4A3D]/70 dark:text-[#c6a87c]/70 mr-1"><Filter className="w-3.5 h-3.5" /><span className="text-[10px] sm:text-xs font-semibold uppercase tracking-wider">Length:</span></div>
-                          {['All', 'Short', 'Medium', 'Long'].map(f => (<button key={f} onClick={() => { setLengthFilter(f); setCurrentPage(1); if (modalScrollRef.current) modalScrollRef.current.scrollTop = 0; }} className={`px-3 py-1 sm:py-1.5 rounded-md text-[10px] sm:text-xs font-medium transition-colors cursor-pointer ${lengthFilter === f ? 'bg-[#5C4A3D] dark:bg-[#c6a87c]/20 text-[#FAFAFA]' : 'bg-[#FDFBF7] dark:bg-[#c6a87c]/5 text-[#5C4A3D] dark:text-[#c6a87c] border border-[#5C4A3D]/15 dark:border-transparent hover:bg-[#EAE4D3] dark:hover:bg-[#c6a87c]/10'}`}>{f}</button>))}
-                          <span className="ml-auto text-[10px] sm:text-xs font-mono text-[#5C4A3D]/60 dark:text-[#c6a87c]/50">{filteredItems.length} matches</span>
-                        </div>
-                        <div ref={modalScrollRef} onScroll={handleModalScroll} className="p-4 sm:p-6 flex flex-col gap-4 sm:gap-6 overflow-y-auto flex-grow smart-scrollbar">
-                          {filteredItems.length === 0 ? <div className="flex flex-col items-center justify-center h-full text-[#5C4A3D]/50 dark:text-[#c6a87c]/50 italic mt-10"><p>No {lengthFilter.toLowerCase()} hadiths found.</p></div> : paginatedItems.map((item, idx) => (<HadithCard key={idx} item={item} onVerseClick={handleVerseClick} handleCopyHadith={handleCopyHadith} searchMode={searchMode} onFindSimilar={handleFindSimilar} />))}
-                          {totalPages > 1 && filteredItems.length > 0 && (
-                            <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-4 sm:pt-6 border-t border-[#5C4A3D]/15 dark:border-[#c6a87c]/20 mt-2 sm:mt-4">
-                              <button onClick={() => { setCurrentPage(prev => Math.max(prev - 1, 1)); modalScrollRef.current.scrollTop = 0; }} disabled={safeCurrentPage === 1} className={`flex items-center justify-center gap-1 w-full sm:w-auto px-4 py-2 rounded-lg font-medium transition-colors cursor-pointer ${safeCurrentPage === 1 ? 'opacity-30 cursor-not-allowed text-[#5C4A3D]/50 dark:text-slate-500' : 'text-[#2D241C] dark:text-[#c6a87c] hover:bg-[#FDFBF7] dark:hover:bg-[#c6a87c]/10'}`}><ChevronLeft className="w-5 h-5" /> Previous</button>
-                              <span className="font-mono text-xs sm:text-sm text-[#5C4A3D]/60 dark:text-[#c6a87c]/60">Page {safeCurrentPage} of {totalPages}</span>
-                              <button onClick={() => { setCurrentPage(prev => Math.min(prev + 1, totalPages)); modalScrollRef.current.scrollTop = 0; }} disabled={safeCurrentPage === totalPages} className={`flex items-center justify-center gap-1 w-full sm:w-auto px-4 py-2 rounded-lg font-medium transition-colors cursor-pointer ${safeCurrentPage === totalPages ? 'opacity-30 cursor-not-allowed text-[#5C4A3D]/50 dark:text-slate-500' : 'text-[#2D241C] dark:text-[#c6a87c] hover:bg-[#FDFBF7] dark:hover:bg-[#c6a87c]/10'}`}>Next <ChevronRight className="w-5 h-5" /></button>
-                            </div>
-                          )}
-                        </div>
-                      </motion.div>
-                    </div>
-                  );
-                })()}
-              </AnimatePresence>
             </motion.div>
           )}
+        </AnimatePresence>
+
+        <AnimatePresence>
+          {activeCluster !== null && data?.clusters && data.clusters[activeCluster] && (() => {
+            const clusterItems = data.clusters[activeCluster].items || [];
+            const filteredItems = clusterItems.filter(item => { if (lengthFilter === 'All') return true; const len = String(item.english_text || '').length; if (lengthFilter === 'Short') return len < 300; if (lengthFilter === 'Medium') return len >= 300 && len <= 1000; if (lengthFilter === 'Long') return len > 1000; return true; });
+            const totalPages = Math.ceil(filteredItems.length / ITEMS_PER_PAGE) || 1, safeCurrentPage = Math.min(currentPage, totalPages), startIndex = (safeCurrentPage - 1) * ITEMS_PER_PAGE, paginatedItems = filteredItems.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+            return (
+              <div className="fixed inset-0 z-[1000] flex items-center justify-center pointer-events-auto p-4 sm:p-0">
+                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setActiveCluster(null)} className="absolute inset-0 bg-[#2D241C]/60 dark:bg-[#020604]/80 backdrop-blur-md cursor-pointer" />
+                <motion.div initial={{ opacity: 0, scale: 0.95, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 20 }} className={`relative w-full sm:w-[90vw] max-w-[700px] h-[85vh] flex flex-col shadow-2xl rounded-2xl z-[1001] border bg-[#EAE4D3] dark:bg-[#030A06] border-[#5C4A3D]/20 dark:border-[#c6a87c]/20`}>
+                  <div className={`flex justify-between items-center backdrop-blur-xl pt-5 pb-4 px-4 sm:px-6 z-10 border-b rounded-t-2xl shrink-0 bg-[#FDFBF7]/60 dark:bg-[#c6a87c]/5 border-[#5C4A3D]/15 dark:border-[#c6a87c]/20`}>
+                    <h2 className="text-lg sm:text-xl md:text-2xl font-mono font-normal tracking-tight truncate pr-4 text-[#2D241C] dark:text-[#FAFAFA]">{data.clusters[activeCluster].theme_label}</h2>
+                    <button onClick={() => setActiveCluster(null)} className="p-2 hover:bg-[#FDFBF7] dark:hover:bg-[#c6a87c]/10 rounded-full transition-colors cursor-pointer shrink-0"><X className="w-5 h-5 sm:w-6 sm:h-6 text-[#5C4A3D] dark:text-[#c6a87c]" /></button>
+                  </div>
+                  <div className={`px-4 sm:px-6 py-3 border-b shrink-0 flex flex-wrap gap-2 items-center bg-[#F8F5EE]/40 dark:bg-black/20 border-[#5C4A3D]/15 dark:border-[#c6a87c]/20`}>
+                    <div className="flex items-center gap-1.5 text-[#5C4A3D]/70 dark:text-[#c6a87c]/70 mr-1"><Filter className="w-3.5 h-3.5" /><span className="text-[10px] sm:text-xs font-semibold uppercase tracking-wider">Length:</span></div>
+                    {['All', 'Short', 'Medium', 'Long'].map(f => (<button key={f} onClick={() => { setLengthFilter(f); setCurrentPage(1); if (modalScrollRef.current) modalScrollRef.current.scrollTop = 0; }} className={`px-3 py-1 sm:py-1.5 rounded-md text-[10px] sm:text-xs font-medium transition-colors cursor-pointer ${lengthFilter === f ? 'bg-[#5C4A3D] dark:bg-[#c6a87c]/20 text-[#FAFAFA]' : 'bg-[#FDFBF7] dark:bg-[#c6a87c]/5 text-[#5C4A3D] dark:text-[#c6a87c] border border-[#5C4A3D]/15 dark:border-transparent hover:bg-[#EAE4D3] dark:hover:bg-[#c6a87c]/10'}`}>{f}</button>))}
+                    <span className="ml-auto text-[10px] sm:text-xs font-mono text-[#5C4A3D]/60 dark:text-[#c6a87c]/50">{filteredItems.length} matches</span>
+                  </div>
+                  <div ref={modalScrollRef} onScroll={handleModalScroll} className="p-4 sm:p-6 flex flex-col gap-4 sm:gap-6 overflow-y-auto flex-grow smart-scrollbar">
+                    {filteredItems.length === 0 ? <div className="flex flex-col items-center justify-center h-full text-[#5C4A3D]/50 dark:text-[#c6a87c]/50 italic mt-10"><p>No {lengthFilter.toLowerCase()} hadiths found.</p></div> : paginatedItems.map((item, idx) => (<HadithCard key={idx} item={item} onVerseClick={handleVerseClick} handleCopyHadith={handleCopyHadith} searchMode={searchMode} onFindSimilar={handleFindSimilar} />))}
+                    {totalPages > 1 && filteredItems.length > 0 && (
+                      <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-4 sm:pt-6 border-t border-[#5C4A3D]/15 dark:border-[#c6a87c]/20 mt-2 sm:mt-4">
+                        <button onClick={() => { setCurrentPage(prev => Math.max(prev - 1, 1)); modalScrollRef.current.scrollTop = 0; }} disabled={safeCurrentPage === 1} className={`flex items-center justify-center gap-1 w-full sm:w-auto px-4 py-2 rounded-lg font-medium transition-colors cursor-pointer ${safeCurrentPage === 1 ? 'opacity-30 cursor-not-allowed text-[#5C4A3D]/50 dark:text-slate-500' : 'text-[#2D241C] dark:text-[#c6a87c] hover:bg-[#FDFBF7] dark:hover:bg-[#c6a87c]/10'}`}><ChevronLeft className="w-5 h-5" /> Previous</button>
+                        <span className="font-mono text-xs sm:text-sm text-[#5C4A3D]/60 dark:text-[#c6a87c]/60">Page {safeCurrentPage} of {totalPages}</span>
+                        <button onClick={() => { setCurrentPage(prev => Math.min(prev + 1, totalPages)); modalScrollRef.current.scrollTop = 0; }} disabled={safeCurrentPage === totalPages} className={`flex items-center justify-center gap-1 w-full sm:w-auto px-4 py-2 rounded-lg font-medium transition-colors cursor-pointer ${safeCurrentPage === totalPages ? 'opacity-30 cursor-not-allowed text-[#5C4A3D]/50 dark:text-slate-500' : 'text-[#2D241C] dark:text-[#c6a87c] hover:bg-[#FDFBF7] dark:hover:bg-[#c6a87c]/10'}`}>Next <ChevronRight className="w-5 h-5" /></button>
+                      </div>
+                    )}
+                  </div>
+                </motion.div>
+              </div>
+            );
+          })()}
         </AnimatePresence>
 
         {/* --- MAP VIEW: THE ANCHOR POPUP MODAL --- */}
@@ -2790,7 +2682,6 @@ export default function App() {
                 <div className="p-6 sm:p-8 overflow-y-auto flex-grow smart-scrollbar">
                   {anchorHadith.arabic_text && <div className="mb-6"><p className="font-arabic text-3xl sm:text-4xl text-right leading-[2.2] text-[#2D241C] dark:text-slate-100" dir="rtl" lang="ar" style={{ fontFamily: activeFontFamily, fontVariantLigatures: 'normal', fontFeatureSettings: '"ccmp" 1, "mark" 1, "mkmk" 1' }}>{anchorHadith.arabic_text}</p></div>}
                   <div className={anchorHadith.arabic_text ? "border-t border-[#5C4A3D]/10 dark:border-[#c6a87c]/20 pt-6" : ""}><p className="text-base sm:text-lg text-[#5C4A3D] dark:text-[#c6a87c] leading-relaxed font-serif">{anchorHadith.english_text}</p></div>
-
                   <div className="mt-6 flex justify-end pt-4 border-t border-[#5C4A3D]/10 dark:border-[#c6a87c]/20">
                     <button onClick={(e) => {
                       e.stopPropagation();
@@ -2801,7 +2692,6 @@ export default function App() {
                       {anchorCopied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}<span>{anchorCopied ? 'Copied!' : 'Copy Text'}</span>
                     </button>
                   </div>
-
                 </div>
               </motion.div>
             </div>
