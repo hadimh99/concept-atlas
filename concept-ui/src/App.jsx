@@ -1545,6 +1545,7 @@ export default function App() {
   const [authMessage, setAuthMessage] = useState({ text: '', type: '' });
 
   // THE MISSING PIECE RESTORED:
+  const [showSignOutConfirm, setShowSignOutConfirm] = useState(false);
   const [showVault, setShowVault] = useState(false);
   const [vaultItems, setVaultItems] = useState([]);
 
@@ -2289,6 +2290,25 @@ export default function App() {
         )}
       </AnimatePresence>
 
+      {/* --- SIGN OUT CONFIRMATION MODAL --- */}
+      <AnimatePresence>
+        {showSignOutConfirm && (
+          <div className="fixed inset-0 z-[6000] flex items-center justify-center p-4 bg-[#FDFBF7]/40 dark:bg-[#020805]/60 backdrop-blur-md pointer-events-auto">
+            <motion.div initial={{ opacity: 0, scale: 0.95, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 20 }} className="relative w-full max-w-sm p-6 sm:p-8 bg-[#FDFBF7] dark:bg-[#0A120E] border border-[#5C4A3D]/10 dark:border-[#c6a87c]/20 rounded-[2rem] shadow-2xl text-center">
+              <div className="w-12 h-12 mx-auto mb-4 rounded-full bg-red-500/10 flex items-center justify-center border border-red-500/20">
+                <User className="w-5 h-5 text-red-500" />
+              </div>
+              <h2 className="text-xl sm:text-2xl font-serif text-[#2D241C] dark:text-[#FAFAFA] mb-2">Sign Out?</h2>
+              <p className="text-sm text-[#5C4A3D]/80 dark:text-[#FAFAFA]/60 mb-6">Are you sure you want to sign out of your account?</p>
+              <div className="flex gap-3">
+                <button onClick={() => setShowSignOutConfirm(false)} className="flex-1 py-3 rounded-xl font-medium text-[#5C4A3D] dark:text-[#FAFAFA] bg-[#F8F5EE] dark:bg-[#1A1510] hover:bg-[#EAE4D3] dark:hover:bg-[#251E17] transition-colors border border-[#5C4A3D]/10 dark:border-[#c6a87c]/20 cursor-pointer">Cancel</button>
+                <button onClick={() => { handleSignOut(); setShowSignOutConfirm(false); }} className="flex-1 py-3 rounded-xl font-medium text-white bg-red-500 hover:bg-red-600 transition-colors shadow-sm cursor-pointer">Sign Out</button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
       {activeTab === 'search' && (
         <>
           <div className="gilded-halo dark:block hidden" />
@@ -2334,7 +2354,7 @@ export default function App() {
                 <button onClick={() => setShowVault(true)} title="Vault" className="w-10 h-10 sm:w-11 sm:h-11 rounded-full flex items-center justify-center text-[#c6a87c] bg-[#c6a87c]/10 hover:bg-[#c6a87c]/20 transition-colors border border-[#c6a87c]/20 cursor-pointer">
                   <Bookmark className="w-5 h-5" />
                 </button>
-                <button onClick={handleSignOut} className="text-[10px] uppercase font-bold tracking-widest text-[#5C4A3D]/60 dark:text-[#c6a87c]/50 hover:text-red-500 dark:hover:text-red-400 transition-colors cursor-pointer pr-1">
+                <button onClick={() => setShowSignOutConfirm(true)} className="text-[10px] uppercase font-bold tracking-widest text-[#5C4A3D]/60 dark:text-[#c6a87c]/50 hover:text-red-500 dark:hover:text-red-400 transition-colors cursor-pointer pr-1">
                   Sign Out
                 </button>
               </div>
@@ -2374,7 +2394,7 @@ export default function App() {
                     <button onClick={() => { setShowUpdates(true); setShowMobileMenu(false); }} className={`w-full text-left flex items-center gap-3 p-3 rounded-lg text-sm cursor-pointer ${activeTab === 'library' ? 'text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-[#2c2c2e]' : 'text-[#2D241C] dark:text-[#FAFAFA] hover:bg-[#EAE4D3]/50 dark:hover:bg-[#c6a87c]/10'}`}><Sparkles className="w-4 h-4 shrink-0" /> What's New</button>
                     <button onClick={() => { setShowInfo(true); setShowMobileMenu(false); }} className={`w-full text-left flex items-center gap-3 p-3 rounded-lg text-sm cursor-pointer ${activeTab === 'library' ? 'text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-[#2c2c2e]' : 'text-[#2D241C] dark:text-[#FAFAFA] hover:bg-[#EAE4D3]/50 dark:hover:bg-[#c6a87c]/10'}`}><HelpCircle className="w-4 h-4 shrink-0" /> Help & Guide</button>
                     {user && (
-                      <button onClick={() => { handleSignOut(); setShowMobileMenu(false); }} className={`w-full text-left flex items-center gap-3 p-3 rounded-lg text-sm cursor-pointer text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors`}>
+                      <button onClick={() => { setShowSignOutConfirm(true); setShowMobileMenu(false); }} className={`w-full text-left flex items-center gap-3 p-3 rounded-lg text-sm cursor-pointer text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors`}>
                         <User className="w-4 h-4 shrink-0" /> Sign Out
                       </button>
                     )}
