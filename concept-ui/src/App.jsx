@@ -582,7 +582,8 @@ const TranscriptLibrary = ({ transcripts }) => {
   const heatmapDays = useMemo(() => {
     const days = [];
     const historyData = analytics?.history || {};
-    for (let i = 0; i <= 27; i++) {
+    // Reversed loop: 27 days ago starts on the left, Today (0) ends on the right!
+    for (let i = 27; i >= 0; i--) {
       const d = new Date();
       d.setDate(d.getDate() - i);
       const dateStr = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
@@ -669,6 +670,18 @@ const TranscriptLibrary = ({ transcripts }) => {
     savedData[doc.id] = docData;
     localStorage.setItem('kisa_progress', JSON.stringify(savedData));
     setReadingProgress(savedData);
+
+    // Log a daily activity point just for studying!
+    const dateObj = new Date();
+    const today = dateObj.getFullYear() + '-' + String(dateObj.getMonth() + 1).padStart(2, '0') + '-' + String(dateObj.getDate()).padStart(2, '0');
+
+    setAnalytics(prev => {
+      const newAnalytics = { ...prev };
+      newAnalytics.history = { ...(prev.history || {}) };
+      newAnalytics.history[today] = (newAnalytics.history[today] || 0) + 1;
+      localStorage.setItem('kisa_analytics', JSON.stringify(newAnalytics));
+      return newAnalytics;
+    });
   };
 
   const closeReader = () => {
