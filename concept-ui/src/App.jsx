@@ -319,34 +319,21 @@ const QuranReader = ({ activeFontFamily, fontStyle, setFontStyle, handleSurahSel
   const ayahs = ayahsRaw.map((ayah, idx) => {
     let arText = ayah.ar;
     if (idx === 0 && selectedSurah !== 1 && selectedSurah !== 9) {
-      // Bulletproof extractor covering multiple diacritic variations
-      const rahimEndIndices = [
-        arText.indexOf('ٱلرَّحِيمِ'), arText.indexOf('الرَّحِيمِ'),
-        arText.indexOf('الرحيم'), arText.indexOf('ٱلرَّحِيمِ'),
-        arText.indexOf('الرَّحِيمِ')
-      ];
-      const matchPos = Math.max(...rahimEndIndices);
+      // Ultra-robust Regex to catch ANY diacritic variation of Bismillah, ignoring Uthmani pause marks
+      const bismillahRegex = /^(?:بِسْمِ|بسم)[\s\S]{10,40}?(?:الرَّحِيمِ|ٱلرَّحِيمِ|الرَّحِيمِ|ٱلرَّحِيمِ|الرحيم)(?:[\s\u06D6-\u06DC\u200B\u00A0]*)/;
+      const match = arText.match(bismillahRegex);
 
-      if (matchPos !== -1) {
-        // Find the first space AFTER "Ar-Raheem" to safely split it
-        const splitIndex = arText.indexOf(' ', matchPos);
-        if (splitIndex !== -1 && splitIndex < matchPos + 8) {
-          surahBismillah = arText.substring(0, splitIndex).trim();
-          arText = arText.substring(splitIndex).trim();
-        }
+      if (match) {
+        // Use a pristine, uniform Bismillah for the header to guarantee perfect formatting
+        surahBismillah = "بِسْمِ ٱللَّهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ";
+        // Safely slice the matched string completely off the front of the ayah
+        arText = arText.substring(match[0].length).trim();
       } else {
-        // Ultimate Fallback: Strip diacritics and count 4 spaces if it starts with Bismillah
-        const noDiacritics = arText.replace(/[\u0610-\u061A\u064B-\u065F\u0670\u06D6-\u06DC\u06DF-\u06E8\u06EA-\u06ED]/g, '');
-        if (noDiacritics.startsWith("بسم الله الرحمن الرحيم")) {
-          let spaceCount = 0; let cutPos = -1;
-          for (let i = 0; i < arText.length; i++) {
-            if (arText[i] === ' ') spaceCount++;
-            if (spaceCount === 4) { cutPos = i; break; }
-          }
-          if (cutPos !== -1) {
-            surahBismillah = arText.substring(0, cutPos).trim();
-            arText = arText.substring(cutPos).trim();
-          }
+        // Extreme Fallback: Forcefully remove the first 4 words if the regex somehow misses
+        const words = arText.split(/[\s\u00A0]+/);
+        if (words.length > 4) {
+          surahBismillah = "بِسْمِ ٱللَّهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ";
+          arText = words.slice(4).join(' ').trim();
         }
       }
     }
@@ -448,13 +435,19 @@ const QuranReader = ({ activeFontFamily, fontStyle, setFontStyle, handleSurahSel
         </div>
       </div>
 
+      {/* THE PERFECT HEADER LAYOUT */}
       <div className="text-center mb-12 flex flex-col items-center">
+        {/* 1. Small Orange English Title at the Top */}
         <p className="text-amber-800 dark:text-amber-500 font-mono text-[10px] sm:text-xs tracking-[0.2em] uppercase font-bold mb-3 sm:mb-4">
           Surah {surahs.find(s => s.id === selectedSurah)?.enName}
         </p>
+
+        {/* 2. Large Arabic Surah Name in the Middle */}
         <h1 className="text-4xl sm:text-5xl md:text-6xl font-arabic text-slate-900 dark:text-slate-50 mb-6 leading-[1.5] drop-shadow-sm" style={{ fontFamily: activeFontFamily }} dir="rtl" lang="ar">
           {surahs.find(s => s.id === selectedSurah)?.arName}
         </h1>
+
+        {/* 3. Safely Centered Bismillah underneath */}
         {surahBismillah && (
           <h2 className="font-arabic text-2xl sm:text-3xl md:text-4xl text-slate-700 dark:text-slate-300 leading-[1.5] mt-2 opacity-90" style={{ fontFamily: activeFontFamily }} dir="rtl" lang="ar">
             {surahBismillah}
