@@ -262,6 +262,7 @@ const QuranReader = ({ activeFontFamily, fontStyle, setFontStyle, handleSurahSel
     return saved ? JSON.parse(saved) : { totalCompleted: 0, totalSeconds: 0, history: {}, dailyTime: {} };
   });
 
+  const [resumeToast, setResumeToast] = useState(false);
   const [quranProgress, setQuranProgress] = useState(() => {
     const saved = localStorage.getItem('kisa_quran_progress');
     return saved ? JSON.parse(saved) : { lastSurah: null };
@@ -290,6 +291,49 @@ const QuranReader = ({ activeFontFamily, fontStyle, setFontStyle, handleSurahSel
     }, 10000);
     return () => clearInterval(timer);
   }, [currentView]);
+
+  // Auto-Save Verse Position on Scroll
+  useEffect(() => {
+    if (currentView !== 'reader') return;
+    let ticking = false;
+    let lastSaveTime = Date.now();
+
+    const handleScroll = () => {
+      if (!ticking) {
+        window.requestAnimationFrame(() => {
+          const now = Date.now();
+          if (now - lastSaveTime > 1000) { // Check every 1 second while scrolling
+            const verses = document.querySelectorAll(`[id^="verse-${selectedSurah}-"]`);
+            let currentVerse = null;
+
+            for (let i = 0; i < verses.length; i++) {
+              const rect = verses[i].getBoundingClientRect();
+              // If the verse is within the top half of the screen
+              if ((rect.top >= 0 && rect.top < window.innerHeight / 2) || (rect.top < 0 && rect.bottom > 100)) {
+                currentVerse = parseInt(verses[i].id.split('-')[2]);
+                break;
+              }
+            }
+
+            if (currentVerse) {
+              setQuranProgress(prev => {
+                if (prev.lastSurah === selectedSurah && prev.lastVerse === currentVerse) return prev;
+                const newProg = { lastSurah: selectedSurah, lastVerse: currentVerse, timestamp: now };
+                localStorage.setItem('kisa_quran_progress', JSON.stringify(newProg));
+                return newProg;
+              });
+            }
+            lastSaveTime = now;
+          }
+          ticking = false;
+        });
+        ticking = true;
+      }
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [currentView, selectedSurah]);
 
   const heatmapDays = useMemo(() => {
     const dailyTimeData = analytics?.dailyTime || {};
@@ -343,17 +387,24 @@ const QuranReader = ({ activeFontFamily, fontStyle, setFontStyle, handleSurahSel
     setSearchResults(results.slice(0, 5));
   };
 
-  const openSurah = (id) => {
-    window.scrollTo(0, 0); // instantly scrolls to the top
+  const openSurah = (id, specificVerse = null) => {
+    if (!specificVerse) window.scrollTo(0, 0);
     setSelectedSurah(id);
     setCurrentView('reader');
     setQuranSearchQuery('');
     setSearchResults([]);
     setShowVirtues(false);
 
-    const newProg = { lastSurah: id, timestamp: Date.now() };
-    setQuranProgress(newProg);
-    localStorage.setItem('kisa_quran_progress', JSON.stringify(newProg));
+    if (specificVerse) {
+      setTargetVerse(specificVerse);
+      setResumeToast(true);
+      setTimeout(() => setResumeToast(false), 3000);
+    } else {
+      // Only overwrite progress if starting a Surah fresh
+      const newProg = { lastSurah: id, lastVerse: 1, timestamp: Date.now() };
+      setQuranProgress(newProg);
+      localStorage.setItem('kisa_quran_progress', JSON.stringify(newProg));
+    }
 
     const s = surahs.find(x => x.id === id);
     if (s && handleSurahSelectHook) handleSurahSelectHook(id, s.enName);
@@ -449,13 +500,15 @@ const QuranReader = ({ activeFontFamily, fontStyle, setFontStyle, handleSurahSel
 
         {/* Pick Up Where You Left Off */}
         {lastSurah && !quranSearchQuery.trim() && (
-          <div onClick={() => openSurah(lastSurah.id)} className="w-full bg-gradient-to-r from-amber-500/10 to-transparent border border-amber-500/30 hover:bg-amber-500/20 rounded-2xl p-6 sm:p-8 mb-12 cursor-pointer transition-all duration-300 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6 shadow-sm group">
+          <div onClick={() => openSurah(lastSurah.id, quranProgress.lastVerse)} className="w-full bg-gradient-to-r from-amber-500/10 to-transparent border border-amber-500/30 hover:bg-amber-500/20 rounded-2xl p-6 sm:p-8 mb-12 cursor-pointer transition-all duration-300 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6 shadow-sm group">
             <div>
               <div className="flex items-center gap-1.5 mb-3">
                 <Clock className="w-4 h-4 text-amber-600 dark:text-amber-500" />
                 <span className="text-amber-600 dark:text-amber-500 font-bold text-[10px] sm:text-xs uppercase tracking-widest">Continue Reading</span>
               </div>
-              <h2 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-slate-50 group-hover:text-amber-600 dark:group-hover:text-amber-500 transition-colors">Surah {lastSurah.enName}</h2>
+              <h2 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-slate-50 group-hover:text-amber-600 dark:group-hover:text-amber-500 transition-colors">
+                Surah {lastSurah.enName} <span className="text-slate-500 dark:text-slate-400 text-base sm:text-lg font-normal ml-2">Verse {quranProgress.lastVerse || 1}</span>
+              </h2>
             </div>
             <div className="w-12 h-12 rounded-full bg-white dark:bg-[#1a1a1a] shadow-md border border-amber-500/30 flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
               <ChevronRight className="w-6 h-6 text-amber-600 dark:text-amber-500" />
@@ -571,6 +624,14 @@ const QuranReader = ({ activeFontFamily, fontStyle, setFontStyle, handleSurahSel
   return (
     <div className="w-full max-w-4xl px-4 sm:px-6 pt-24 sm:pt-28 pb-12 mx-auto min-h-screen flex flex-col items-center pointer-events-auto">
       {(showSurahMenu || showSettingsMenu || showVirtues) && (<div className="fixed inset-0 z-[60] pointer-events-auto" onClick={() => { setShowSurahMenu(false); setShowSettingsMenu(false); setShowVirtues(false); }} />)}
+
+      <AnimatePresence>
+        {resumeToast && (
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} className="fixed top-24 left-1/2 -translate-x-1/2 z-[400] bg-slate-900 dark:bg-white text-white dark:text-slate-900 px-4 py-2.5 rounded-full shadow-2xl text-[10px] sm:text-xs font-bold uppercase tracking-widest flex items-center gap-2">
+            <Sparkles className="w-3.5 h-3.5 text-amber-500" /> Resumed where you left off
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Back to Dashboard Button */}
       <div className="w-full flex justify-start mb-6">
