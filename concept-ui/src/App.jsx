@@ -1543,6 +1543,9 @@ export default function App() {
   const [isSignUp, setIsSignUp] = useState(false);
   const [authLoading, setAuthLoading] = useState(false);
   const [authMessage, setAuthMessage] = useState({ text: '', type: '' });
+
+  // THE MISSING PIECE RESTORED:
+  const [showVault, setShowVault] = useState(false);
   const [vaultItems, setVaultItems] = useState([]);
 
   const [vaultSearch, setVaultSearch] = useState('');
@@ -2163,9 +2166,9 @@ export default function App() {
                     <div className="flex flex-col gap-6 md:gap-8 max-w-4xl mx-auto pb-24 md:pb-20">
                       {filteredVaultItems.map((item) => {
                         const isExpanded = expandedVaultItems[item.id];
-                        const needsExpansion = item.content.length > 400;
-                        const displayContent = !needsExpansion || isExpanded ? item.content : item.content.substring(0, 400) + '...';
-
+                        const safeContent = item.content || '';
+                        const needsExpansion = safeContent.length > 400;
+                        const displayContent = !needsExpansion || isExpanded ? safeContent : safeContent.substring(0, 400) + '...';
                         return (
                           <div key={item.id} className="bg-neutral-800 border-t border-l border-neutral-600 border-b-2 border-r-2 border-neutral-950 rounded-lg p-5 sm:p-8 shadow-[4px_4px_15px_rgba(0,0,0,0.6)] md:shadow-[8px_8px_20px_rgba(0,0,0,0.6)] transition-all group relative flex flex-col">
 
