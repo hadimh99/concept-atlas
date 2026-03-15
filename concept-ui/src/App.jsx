@@ -2331,9 +2331,8 @@ export default function App() {
             {/* VAULT / AUTH BUTTON */}
             {user ? (
               <div className="flex items-center gap-3">
-                <button onClick={() => setShowVault(true)} className="flex items-center gap-2 text-sm font-medium text-[#c6a87c] bg-[#c6a87c]/10 px-4 py-2 rounded-full hover:bg-[#c6a87c]/20 transition-colors border border-[#c6a87c]/20 cursor-pointer">
-                  <Bookmark className="w-4 h-4" />
-                  <span className="hidden sm:inline">Vault</span>
+                <button onClick={() => setShowVault(true)} title="Vault" className="w-10 h-10 sm:w-11 sm:h-11 rounded-full flex items-center justify-center text-[#c6a87c] bg-[#c6a87c]/10 hover:bg-[#c6a87c]/20 transition-colors border border-[#c6a87c]/20 cursor-pointer">
+                  <Bookmark className="w-5 h-5" />
                 </button>
                 <button onClick={handleSignOut} className="text-[10px] uppercase font-bold tracking-widest text-[#5C4A3D]/60 dark:text-[#c6a87c]/50 hover:text-red-500 dark:hover:text-red-400 transition-colors cursor-pointer pr-1">
                   Sign Out
