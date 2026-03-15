@@ -344,6 +344,7 @@ const QuranReader = ({ activeFontFamily, fontStyle, setFontStyle, handleSurahSel
   };
 
   const openSurah = (id) => {
+    window.scrollTo(0, 0); // instantly scrolls to the top
     setSelectedSurah(id);
     setCurrentView('reader');
     setQuranSearchQuery('');
@@ -669,14 +670,13 @@ const QuranReader = ({ activeFontFamily, fontStyle, setFontStyle, handleSurahSel
                     <div className="inline-block px-3 py-1 bg-amber-100 dark:bg-amber-900/30 text-amber-800 dark:text-amber-400 text-[10px] font-bold uppercase tracking-widest rounded-md mb-6 border border-amber-200 dark:border-amber-800/50">
                       {quranBenefits[selectedSurah].tagline}
                     </div>
-                    <ul className="flex flex-col gap-6">
+                    <div className="flex flex-col gap-6">
                       {quranBenefits[selectedSurah].benefits.map((benefit, i) => (
-                        <li key={i} className="flex items-start gap-4">
-                          <div className="mt-1.5 w-2 h-2 rounded-full bg-amber-500 shrink-0 shadow-[0_0_8px_rgba(245,158,11,0.6)]" />
-                          <p className="text-base leading-relaxed text-slate-700 dark:text-slate-300 font-serif">{benefit.replace('', '')}</p>
-                        </li>
+                        <p key={i} className="text-base sm:text-[17px] leading-[1.8] text-slate-800 dark:text-slate-200 font-serif">
+                          {benefit}
+                        </p>
                       ))}
-                    </ul>
+                    </div>
                   </>
                 ) : (
                   <div className="flex flex-col items-center justify-center h-full text-center opacity-50">
@@ -2677,7 +2677,7 @@ export default function App() {
         </div>
       </header>
 
-      <main ref={containerRef} className={`relative w-full flex-grow flex flex-col z-10 ${lockMainScreen ? 'items-center justify-center h-screen overflow-hidden' : 'min-h-screen'}`}>
+      <main ref={containerRef} className={`relative w-full flex-grow flex flex-col ${lockMainScreen ? 'items-center justify-center h-screen overflow-hidden' : 'min-h-screen'}`}>
         {activeTab === 'quran' && <QuranReader activeFontFamily={activeFontFamily} fontStyle={fontStyle} setFontStyle={setFontStyle} handleSurahSelectHook={(id, name) => saveToHistory({ type: 'quran', surahId: id, surahName: name, timestamp: Date.now() })} externalSurahTarget={quranTarget} onTafsirClick={handleTafsirClick} />}
 
         {activeTab === 'library' && <TranscriptLibrary transcripts={transcriptData} />}
