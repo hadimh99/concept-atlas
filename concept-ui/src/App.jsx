@@ -1073,8 +1073,8 @@ const TranscriptLibrary = ({ transcripts }) => {
                 <div
                   key={i}
                   className={`w-3 h-3 sm:w-4 sm:h-4 rounded-sm transition-colors ${block.metGoal
-                      ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.4)]'
-                      : 'bg-zinc-100 dark:bg-zinc-800'
+                    ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.4)]'
+                    : 'bg-zinc-100 dark:bg-zinc-800'
                     }`}
                 />
               ))}
@@ -1539,10 +1539,10 @@ export default function App() {
   const [user, setUser] = useState(null);
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [authEmail, setAuthEmail] = useState('');
+  const [authPassword, setAuthPassword] = useState('');
+  const [isSignUp, setIsSignUp] = useState(false);
   const [authLoading, setAuthLoading] = useState(false);
   const [authMessage, setAuthMessage] = useState({ text: '', type: '' });
-
-  const [showVault, setShowVault] = useState(false);
   const [vaultItems, setVaultItems] = useState([]);
 
   const [vaultSearch, setVaultSearch] = useState('');
@@ -1614,29 +1614,50 @@ export default function App() {
     return () => subscription.unsubscribe();
   }, []);
 
-  const handleMagicLinkLogin = async (e) => {
+  const handleEmailAuth = async (e) => {
     e.preventDefault();
-
-    // 1. Intercept bad emails instantly (Stops the jitter)
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(authEmail)) {
-      setAuthMessage({ text: 'Enter a valid email address.', type: 'error' });
+    if (!authEmail || !authPassword) {
+      setAuthMessage({ text: 'Please enter both email and password.', type: 'error' });
+      return;
+    }
+    if (authPassword.length < 6) {
+      setAuthMessage({ text: 'Password must be at least 6 characters.', type: 'error' });
       return;
     }
 
-    // 2. Proceed with secure login
     setAuthLoading(true);
     setAuthMessage({ text: '', type: '' });
 
-    const { error } = await supabase.auth.signInWithOtp({ email: authEmail });
-
-    if (error) {
-      setAuthMessage({ text: error.message, type: 'error' });
+    let error;
+    if (isSignUp) {
+      // Create new account
+      const { data, error: signUpError } = await supabase.auth.signUp({ email: authEmail, password: authPassword });
+      error = signUpError;
+      // Catch if user already exists
+      if (!error && data?.user?.identities?.length === 0) {
+        error = { message: "An account with this email already exists. Please sign in." };
+      } else if (!error) {
+        setAuthMessage({ text: 'Account created! You are now signed in.', type: 'success' });
+        setTimeout(() => { setShowAuthModal(false); setAuthPassword(''); }, 1500);
+      }
     } else {
-      setAuthMessage({ text: 'Check your email for the secure login link!', type: 'success' });
-      setAuthEmail('');
+      // Log into existing account
+      const { error: signInError } = await supabase.auth.signInWithPassword({ email: authEmail, password: authPassword });
+      error = signInError;
+      if (!error) {
+        setShowAuthModal(false);
+        setAuthPassword('');
+      }
     }
+
+    if (error) setAuthMessage({ text: error.message, type: 'error' });
     setAuthLoading(false);
+  };
+
+  const handleSignOut = async () => {
+    await supabase.auth.signOut();
+    setUser(null);
+    setShowVault(false);
   };
 
   const [viewMode, setViewMode] = useState(typeof window !== 'undefined' && window.innerWidth < 800 ? 'list' : 'map');
@@ -2272,14 +2293,24 @@ export default function App() {
               </div>
 
               {/* Form */}
-              <form onSubmit={handleMagicLinkLogin} className="space-y-4">
+              <form onSubmit={handleEmailAuth} className="space-y-4">
                 <div>
                   <input type="email" value={authEmail} onChange={(e) => setAuthEmail(e.target.value)} placeholder="name@example.com" required className="w-full bg-transparent appearance-none outline-none rounded-xl py-3 px-4 text-base font-sans text-[#2D241C] dark:text-[#FAFAFA] placeholder:text-[#5C4A3D]/40 dark:placeholder:text-[#c6a87c]/40 border border-[#5C4A3D]/20 dark:border-[#c6a87c]/30 focus:border-[#c6a87c] focus:ring-1 focus:ring-[#c6a87c] transition-all" />
                 </div>
+                <div>
+                  <input type="password" value={authPassword} onChange={(e) => setAuthPassword(e.target.value)} placeholder="Password (min 6 chars)" required className="w-full bg-transparent appearance-none outline-none rounded-xl py-3 px-4 text-base font-sans text-[#2D241C] dark:text-[#FAFAFA] placeholder:text-[#5C4A3D]/40 dark:placeholder:text-[#c6a87c]/40 border border-[#5C4A3D]/20 dark:border-[#c6a87c]/30 focus:border-[#c6a87c] focus:ring-1 focus:ring-[#c6a87c] transition-all" />
+                </div>
                 <button type="submit" disabled={authLoading} className="w-full flex items-center justify-center py-3.5 rounded-xl font-medium text-[#FDFBF7] dark:text-[#0A120E] bg-[#2D241C] dark:bg-[#c6a87c] hover:bg-[#1A1510] dark:hover:bg-[#d4ba96] transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
-                  {authLoading ? 'Securing link...' : 'Send Secure Link'}
+                  {authLoading ? 'Authenticating...' : (isSignUp ? 'Create Account' : 'Sign In')}
                 </button>
               </form>
+
+              {/* Toggle Sign In / Sign Up */}
+              <div className="mt-5 text-center">
+                <button onClick={() => { setIsSignUp(!isSignUp); setAuthMessage({ text: '', type: '' }); }} className="text-sm font-medium text-[#5C4A3D]/80 dark:text-[#c6a87c]/80 hover:text-[#2D241C] dark:hover:text-[#FAFAFA] transition-colors cursor-pointer">
+                  {isSignUp ? 'Already have an account? Sign In' : "Don't have an account? Create one"}
+                </button>
+              </div>
 
               {/* Feedback Message */}
               {authMessage.text && (
@@ -2332,14 +2363,20 @@ export default function App() {
 
 
             <button onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')} className="w-10 h-10 sm:w-11 sm:h-11 rounded-full flex items-center justify-center group transition-all duration-300 hover:scale-110 cursor-pointer">{theme === 'dark' ? <Sun className="w-5 h-5 text-[#c6a87c]/60 group-hover:text-yellow-400" /> : <Moon className="w-5 h-5 text-[#5C4A3D]/80 group-hover:text-[#2D241C]" />}</button>
+
             {/* VAULT / AUTH BUTTON */}
             {user ? (
-              <button onClick={() => setShowVault(true)} className="flex items-center gap-2 text-sm font-medium text-[#c6a87c] bg-[#c6a87c]/10 px-4 py-2 rounded-full hover:bg-[#c6a87c]/20 transition-colors border border-[#c6a87c]/20">
-                <Bookmark className="w-4 h-4" />
-                <span className="hidden sm:inline">Vault</span>
-              </button>
+              <div className="flex items-center gap-3">
+                <button onClick={() => setShowVault(true)} className="flex items-center gap-2 text-sm font-medium text-[#c6a87c] bg-[#c6a87c]/10 px-4 py-2 rounded-full hover:bg-[#c6a87c]/20 transition-colors border border-[#c6a87c]/20 cursor-pointer">
+                  <Bookmark className="w-4 h-4" />
+                  <span className="hidden sm:inline">Vault</span>
+                </button>
+                <button onClick={handleSignOut} className="text-[10px] uppercase font-bold tracking-widest text-[#5C4A3D]/60 dark:text-[#c6a87c]/50 hover:text-red-500 dark:hover:text-red-400 transition-colors cursor-pointer pr-1">
+                  Sign Out
+                </button>
+              </div>
             ) : (
-              <button onClick={() => setShowAuthModal(true)} className="flex items-center gap-2 text-sm font-medium text-[#5C4A3D] dark:text-[#FAFAFA] hover:text-[#2D241C] dark:hover:text-[#c6a87c] transition-colors">
+              <button onClick={() => setShowAuthModal(true)} className="flex items-center gap-2 text-sm font-medium text-[#5C4A3D] dark:text-[#FAFAFA] hover:text-[#2D241C] dark:hover:text-[#c6a87c] transition-colors cursor-pointer">
                 <User className="w-4 h-4" />
                 <span className="hidden sm:inline">Sign In</span>
               </button>
@@ -2374,6 +2411,11 @@ export default function App() {
                     {activeTab === 'search' && <button onClick={() => { navigator.clipboard.writeText(window.location.href); setCopiedLink(true); setTimeout(() => { setCopiedLink(false); setShowMobileMenu(false); }, 1000); }} className={`w-full text-left flex items-center gap-3 p-3 rounded-lg text-sm cursor-pointer ${copiedLink ? 'text-emerald-500' : 'text-[#2D241C] dark:text-[#FAFAFA] hover:bg-[#EAE4D3]/50 dark:hover:bg-[#c6a87c]/10'}`}><Share2 className="w-4 h-4 shrink-0" /> Share Link</button>}
                     <button onClick={() => { setShowUpdates(true); setShowMobileMenu(false); }} className={`w-full text-left flex items-center gap-3 p-3 rounded-lg text-sm cursor-pointer ${activeTab === 'library' ? 'text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-[#2c2c2e]' : 'text-[#2D241C] dark:text-[#FAFAFA] hover:bg-[#EAE4D3]/50 dark:hover:bg-[#c6a87c]/10'}`}><Sparkles className="w-4 h-4 shrink-0" /> What's New</button>
                     <button onClick={() => { setShowInfo(true); setShowMobileMenu(false); }} className={`w-full text-left flex items-center gap-3 p-3 rounded-lg text-sm cursor-pointer ${activeTab === 'library' ? 'text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-[#2c2c2e]' : 'text-[#2D241C] dark:text-[#FAFAFA] hover:bg-[#EAE4D3]/50 dark:hover:bg-[#c6a87c]/10'}`}><HelpCircle className="w-4 h-4 shrink-0" /> Help & Guide</button>
+                    {user && (
+                      <button onClick={() => { handleSignOut(); setShowMobileMenu(false); }} className={`w-full text-left flex items-center gap-3 p-3 rounded-lg text-sm cursor-pointer text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors`}>
+                        <User className="w-4 h-4 shrink-0" /> Sign Out
+                      </button>
+                    )}
                     <button onClick={() => { setTheme(theme === 'dark' ? 'light' : 'dark'); setShowMobileMenu(false); }} className={`w-full text-left flex items-center gap-3 p-3 rounded-lg text-sm cursor-pointer ${activeTab === 'library' ? 'text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-[#2c2c2e]' : 'text-[#2D241C] dark:text-[#FAFAFA] hover:bg-[#EAE4D3]/50 dark:hover:bg-[#c6a87c]/10'}`}>{theme === 'dark' ? <Sun className={`w-4 h-4 shrink-0 ${activeTab === 'library' ? 'text-[#c6a87c]' : 'text-amber-500'}`} /> : <Moon className="w-4 h-4 shrink-0 text-[#5C4A3D]" />} Toggle Theme</button>
                   </motion.div>
                 )}
