@@ -442,14 +442,14 @@ const QuranReader = ({ activeFontFamily, fontStyle, setFontStyle, handleSurahSel
           Surah {surahs.find(s => s.id === selectedSurah)?.enName}
         </p>
 
-        {/* 2. Large Arabic Surah Name in the Middle */}
-        <h1 className="text-4xl sm:text-5xl md:text-6xl font-arabic text-slate-900 dark:text-slate-50 mb-6 leading-[1.5] drop-shadow-sm" style={{ fontFamily: activeFontFamily }} dir="rtl" lang="ar">
+        {/* 2. Arabic Surah Name (Sized down) */}
+        <h1 className="text-2xl sm:text-3xl md:text-4xl font-arabic text-slate-900 dark:text-slate-50 mb-4 sm:mb-5 leading-[1.5] drop-shadow-sm" style={{ fontFamily: activeFontFamily }} dir="rtl" lang="ar">
           {surahs.find(s => s.id === selectedSurah)?.arName}
         </h1>
 
-        {/* 3. Safely Centered Bismillah underneath */}
+        {/* 3. Safely Centered Bismillah (Sized up as the dominant element) */}
         {surahBismillah && (
-          <h2 className="font-arabic text-2xl sm:text-3xl md:text-4xl text-slate-700 dark:text-slate-300 leading-[1.5] mt-2 opacity-90" style={{ fontFamily: activeFontFamily }} dir="rtl" lang="ar">
+          <h2 className="font-arabic text-4xl sm:text-5xl md:text-6xl text-slate-700 dark:text-slate-300 leading-[1.5] mt-2 opacity-90" style={{ fontFamily: activeFontFamily }} dir="rtl" lang="ar">
             {surahBismillah}
           </h2>
         )}
