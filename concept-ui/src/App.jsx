@@ -319,10 +319,35 @@ const QuranReader = ({ activeFontFamily, fontStyle, setFontStyle, handleSurahSel
   const ayahs = ayahsRaw.map((ayah, idx) => {
     let arText = ayah.ar;
     if (idx === 0 && selectedSurah !== 1 && selectedSurah !== 9) {
-      const bismillahEnd = Math.max(arText.indexOf('ٱلرَّحِيمِ'), arText.indexOf('الرَّحِيمِ'), arText.indexOf('الرحيم'));
-      if (bismillahEnd !== -1) {
-        const splitIndex = arText.indexOf(' ', bismillahEnd);
-        if (splitIndex !== -1) { surahBismillah = arText.substring(0, splitIndex).trim(); arText = arText.substring(splitIndex).trim(); }
+      // Bulletproof extractor covering multiple diacritic variations
+      const rahimEndIndices = [
+        arText.indexOf('ٱلرَّحِيمِ'), arText.indexOf('الرَّحِيمِ'),
+        arText.indexOf('الرحيم'), arText.indexOf('ٱلرَّحِيمِ'),
+        arText.indexOf('الرَّحِيمِ')
+      ];
+      const matchPos = Math.max(...rahimEndIndices);
+
+      if (matchPos !== -1) {
+        // Find the first space AFTER "Ar-Raheem" to safely split it
+        const splitIndex = arText.indexOf(' ', matchPos);
+        if (splitIndex !== -1 && splitIndex < matchPos + 8) {
+          surahBismillah = arText.substring(0, splitIndex).trim();
+          arText = arText.substring(splitIndex).trim();
+        }
+      } else {
+        // Ultimate Fallback: Strip diacritics and count 4 spaces if it starts with Bismillah
+        const noDiacritics = arText.replace(/[\u0610-\u061A\u064B-\u065F\u0670\u06D6-\u06DC\u06DF-\u06E8\u06EA-\u06ED]/g, '');
+        if (noDiacritics.startsWith("بسم الله الرحمن الرحيم")) {
+          let spaceCount = 0; let cutPos = -1;
+          for (let i = 0; i < arText.length; i++) {
+            if (arText[i] === ' ') spaceCount++;
+            if (spaceCount === 4) { cutPos = i; break; }
+          }
+          if (cutPos !== -1) {
+            surahBismillah = arText.substring(0, cutPos).trim();
+            arText = arText.substring(cutPos).trim();
+          }
+        }
       }
     }
     return { ...ayah, ar: arText };
@@ -423,16 +448,19 @@ const QuranReader = ({ activeFontFamily, fontStyle, setFontStyle, handleSurahSel
         </div>
       </div>
 
-      <div className="text-center mb-10">
-        <h1 className="text-4xl sm:text-6xl font-arabic text-slate-900 dark:text-slate-50 pb-2 sm:pb-4 mb-4 sm:mb-5 leading-[1.5] sm:leading-[1.5] drop-shadow-sm" style={{ fontFamily: activeFontFamily }} dir="rtl" lang="ar">{surahs.find(s => s.id === selectedSurah)?.arName}</h1>
-        <p className="text-amber-800 dark:text-amber-500 font-mono text-sm tracking-widest uppercase font-semibold">Surah {surahs.find(s => s.id === selectedSurah)?.enName}</p>
+      <div className="text-center mb-12 flex flex-col items-center">
+        <p className="text-amber-800 dark:text-amber-500 font-mono text-[10px] sm:text-xs tracking-[0.2em] uppercase font-bold mb-3 sm:mb-4">
+          Surah {surahs.find(s => s.id === selectedSurah)?.enName}
+        </p>
+        <h1 className="text-4xl sm:text-5xl md:text-6xl font-arabic text-slate-900 dark:text-slate-50 mb-6 leading-[1.5] drop-shadow-sm" style={{ fontFamily: activeFontFamily }} dir="rtl" lang="ar">
+          {surahs.find(s => s.id === selectedSurah)?.arName}
+        </h1>
+        {surahBismillah && (
+          <h2 className="font-arabic text-2xl sm:text-3xl md:text-4xl text-slate-700 dark:text-slate-300 leading-[1.5] mt-2 opacity-90" style={{ fontFamily: activeFontFamily }} dir="rtl" lang="ar">
+            {surahBismillah}
+          </h2>
+        )}
       </div>
-
-      {surahBismillah && (
-        <div className="text-center mb-12">
-          <h2 className="font-arabic text-3xl sm:text-4xl text-slate-800 dark:text-slate-200 pb-2 leading-[1.5]" style={{ fontFamily: activeFontFamily }} dir="rtl" lang="ar">{surahBismillah}</h2>
-        </div>
-      )}
 
       {readingMode === 'flow' ? (
         <div className="w-full pb-10 max-w-4xl mx-auto px-2 sm:px-0">
