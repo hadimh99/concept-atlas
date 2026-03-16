@@ -27,7 +27,7 @@ export const quranBenefits = {
     4: {
         tagline: "The Safeguard against Squeezing",
         benefits: [
-            "Amirul Ma'mineen (a.s.) has said that whoever recites this surah on every Friday, he will remain safe from the squeezing in the grave ('fishar-e-qabr')."
+            "Amirul Mu'mineen (a.s.) has said that whoever recites this surah on every Friday, he will remain safe from the squeezing in the grave ('fishar-e-qabr')."
         ]
     },
     5: {
@@ -54,7 +54,7 @@ export const quranBenefits = {
     8: {
         tagline: "Cure for Ailments",
         benefits: [
-            "Imam Ja'far as-Sadiq (a.s.) said that whoever recites this surah and surah at-Tawbah every month, he will be protected from being a hypocrite and will be counted among the followers of Amirul Ma'mineen (a.s.).",
+            "Imam Ja'far as-Sadiq (a.s.) said that whoever recites this surah and surah at-Tawbah every month, he will be protected from being a hypocrite and will be counted among the followers of Amirul Mu'mineen (a.s.).",
             "If this surah is written and kept, then the reciter will get his rights from those who took it and his needs will be fulfilled."
         ]
     },
@@ -655,7 +655,7 @@ export const quranBenefits = {
     100: {
         tagline: "Companionship of Ali (a.s.)",
         benefits: [
-            "Recitation of this surah carries the reward equal to reciting the whole Qur'an. If a person recites this surah regularly, he will be counted from the companions of Amirul Ma'mineen (a.s.)."
+            "Recitation of this surah carries the reward equal to reciting the whole Qur'an. If a person recites this surah regularly, he will be counted from the companions of Amirul Mu'mineen (a.s.)."
         ]
     },
     101: {
