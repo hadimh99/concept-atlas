@@ -535,7 +535,7 @@ const QuranReader = ({ activeFontFamily, fontStyle, setFontStyle, handleSurahSel
         <div className="w-full bg-white dark:bg-[#1a1a1a] border border-slate-200 dark:border-slate-800 rounded-2xl p-5 sm:p-6 mb-10 shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
           <div className="flex gap-8">
             <div>
-              <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-1">Study Time</p>
+              <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-1">Reading Time</p>
               <p className="text-3xl font-serif font-bold text-slate-900 dark:text-slate-50">
                 {hrs > 0 && <>{hrs}<span className="text-sm font-sans text-slate-500 font-normal mr-1">h</span></>}
                 {mins}<span className="text-sm font-sans text-slate-500 font-normal">m</span>
@@ -1443,7 +1443,7 @@ const TranscriptLibrary = ({ transcripts }) => {
               <p className="text-3xl font-serif font-bold text-zinc-900 dark:text-white">{analytics.totalCompleted} <span className="text-sm font-sans text-zinc-500 font-normal">transcripts</span></p>
             </div>
             <div>
-              <p className="text-[10px] font-bold uppercase tracking-widest text-zinc-400 mb-1">Study Time</p>
+              <p className="text-[10px] font-bold uppercase tracking-widest text-zinc-400 mb-1">Reading Time</p>
               <p className="text-3xl font-serif font-bold text-zinc-900 dark:text-white">
                 {hrs > 0 && <>{hrs}<span className="text-sm font-sans text-zinc-500 font-normal mr-1">h</span></>}
                 {mins}<span className="text-sm font-sans text-zinc-500 font-normal">m</span>
