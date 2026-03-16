@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Search, Moon, Sun, Sparkles, X, ChevronRight, ChevronLeft, Home, Copy, ChevronDown, ChevronUp, List, Layout, Info, BookOpen, History, HelpCircle, Database, Filter, Share2, Check, Settings2, Menu, Clock, Trash2, LibraryBig, Youtube, Library as LibraryIcon, ArrowDown, User, Bookmark, Coins, HeartPulse, ShieldAlert, MoreHorizontal } from 'lucide-react';
+import { Search, Moon, Sun, Sparkles, X, ChevronRight, ChevronLeft, Home, Copy, ChevronDown, ChevronUp, List, Layout, Info, BookOpen, History, HelpCircle, Database, Filter, Share2, Check, Settings2, Menu, Clock, Trash2, LibraryBig, Youtube, Library as LibraryIcon, ArrowDown, User, Bookmark, Coins, HeartPulse, ShieldAlert, MoreHorizontal, PenLine, FolderPlus } from 'lucide-react';
 import quranData from './quran.json';
 import verseMap from './verse_map.json';
 import transcriptData from './transcripts.json';
@@ -1916,16 +1916,33 @@ export default function App() {
   const [showEditorChain, setShowEditorChain] = useState(false);
   const [localEmptyFolders, setLocalEmptyFolders] = useState([]);
 
-  // UPDATED USEMEMO TO SUPPORT EMPTY FOLDER CREATION
+  // Extract unique folders handling comma-separated multi-folders
   const customFolders = useMemo(() => {
-    const folders = new Set([...vaultItems.map(item => item.folder_name).filter(Boolean), ...localEmptyFolders]);
+    const folders = new Set(localEmptyFolders);
+    vaultItems.forEach(item => {
+      if (item.folder_name) {
+        item.folder_name.split(',').forEach(f => {
+          if (f.trim()) folders.add(f.trim());
+        });
+      }
+    });
     return Array.from(folders).sort();
   }, [vaultItems, localEmptyFolders]);
 
+  // FIXED FILTERING LOGIC
   const filteredVaultItems = useMemo(() => {
     let filtered = vaultItems;
     if (activeFolder === 'Uncategorized') filtered = filtered.filter(item => !item.folder_name);
-    else if (activeFolder !== 'All') filtered = filtered.filter(item => item.folder_name === activeFolder);
+    else if (activeFolder === 'Quran') filtered = filtered.filter(item => item.type === 'quran');
+    else if (activeFolder === 'Hadiths') filtered = filtered.filter(item => item.type === 'hadith' || !item.type);
+    else if (activeFolder === 'Transcripts') filtered = filtered.filter(item => item.type === 'transcript');
+    else if (activeFolder !== 'All') {
+      filtered = filtered.filter(item => {
+        if (!item.folder_name) return false;
+        const folders = item.folder_name.split(',').map(f => f.trim());
+        return folders.includes(activeFolder);
+      });
+    }
 
     if (vaultSearch.trim()) {
       const q = vaultSearch.toLowerCase();
@@ -1936,13 +1953,24 @@ export default function App() {
 
   const toggleVaultExpand = (id) => setExpandedVaultItems(prev => ({ ...prev, [id]: !prev[id] }));
 
-  const assignToFolder = async (itemId, folderName) => {
+  // MULTI-FOLDER SUPPORT LOGIC
+  const assignToFolder = async (itemId, folderName, mode = 'move') => {
+    const item = vaultItems.find(i => i.id === itemId);
+    let newFolderName = folderName;
+
+    if (mode === 'add' && folderName) {
+      let current = item.folder_name ? item.folder_name.split(',').map(f => f.trim()).filter(Boolean) : [];
+      if (!current.includes(folderName)) current.push(folderName);
+      newFolderName = current.join(', ');
+    }
+
     // 1. Optimistic Update
-    setVaultItems(prev => prev.map(item => item.id === itemId ? { ...item, folder_name: folderName } : item));
+    setVaultItems(prev => prev.map(i => i.id === itemId ? { ...i, folder_name: newFolderName } : i));
     setMovingItemId(null);
+    setActiveCardMenu(null);
 
     // 2. Cloud Sync
-    const { error } = await supabase.from('vault_items').update({ folder_name: folderName }).eq('id', itemId);
+    const { error } = await supabase.from('vault_items').update({ folder_name: newFolderName }).eq('id', itemId);
     if (error) {
       alert(`Supabase Error: ${error.message}`);
       fetchVaultItems(); // Reverts the UI
@@ -2462,7 +2490,7 @@ export default function App() {
               {/* PANE 1: THE NAVIGATOR (SIDEBAR) */}
               <div className="w-full md:w-[260px] bg-[#f7f7f9] dark:bg-[#151518] border-b md:border-b-0 md:border-r border-slate-200 dark:border-[#2d2d33] flex flex-col shrink-0 z-20">
 
-                {/* Header (Traffic Lights Removed) */}
+                {/* Header */}
                 <div className="p-4 flex justify-between items-center shrink-0">
                   <h2 className="font-serif text-lg font-bold text-slate-800 dark:text-[#ededf0] flex items-center gap-2">
                     <Bookmark className="w-4 h-4 text-[#c6a87c]" /> Vault
@@ -2493,7 +2521,7 @@ export default function App() {
                     </button>
                   </div>
 
-                  {/* Smart Sources Group (Reordered & Recolored) */}
+                  {/* Smart Sources Group */}
                   <div>
                     <div className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-1 px-3">Sources</div>
                     <button onClick={() => { setActiveFolder('Hadiths'); setSelectedVaultItem(null); }} className={`w-full text-left px-3 py-1.5 rounded-md text-sm font-medium transition-colors mb-1 flex items-center justify-between group ${activeFolder === 'Hadiths' ? 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 shadow-sm' : 'text-slate-600 dark:text-[#9a9a9f] hover:bg-slate-200/50 dark:hover:bg-[#1c1c20]'}`}>
@@ -2525,7 +2553,7 @@ export default function App() {
                             customFolders.map(folder => (
                               <button key={folder} onClick={() => { setActiveFolder(folder); setSelectedVaultItem(null); }} className={`w-full text-left px-3 py-1.5 rounded-md text-sm font-medium transition-colors flex items-center justify-between group ${activeFolder === folder ? 'bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 shadow-sm' : 'text-slate-600 dark:text-[#9a9a9f] hover:bg-slate-200/50 dark:hover:bg-[#1c1c20]'}`}>
                                 <div className="flex items-center gap-2 truncate"><Layout className={`w-3.5 h-3.5 ${activeFolder === folder ? 'opacity-100' : 'opacity-70'} shrink-0`} /> <span className="truncate">{folder}</span></div>
-                                <span className="text-[10px] font-mono opacity-50 pl-2">{vaultItems.filter(i => i.folder_name === folder).length}</span>
+                                <span className="text-[10px] font-mono opacity-50 pl-2">{vaultItems.filter(i => i.folder_name && i.folder_name.split(',').map(f => f.trim()).includes(folder)).length}</span>
                               </button>
                             ))
                           )}
@@ -2594,13 +2622,13 @@ export default function App() {
                           </button>
                         </div>
 
-                        {/* Immutable Document Body (Matching HadithCard Anatomy) */}
+                        {/* Immutable Document Body */}
                         <div className="mb-10 p-6 rounded-xl bg-slate-50 dark:bg-[#151518] border border-slate-200 dark:border-[#2d2d33] shadow-sm">
                           <div className="mb-5 border-b border-slate-200 dark:border-[#2d2d33] pb-3">
                             <span className="text-xs sm:text-sm font-medium text-slate-500 dark:text-[#9a9a9f] leading-relaxed block">{selectedVaultItem.source}</span>
                           </div>
 
-                          {/* Optional Arabic Dropdown */}
+                          {/* Arabic Dropdown */}
                           {selectedVaultItem.arabic_text && (
                             <div className="mb-4">
                               <button onClick={() => setShowEditorArabic(!showEditorArabic)} className="flex items-center gap-1 text-sm font-medium transition-colors cursor-pointer text-emerald-600 dark:text-emerald-500 hover:text-emerald-700 dark:hover:text-emerald-400">
@@ -2620,7 +2648,7 @@ export default function App() {
                             </div>
                           )}
 
-                          {/* Optional Chain Dropdown */}
+                          {/* Chain Dropdown */}
                           {selectedVaultItem.chain && (
                             <div className="mb-5">
                               <button onClick={() => setShowEditorChain(!showEditorChain)} className="flex items-center gap-1 text-xs font-semibold uppercase tracking-wider transition-colors cursor-pointer text-slate-400 hover:text-blue-500 dark:text-[#5d5d62] dark:hover:text-blue-400">
@@ -2644,38 +2672,12 @@ export default function App() {
                           </p>
                         </div>
 
-                        {/* Editor Scholar's Margin (Note Taking with Tactile Saving UX) */}
+                        {/* Editor Scholar's Margin (Note Taking) */}
                         <div className="flex-grow flex flex-col pl-4 border-l-2 border-blue-500">
                           <div className="flex items-center justify-between mb-4">
                             <div className="flex items-center gap-2">
-                              <List className="w-4 h-4 text-blue-500" />
+                              <PenLine className="w-4 h-4 text-blue-500" />
                               <h3 className="text-xs font-bold uppercase tracking-widest text-slate-400 dark:text-[#9a9a9f]">Scholar's Margin</h3>
-                            </div>
-
-                            <div className="flex items-center gap-3">
-                              {noteSaveStatus && (
-                                <motion.span initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-xs font-bold text-emerald-500 flex items-center gap-1">
-                                  <Check className="w-3.5 h-3.5" /> {noteSaveStatus}
-                                </motion.span>
-                              )}
-
-                              {/* Only show Save button if user has typed something different from the saved note */}
-                              {editingNoteId === selectedVaultItem.id && noteText !== (selectedVaultItem.note || "") && (
-                                <button
-                                  onMouseDown={(e) => {
-                                    e.preventDefault(); // Prevents blur from firing before onClick
-                                    setVaultItems(prev => prev.map(i => i.id === selectedVaultItem.id ? { ...i, note: noteText } : i));
-                                    setSelectedVaultItem(prev => ({ ...prev, note: noteText }));
-                                    supabase.from('vault_items').update({ note: noteText }).eq('id', selectedVaultItem.id);
-
-                                    setNoteSaveStatus('Saved!');
-                                    setTimeout(() => { setNoteSaveStatus(''); setEditingNoteId(null); }, 1500);
-                                  }}
-                                  className="px-3 py-1.5 bg-blue-500 text-white rounded-md text-xs font-bold uppercase tracking-widest shadow-sm hover:bg-blue-600 transition-colors cursor-pointer"
-                                >
-                                  Save Note
-                                </button>
-                              )}
                             </div>
                           </div>
 
@@ -2687,7 +2689,6 @@ export default function App() {
                               setNoteText(e.target.value);
                             }}
                             onBlur={() => {
-                              // Auto-save quietly on blur
                               if (editingNoteId === selectedVaultItem.id && noteText !== (selectedVaultItem.note || "")) {
                                 setVaultItems(prev => prev.map(i => i.id === selectedVaultItem.id ? { ...i, note: noteText } : i));
                                 setSelectedVaultItem(prev => ({ ...prev, note: noteText }));
@@ -2728,31 +2729,30 @@ export default function App() {
                               const itemType = item.type || 'hadith';
                               const isQuran = itemType === 'quran';
                               const isTranscript = itemType === 'transcript';
-
-                              // Explicitly map colors to avoid Tailwind compilation errors
-                              const getBadgeStyles = () => {
-                                if (isQuran) return "border-amber-200 dark:border-amber-800 text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20";
-                                if (isTranscript) return "border-[#c6a87c]/30 text-[#c6a87c] dark:text-[#d4b78f] bg-[#c6a87c]/10";
-                                return "border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/20";
-                              };
-                              const getGlowStyles = () => {
-                                if (isQuran) return "bg-amber-500/50 dark:bg-amber-500/40";
-                                if (isTranscript) return "bg-[#c6a87c]/50 dark:bg-[#c6a87c]/40";
-                                return "bg-emerald-500/50 dark:bg-emerald-500/40";
-                              };
+                              const typeColor = isQuran ? 'amber' : isTranscript ? 'yellow' : 'emerald';
 
                               if (vaultViewMode === 'grid') {
                                 return (
                                   <div key={item.id} onClick={() => { setSelectedVaultItem(item); setShowEditorArabic(false); setShowEditorChain(false); }} className="h-[240px] flex flex-col bg-white dark:bg-[#151518] border border-slate-200 dark:border-[#2d2d33] rounded-xl shadow-sm hover:shadow-[0_10px_40px_rgba(0,0,0,0.08)] dark:hover:shadow-[0_10px_40px_rgba(0,0,0,0.4)] hover:border-slate-300 dark:hover:border-[#424248] transition-all cursor-pointer overflow-hidden relative group">
 
-                                    <div className={`h-1 w-full ${getGlowStyles()}`} />
+                                    <div className={`h-1 w-full ${isTranscript ? 'bg-[#c6a87c]/50 dark:bg-[#c6a87c]/40' : `bg-${typeColor}-500/50 dark:bg-${typeColor}-500/40`}`} />
 
                                     <div className="p-5 flex-grow overflow-hidden relative">
-                                      <div className="flex items-center gap-2 mb-3">
-                                        <span className={`px-2 py-0.5 rounded text-[9px] font-mono uppercase tracking-widest font-bold border ${getBadgeStyles()}`}>
+                                      <div className="flex flex-wrap items-center gap-2 mb-3">
+                                        <span className={`px-2 py-0.5 rounded text-[9px] font-mono uppercase tracking-widest font-bold border ${isTranscript ? 'border-[#c6a87c]/30 text-[#c6a87c] bg-[#c6a87c]/10' : `border-${typeColor}-200 dark:border-${typeColor}-800 text-${typeColor}-700 dark:text-${typeColor}-400 bg-${typeColor}-50 dark:bg-${typeColor}-900/10`}`}>
                                           {isQuran ? <BookOpen className="w-3 h-3 inline mr-1" /> : isTranscript ? <LibraryIcon className="w-3 h-3 inline mr-1" /> : <Sparkles className="w-3 h-3 inline mr-1" />}
                                           {itemType}
                                         </span>
+                                        {/* Multi-Folder Badges */}
+                                        {item.folder_name && item.folder_name.split(',').map((folderName, index) => {
+                                          const f = folderName.trim();
+                                          if (!f) return null;
+                                          return (
+                                            <span key={`badge-${item.id}-${index}`} className={`px-2 py-0.5 rounded text-[9px] font-mono uppercase tracking-widest font-bold border ${isTranscript ? 'border-[#c6a87c]/30 text-[#c6a87c] bg-[#c6a87c]/10' : `border-${typeColor}-200 dark:border-${typeColor}-800 text-${typeColor}-700 dark:text-${typeColor}-400 bg-${typeColor}-50 dark:bg-${typeColor}-900/10`}`}>
+                                              <Layout className="w-3 h-3 inline mr-1" /> {f}
+                                            </span>
+                                          );
+                                        })}
                                       </div>
                                       <p className="text-xs font-mono text-slate-400 dark:text-[#9a9a9f] font-bold mb-2 truncate">{item.source}</p>
                                       <p className={`font-serif text-sm text-slate-700 dark:text-[#ededf0] leading-relaxed antialiased ${isQuran ? 'text-center italic' : ''}`}>
@@ -2765,7 +2765,7 @@ export default function App() {
                                     <div className="px-5 py-3 border-t border-slate-100 dark:border-[#2d2d33] flex justify-between items-center bg-slate-50/50 dark:bg-[#1c1c20]/50 relative">
                                       <div className="flex items-center gap-3">
                                         <span className="text-[10px] font-mono text-slate-400 dark:text-[#5d5d62]">{new Date(item.created_at).toLocaleDateString()}</span>
-                                        {item.note && <List className="w-3.5 h-3.5 text-blue-500" title="Has Note" />}
+                                        {item.note && <PenLine className="w-3.5 h-3.5 text-blue-500" title="Has Note" />}
                                       </div>
 
                                       <div className="relative">
@@ -2779,26 +2779,47 @@ export default function App() {
                                               <div className="fixed inset-0 z-40" onClick={(e) => { e.stopPropagation(); setActiveCardMenu(null); }} />
                                               <motion.div initial={{ opacity: 0, scale: 0.95, y: 5 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 5 }} className="absolute bottom-full right-0 mb-2 w-48 bg-white dark:bg-[#1c1c20] border border-slate-200 dark:border-[#2d2d33] rounded-xl shadow-xl z-50 overflow-hidden flex flex-col p-1">
 
-                                                <div className="group/move relative">
+                                                {/* Add to Folder */}
+                                                <div className="group/add relative">
                                                   <button className="w-full text-left px-3 py-2 text-xs font-semibold text-slate-700 dark:text-[#ededf0] hover:bg-slate-100 dark:hover:bg-[#2d2d33] rounded-md transition-colors flex items-center gap-2">
-                                                    <Layout className="w-3.5 h-3.5 opacity-60" /> Move to Folder...
+                                                    <FolderPlus className="w-3.5 h-3.5 opacity-60" /> Add to Folder...
                                                   </button>
-                                                  <div className="hidden group-hover/move:flex flex-col absolute bottom-0 right-[95%] w-40 bg-white dark:bg-[#1c1c20] border border-slate-200 dark:border-[#2d2d33] rounded-xl shadow-xl z-50 p-1 mb-2 max-h-40 overflow-y-auto smart-scrollbar">
+                                                  <div className="hidden group-hover/add:flex flex-col absolute bottom-0 right-[95%] w-40 bg-white dark:bg-[#1c1c20] border border-slate-200 dark:border-[#2d2d33] rounded-xl shadow-xl z-50 p-1 mb-2 max-h-40 overflow-y-auto smart-scrollbar">
                                                     {customFolders.map(f => (
-                                                      <button key={f} onClick={(e) => { e.stopPropagation(); setVaultItems(prev => prev.map(i => i.id === item.id ? { ...i, folder_name: f } : i)); supabase.from('vault_items').update({ folder_name: f }).eq('id', item.id); setActiveCardMenu(null); }} className="w-full text-left px-3 py-2 text-xs text-slate-600 dark:text-[#9a9a9f] hover:bg-slate-100 dark:hover:bg-[#2d2d33] rounded-md transition-colors truncate">
+                                                      <button key={`add-${f}`} onClick={(e) => { e.stopPropagation(); assignToFolder(item.id, f, 'add'); }} className="w-full text-left px-3 py-2 text-xs text-slate-600 dark:text-[#9a9a9f] hover:bg-slate-100 dark:hover:bg-[#2d2d33] rounded-md transition-colors truncate">
                                                         {f}
                                                       </button>
                                                     ))}
                                                   </div>
                                                 </div>
 
+                                                {/* Move to Folder */}
+                                                <div className="group/move relative">
+                                                  <button className="w-full text-left px-3 py-2 text-xs font-semibold text-slate-700 dark:text-[#ededf0] hover:bg-slate-100 dark:hover:bg-[#2d2d33] rounded-md transition-colors flex items-center gap-2">
+                                                    <Layout className="w-3.5 h-3.5 opacity-60" /> Move to Folder...
+                                                  </button>
+                                                  <div className="hidden group-hover/move:flex flex-col absolute bottom-0 right-[95%] w-40 bg-white dark:bg-[#1c1c20] border border-slate-200 dark:border-[#2d2d33] rounded-xl shadow-xl z-50 p-1 mb-2 max-h-40 overflow-y-auto smart-scrollbar">
+                                                    {customFolders.map(f => (
+                                                      <button key={`move-${f}`} onClick={(e) => { e.stopPropagation(); assignToFolder(item.id, f, 'move'); }} className="w-full text-left px-3 py-2 text-xs text-slate-600 dark:text-[#9a9a9f] hover:bg-slate-100 dark:hover:bg-[#2d2d33] rounded-md transition-colors truncate">
+                                                        {f}
+                                                      </button>
+                                                    ))}
+                                                  </div>
+                                                </div>
+
+                                                {item.folder_name && (
+                                                  <button onClick={(e) => { e.stopPropagation(); assignToFolder(item.id, null, 'move'); }} className="w-full text-left px-3 py-2 text-xs font-semibold text-slate-500 hover:bg-slate-100 dark:hover:bg-[#2d2d33] rounded-md transition-colors flex items-center gap-2 mt-1 border-t border-slate-100 dark:border-[#2d2d33]">
+                                                    Clear Folders
+                                                  </button>
+                                                )}
+
+                                                <div className="my-1 border-t border-slate-100 dark:border-[#2d2d33]" />
+
                                                 <button onClick={(e) => { e.stopPropagation(); navigator.clipboard.writeText(`${item.source}\n\n${item.content}`); setActiveCardMenu(null); }} className="w-full text-left px-3 py-2 text-xs font-semibold text-slate-700 dark:text-[#ededf0] hover:bg-slate-100 dark:hover:bg-[#2d2d33] rounded-md transition-colors flex items-center gap-2">
                                                   <Copy className="w-3.5 h-3.5 opacity-60" /> Copy Text
                                                 </button>
 
-                                                <div className="my-1 border-t border-slate-100 dark:border-[#2d2d33]" />
-
-                                                <button onClick={async (e) => { e.stopPropagation(); await supabase.from('vault_items').delete().eq('id', item.id); fetchVaultItems(); setActiveCardMenu(null); }} className="w-full text-left px-3 py-2 text-xs font-semibold text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-md transition-colors flex items-center gap-2">
+                                                <button onClick={async (e) => { e.stopPropagation(); await supabase.from('vault_items').delete().eq('id', item.id); fetchVaultItems(); setActiveCardMenu(null); }} className="w-full text-left px-3 py-2 text-xs font-semibold text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-md transition-colors flex items-center gap-2 mt-1">
                                                   <Trash2 className="w-3.5 h-3.5 opacity-60" /> Delete Bookmark
                                                 </button>
                                               </motion.div>
@@ -2813,7 +2834,7 @@ export default function App() {
                                 return (
                                   <div key={item.id} onClick={() => setSelectedVaultItem(item)} className="flex items-center justify-between p-4 bg-white dark:bg-[#151518] border border-slate-200 dark:border-[#2d2d33] rounded-lg hover:border-slate-300 dark:hover:border-[#424248] transition-colors cursor-pointer group">
                                     <div className="flex items-center gap-4 overflow-hidden">
-                                      <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${isTranscript ? 'bg-[#c6a87c]/10 text-[#c6a87c]' : isQuran ? 'bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400' : 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400'}`}>
+                                      <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${isTranscript ? 'bg-[#c6a87c]/10 text-[#c6a87c]' : `bg-${typeColor}-50 dark:bg-${typeColor}-900/20 text-${typeColor}-600 dark:text-${typeColor}-400`}`}>
                                         {isQuran ? <BookOpen className="w-4 h-4" /> : isTranscript ? <LibraryIcon className="w-4 h-4" /> : <Sparkles className="w-4 h-4" />}
                                       </div>
                                       <div className="flex flex-col min-w-0">
@@ -2822,7 +2843,7 @@ export default function App() {
                                       </div>
                                     </div>
                                     <div className="flex items-center gap-3 shrink-0 ml-4">
-                                      {item.note && <List className="w-4 h-4 text-blue-500 opacity-50 group-hover:opacity-100 transition-opacity" />}
+                                      {item.note && <PenLine className="w-4 h-4 text-blue-500 opacity-50 group-hover:opacity-100 transition-opacity" />}
                                       <ChevronRight className="w-4 h-4 text-slate-300 dark:text-[#5d5d62] group-hover:text-slate-500 dark:group-hover:text-[#9a9a9f] transition-colors" />
                                     </div>
                                   </div>
