@@ -397,8 +397,7 @@ const QuranReader = ({ activeFontFamily, fontStyle, setFontStyle, handleSurahSel
 
     if (specificVerse) {
       setTargetVerse(specificVerse);
-      setResumeToast(true);
-      setTimeout(() => setResumeToast(false), 3000);
+      // Removed the early toast trigger from here!
     } else {
       // Only overwrite progress if starting a Surah fresh
       const newProg = { lastSurah: id, lastVerse: 1, timestamp: Date.now() };
@@ -483,9 +482,14 @@ const QuranReader = ({ activeFontFamily, fontStyle, setFontStyle, handleSurahSel
               if (progress < duration) {
                 window.requestAnimationFrame(cinematicScroll);
               } else {
-                // 3. The Landing Highlight
+                // 3. The Landing Highlight & Toast
                 el.classList.add('bg-amber-500/20', 'dark:bg-amber-500/30', 'transition-colors', 'duration-1000');
                 setTimeout(() => el.classList.remove('bg-amber-500/20', 'dark:bg-amber-500/30'), 2000);
+
+                // Trigger the toast exactly when we arrive
+                setResumeToast(true);
+                setTimeout(() => setResumeToast(false), 3000);
+
                 setTargetVerse(null);
               }
             };
