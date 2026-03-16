@@ -447,11 +447,26 @@ const QuranReader = ({ activeFontFamily, fontStyle, setFontStyle, handleSurahSel
 
   useEffect(() => {
     if (targetVerse && ayahs.length > 0 && currentView === 'reader') {
-      setTimeout(() => {
+      // Smart Retry Scroller: Waits for large Surahs (like Baqarah) to finish rendering
+      const tryScroll = (attempts = 0) => {
         const el = document.getElementById(`verse-${selectedSurah}-${targetVerse}`);
-        if (el) { el.scrollIntoView({ behavior: 'smooth', block: 'center' }); el.classList.add('bg-amber-500/20', 'dark:bg-amber-500/30'); setTimeout(() => el.classList.remove('bg-amber-500/20', 'dark:bg-amber-500/30'), 2000); }
-        setTargetVerse(null);
-      }, 100);
+        if (el) {
+          // Adjust the scroll slightly to account for the fixed navigation header
+          const yOffset = el.getBoundingClientRect().top + window.scrollY - 120;
+          window.scrollTo({ top: yOffset, behavior: 'smooth' });
+
+          el.classList.add('bg-amber-500/20', 'dark:bg-amber-500/30');
+          setTimeout(() => el.classList.remove('bg-amber-500/20', 'dark:bg-amber-500/30'), 2000);
+          setTargetVerse(null);
+        } else if (attempts < 15) {
+          // If the DOM hasn't painted yet, wait 100ms and try again (up to 1.5 seconds)
+          setTimeout(() => tryScroll(attempts + 1), 100);
+        } else {
+          setTargetVerse(null); // Safely give up if it somehow completely fails
+        }
+      };
+
+      tryScroll();
     }
   }, [selectedSurah, targetVerse, readingMode, ayahs, currentView]);
 
