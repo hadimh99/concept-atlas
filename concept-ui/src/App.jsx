@@ -2436,30 +2436,30 @@ export default function App() {
 
       {showMobileMenu && <div className="fixed inset-0 z-[70] pointer-events-auto" onClick={() => setShowMobileMenu(false)} />}
 
-      {/* --- THE SCHOLAR'S VAULT MODAL (INDUSTRIAL LOCKBOX) --- */}
+      {/* --- THE SCHOLAR'S VAULT (PREMIUM WORKSPACE) --- */}
       <AnimatePresence>
         {showVault && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[6000] flex items-center justify-center p-4 sm:p-6 bg-neutral-950/80 backdrop-blur-sm pointer-events-auto">
-            {/* The Heavy Metal Lockbox */}
-            <motion.div initial={{ scale: 0.98, y: 10 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.98, y: 10 }} transition={{ duration: 0.2 }} className="relative w-full max-w-6xl h-[90vh] flex flex-col md:flex-row bg-neutral-900 border border-neutral-700 rounded-xl shadow-[0_30px_60px_rgba(0,0,0,0.9)] overflow-hidden">
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[6000] flex items-center justify-center p-0 sm:p-6 bg-[#FDFBF7]/80 dark:bg-[#020604]/90 backdrop-blur-md pointer-events-auto">
 
-              {/* SIDEBAR: FOLDERS (Horizontal Tabs on Mobile, Vertical Panel on Desktop) */}
-              <div className="w-full md:w-64 lg:w-72 bg-neutral-800 border-b-2 md:border-b-0 md:border-r-2 border-neutral-950 flex flex-col shrink-0 z-20 shadow-[0_8px_30px_rgba(0,0,0,0.6)] md:shadow-[8px_0_30px_rgba(0,0,0,0.6)] relative">
-                <div className="p-4 md:p-6 flex justify-between items-center bg-neutral-800 shrink-0">
-                  <h2 className="font-serif text-lg md:text-xl font-bold text-neutral-100 flex items-center gap-2 md:gap-3 tracking-wide">
-                    <Bookmark className="w-4 h-4 md:w-5 md:h-5 text-[#B56D43]" /> THE VAULT
+            <motion.div initial={{ scale: 0.98, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.98, y: 20 }} transition={{ duration: 0.3, ease: "easeOut" }} className="relative w-full h-full sm:h-[90vh] sm:max-w-7xl flex flex-col md:flex-row bg-[#FDFBF7] dark:bg-[#0A120E] sm:border border-[#5C4A3D]/20 dark:border-[#c6a87c]/30 sm:rounded-2xl shadow-2xl overflow-hidden">
+
+              {/* SIDEBAR: FOLDERS & FILTERS */}
+              <div className="w-full md:w-64 lg:w-72 bg-[#F8F5EE]/50 dark:bg-[#050A08] border-b md:border-b-0 md:border-r border-[#5C4A3D]/10 dark:border-[#c6a87c]/20 flex flex-col shrink-0 z-20 relative">
+                <div className="p-4 md:p-6 flex justify-between items-center border-b border-[#5C4A3D]/10 dark:border-[#c6a87c]/10 shrink-0">
+                  <h2 className="font-serif text-xl md:text-2xl font-bold text-[#2D241C] dark:text-[#FAFAFA] flex items-center gap-3 tracking-wide">
+                    <Bookmark className="w-5 h-5 text-[#c6a87c]" /> The Vault
                   </h2>
-                  <button onClick={() => setShowVault(false)} className="md:hidden p-1.5 text-neutral-400 hover:text-white bg-neutral-900 rounded-md border border-neutral-700 transition-colors shadow-inner"><X className="w-4 h-4" /></button>
+                  <button onClick={() => setShowVault(false)} className="md:hidden p-2 text-[#5C4A3D]/60 hover:text-[#2D241C] dark:text-[#c6a87c]/60 dark:hover:text-[#FAFAFA] transition-colors"><X className="w-5 h-5" /></button>
                 </div>
 
                 {/* Desktop Vertical Folder List */}
                 <div className="hidden md:block p-4 overflow-y-auto smart-scrollbar flex-grow">
-                  <div className="text-[10px] font-bold text-neutral-500 uppercase tracking-widest mb-3 px-3">Library</div>
-                  <button onClick={() => setActiveFolder('All')} className={`w-full text-left px-4 py-3 rounded-md text-sm font-bold transition-all mb-2 flex items-center gap-3 ${activeFolder === 'All' ? 'bg-neutral-900 text-[#B56D43] border-l-4 border-[#B56D43] shadow-inner' : 'text-neutral-400 hover:bg-neutral-700 hover:text-neutral-200 border-l-4 border-transparent'}`}>All Records</button>
-                  <button onClick={() => setActiveFolder('Uncategorized')} className={`w-full text-left px-4 py-3 rounded-md text-sm font-bold transition-all mb-8 flex items-center gap-3 ${activeFolder === 'Uncategorized' ? 'bg-neutral-900 text-[#B56D43] border-l-4 border-[#B56D43] shadow-inner' : 'text-neutral-400 hover:bg-neutral-700 hover:text-neutral-200 border-l-4 border-transparent'}`}>Uncategorized</button>
+                  <div className="text-[10px] font-bold text-[#5C4A3D]/50 dark:text-[#c6a87c]/50 uppercase tracking-widest mb-3 px-3">Master Library</div>
+                  <button onClick={() => setActiveFolder('All')} className={`w-full text-left px-4 py-3 rounded-lg text-sm font-bold transition-all mb-2 flex items-center gap-3 ${activeFolder === 'All' ? 'bg-[#FDFBF7] dark:bg-[#c6a87c]/10 text-[#2D241C] dark:text-[#c6a87c] border border-[#5C4A3D]/15 dark:border-[#c6a87c]/30 shadow-sm' : 'text-[#5C4A3D]/70 dark:text-[#FAFAFA]/60 hover:bg-[#FDFBF7]/50 dark:hover:bg-white/5 border border-transparent'}`}>All Saved Records</button>
+                  <button onClick={() => setActiveFolder('Uncategorized')} className={`w-full text-left px-4 py-3 rounded-lg text-sm font-bold transition-all mb-8 flex items-center gap-3 ${activeFolder === 'Uncategorized' ? 'bg-[#FDFBF7] dark:bg-[#c6a87c]/10 text-[#2D241C] dark:text-[#c6a87c] border border-[#5C4A3D]/15 dark:border-[#c6a87c]/30 shadow-sm' : 'text-[#5C4A3D]/70 dark:text-[#FAFAFA]/60 hover:bg-[#FDFBF7]/50 dark:hover:bg-white/5 border border-transparent'}`}>Uncategorized</button>
 
-                  <button onClick={() => setIsCollectionsOpen(!isCollectionsOpen)} className="w-full flex justify-between items-center text-[10px] font-bold text-neutral-500 hover:text-neutral-300 uppercase tracking-widest mb-3 px-3 transition-colors cursor-pointer group">
-                    <span>Collections</span>
+                  <button onClick={() => setIsCollectionsOpen(!isCollectionsOpen)} className="w-full flex justify-between items-center text-[10px] font-bold text-[#5C4A3D]/50 dark:text-[#c6a87c]/50 hover:text-[#2D241C] dark:hover:text-[#c6a87c] uppercase tracking-widest mb-3 px-3 transition-colors cursor-pointer group">
+                    <span>Research Collections</span>
                     {isCollectionsOpen ? <ChevronUp className="w-3.5 h-3.5 opacity-50 group-hover:opacity-100 transition-opacity" /> : <ChevronDown className="w-3.5 h-3.5 opacity-50 group-hover:opacity-100 transition-opacity" />}
                   </button>
 
@@ -2467,7 +2467,7 @@ export default function App() {
                     {isCollectionsOpen && (
                       <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden flex flex-col gap-1.5">
                         {customFolders.map(folder => (
-                          <button key={folder} onClick={() => setActiveFolder(folder)} className={`w-full text-left px-4 py-3 rounded-md text-sm font-bold transition-all flex items-center gap-3 ${activeFolder === folder ? 'bg-neutral-900 text-[#B56D43] border-l-4 border-[#B56D43] shadow-inner' : 'text-neutral-400 hover:bg-neutral-700 hover:text-neutral-200 border-l-4 border-transparent'}`}>
+                          <button key={folder} onClick={() => setActiveFolder(folder)} className={`w-full text-left px-4 py-2.5 rounded-lg text-sm font-bold transition-all flex items-center gap-3 ${activeFolder === folder ? 'bg-[#FDFBF7] dark:bg-[#c6a87c]/10 text-[#2D241C] dark:text-[#c6a87c] border border-[#5C4A3D]/15 dark:border-[#c6a87c]/30 shadow-sm' : 'text-[#5C4A3D]/70 dark:text-[#FAFAFA]/60 hover:bg-[#FDFBF7]/50 dark:hover:bg-white/5 border border-transparent'}`}>
                             <Layout className="w-3.5 h-3.5 opacity-70" /> <span className="truncate">{folder}</span>
                           </button>
                         ))}
@@ -2477,117 +2477,145 @@ export default function App() {
                 </div>
 
                 {/* Mobile Horizontal Folder Row */}
-                <div className="md:hidden flex items-center overflow-x-auto hide-scroll px-4 pb-4 gap-2 shrink-0 border-b border-neutral-900">
-                  <button onClick={() => setActiveFolder('All')} className={`whitespace-nowrap px-4 py-2 rounded-full text-xs font-bold transition-all border shadow-[0_4px_10px_rgba(0,0,0,0.3)] ${activeFolder === 'All' ? 'bg-neutral-950 text-[#B56D43] border-[#B56D43]' : 'bg-neutral-800 text-neutral-400 border-neutral-600 hover:bg-neutral-700'}`}>All Records</button>
-                  <button onClick={() => setActiveFolder('Uncategorized')} className={`whitespace-nowrap px-4 py-2 rounded-full text-xs font-bold transition-all border shadow-[0_4px_10px_rgba(0,0,0,0.3)] ${activeFolder === 'Uncategorized' ? 'bg-neutral-950 text-[#B56D43] border-[#B56D43]' : 'bg-neutral-800 text-neutral-400 border-neutral-600 hover:bg-neutral-700'}`}>Uncategorized</button>
+                <div className="md:hidden flex items-center overflow-x-auto hide-scroll px-4 pb-4 gap-2 shrink-0 border-b border-[#5C4A3D]/10 dark:border-[#c6a87c]/10 pt-4">
+                  <button onClick={() => setActiveFolder('All')} className={`whitespace-nowrap px-4 py-2 rounded-full text-xs font-bold transition-all border ${activeFolder === 'All' ? 'bg-[#FDFBF7] dark:bg-[#c6a87c]/10 text-[#2D241C] dark:text-[#c6a87c] border-[#5C4A3D]/30 dark:border-[#c6a87c]/50 shadow-sm' : 'bg-transparent text-[#5C4A3D]/70 dark:text-[#FAFAFA]/60 border-[#5C4A3D]/10 dark:border-white/10'}`}>All Records</button>
+                  <button onClick={() => setActiveFolder('Uncategorized')} className={`whitespace-nowrap px-4 py-2 rounded-full text-xs font-bold transition-all border ${activeFolder === 'Uncategorized' ? 'bg-[#FDFBF7] dark:bg-[#c6a87c]/10 text-[#2D241C] dark:text-[#c6a87c] border-[#5C4A3D]/30 dark:border-[#c6a87c]/50 shadow-sm' : 'bg-transparent text-[#5C4A3D]/70 dark:text-[#FAFAFA]/60 border-[#5C4A3D]/10 dark:border-white/10'}`}>Uncategorized</button>
                   {customFolders.map(folder => (
-                    <button key={folder} onClick={() => setActiveFolder(folder)} className={`whitespace-nowrap px-4 py-2 rounded-full text-xs font-bold transition-all border shadow-[0_4px_10px_rgba(0,0,0,0.3)] flex items-center gap-2 ${activeFolder === folder ? 'bg-neutral-950 text-[#B56D43] border-[#B56D43]' : 'bg-neutral-800 text-neutral-400 border-neutral-600 hover:bg-neutral-700'}`}>
+                    <button key={folder} onClick={() => setActiveFolder(folder)} className={`whitespace-nowrap px-4 py-2 rounded-full text-xs font-bold transition-all border flex items-center gap-2 ${activeFolder === folder ? 'bg-[#FDFBF7] dark:bg-[#c6a87c]/10 text-[#2D241C] dark:text-[#c6a87c] border-[#5C4A3D]/30 dark:border-[#c6a87c]/50 shadow-sm' : 'bg-transparent text-[#5C4A3D]/70 dark:text-[#FAFAFA]/60 border-[#5C4A3D]/10 dark:border-white/10'}`}>
                       <Layout className="w-3 h-3 opacity-70" /> {folder}
                     </button>
                   ))}
                 </div>
               </div>
 
-              {/* MAIN CONTENT AREA (Recessed Chamber) */}
-              <div className="flex-grow flex flex-col min-w-0 bg-neutral-950 relative shadow-[inset_15px_15px_40px_rgba(0,0,0,0.8)] overflow-hidden">
+              {/* MAIN CONTENT AREA */}
+              <div className="flex-grow flex flex-col min-w-0 relative bg-white dark:bg-[#030A06]">
 
                 {/* Header & Search */}
-                <div className="px-6 py-4 md:py-5 border-b-2 border-neutral-900 flex items-center justify-between gap-4 shrink-0 z-10 relative bg-neutral-950/80 backdrop-blur-md shadow-[0_10px_20px_rgba(0,0,0,0.4)]">
-                  <div className="relative flex-grow max-w-md group">
-                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-500 group-focus-within:text-[#B56D43] transition-colors" />
-                    <input type="text" value={vaultSearch} onChange={(e) => setVaultSearch(e.target.value)} placeholder="Search lockbox..." className="w-full pl-11 pr-4 py-2.5 md:py-3 bg-neutral-900 border border-neutral-700 rounded-md text-sm font-mono text-neutral-100 placeholder-neutral-600 focus:border-[#B56D43] focus:ring-1 focus:ring-[#B56D43] outline-none transition-all shadow-inner" />
+                <div className="px-6 py-4 md:py-6 border-b border-[#5C4A3D]/10 dark:border-[#c6a87c]/10 flex flex-col sm:flex-row items-center justify-between gap-4 shrink-0 z-10 bg-white/80 dark:bg-[#030A06]/80 backdrop-blur-xl">
+                  <div className="relative w-full sm:max-w-md group">
+                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-[#5C4A3D]/40 dark:text-[#c6a87c]/40 group-focus-within:text-[#c6a87c] transition-colors" />
+                    <input type="text" value={vaultSearch} onChange={(e) => setVaultSearch(e.target.value)} placeholder="Search your knowledge base..." className="w-full pl-11 pr-4 py-3 bg-[#F8F5EE]/50 dark:bg-black/20 border border-[#5C4A3D]/15 dark:border-[#c6a87c]/20 rounded-xl text-sm font-sans text-[#2D241C] dark:text-[#FAFAFA] placeholder-[#5C4A3D]/40 dark:placeholder-[#c6a87c]/40 focus:border-[#c6a87c] focus:ring-1 focus:ring-[#c6a87c] outline-none transition-all" />
                   </div>
-                  <button onClick={() => setShowVault(false)} className="hidden md:flex items-center justify-center p-2.5 text-neutral-500 hover:text-white bg-neutral-800 border border-neutral-600 hover:border-neutral-400 rounded-md transition-all cursor-pointer shadow-[0_4px_10px_rgba(0,0,0,0.5)]"><X className="w-5 h-5" /></button>
+
+                  <div className="hidden md:flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-[#5C4A3D]/60 dark:text-[#c6a87c]/60">
+                    <span className="bg-[#F8F5EE] dark:bg-[#c6a87c]/10 px-3 py-1.5 rounded-md border border-[#5C4A3D]/10 dark:border-[#c6a87c]/20">{filteredVaultItems.length} Entries</span>
+                    <button onClick={() => setShowVault(false)} className="p-2.5 text-[#5C4A3D]/60 hover:text-[#2D241C] dark:text-[#c6a87c]/60 dark:hover:text-[#FAFAFA] transition-colors rounded-full hover:bg-[#F8F5EE] dark:hover:bg-[#c6a87c]/10 ml-2"><X className="w-5 h-5" /></button>
+                  </div>
                 </div>
 
                 {/* Items List */}
                 <div className="flex-grow overflow-y-auto p-4 sm:p-6 md:p-8 smart-scrollbar relative z-10">
                   {filteredVaultItems.length === 0 ? (
-                    <div className="absolute inset-0 flex flex-col items-center justify-center text-center px-4 opacity-40">
-                      <Bookmark className="w-16 h-16 mb-4 text-[#B56D43] opacity-50" />
-                      <p className="text-xl font-serif text-neutral-400">Lockbox is empty.</p>
+                    <div className="absolute inset-0 flex flex-col items-center justify-center text-center px-4 opacity-60">
+                      <Bookmark className="w-16 h-16 mb-4 text-[#c6a87c] opacity-50" />
+                      <p className="text-xl font-serif text-[#2D241C] dark:text-[#FAFAFA]">Your Vault is empty.</p>
+                      <p className="text-sm text-[#5C4A3D]/60 dark:text-[#c6a87c]/60 mt-2 max-w-sm">Save profound Hadiths, Quranic verses, or transcript reflections to build your personal library.</p>
                     </div>
                   ) : (
-                    <div className="flex flex-col gap-6 md:gap-8 max-w-4xl mx-auto pb-24 md:pb-20">
+                    <div className="flex flex-col gap-6 md:gap-8 max-w-4xl mx-auto pb-24 md:pb-12">
                       {filteredVaultItems.map((item) => {
                         const isExpanded = expandedVaultItems[item.id];
                         const safeContent = item.content || '';
-                        const needsExpansion = safeContent.length > 400;
-                        const displayContent = !needsExpansion || isExpanded ? safeContent : safeContent.substring(0, 400) + '...';
-                        return (
-                          <div key={item.id} className="bg-neutral-800 border-t border-l border-neutral-600 border-b-2 border-r-2 border-neutral-950 rounded-lg p-5 sm:p-8 shadow-[4px_4px_15px_rgba(0,0,0,0.6)] md:shadow-[8px_8px_20px_rgba(0,0,0,0.6)] transition-all group relative flex flex-col">
+                        const needsExpansion = safeContent.length > 500;
+                        const displayContent = !needsExpansion || isExpanded ? safeContent : safeContent.substring(0, 500) + '...';
 
-                            <div className="flex flex-wrap justify-between items-start gap-3 mb-5 pb-4 border-b border-neutral-700/50">
+                        // Detect type for UI rendering
+                        const itemType = item.type || 'hadith';
+                        const isQuran = itemType === 'quran';
+                        const isTranscript = itemType === 'transcript';
+
+                        return (
+                          <div key={item.id} className="bg-[#FDFBF7] dark:bg-[#0A120E] border border-[#5C4A3D]/15 dark:border-[#c6a87c]/20 rounded-2xl p-6 sm:p-8 shadow-sm hover:shadow-md transition-all group relative flex flex-col">
+
+                            <div className="flex flex-wrap justify-between items-start gap-3 mb-6 pb-5 border-b border-[#5C4A3D]/10 dark:border-[#c6a87c]/10">
                               <div className="flex flex-wrap items-center gap-2">
-                                <span className="px-3 py-1.5 bg-neutral-900 text-neutral-300 rounded text-[10px] font-mono uppercase tracking-widest font-bold border border-neutral-700 shadow-inner">{item.source}</span>
-                                {item.folder_name && <span className="px-3 py-1.5 bg-neutral-900 text-[#B56D43] rounded text-[10px] font-mono uppercase tracking-widest font-bold border border-[#B56D43]/40 shadow-inner flex items-center gap-1.5"><Layout className="w-3 h-3" />{item.folder_name}</span>}
+                                {/* Type Badge */}
+                                <span className={`px-3 py-1.5 rounded text-[10px] font-mono uppercase tracking-widest font-bold border ${isQuran ? 'bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400 border-amber-200 dark:border-amber-800/50' : isTranscript ? 'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-400 border-indigo-200 dark:border-indigo-800/50' : 'bg-[#F8F5EE] dark:bg-[#c6a87c]/10 text-[#5C4A3D] dark:text-[#c6a87c] border-[#5C4A3D]/20 dark:border-[#c6a87c]/30'}`}>
+                                  {isQuran ? <BookOpen className="w-3.5 h-3.5 inline mr-1.5" /> : isTranscript ? <LibraryIcon className="w-3.5 h-3.5 inline mr-1.5" /> : <Database className="w-3.5 h-3.5 inline mr-1.5" />}
+                                  {itemType}
+                                </span>
+                                {/* Source Badge */}
+                                <span className="px-3 py-1.5 bg-white dark:bg-black/30 text-[#2D241C] dark:text-slate-300 rounded text-[10px] font-mono uppercase tracking-widest font-bold border border-[#5C4A3D]/10 dark:border-white/10 shadow-sm">{item.source}</span>
+                                {/* Folder Badge */}
+                                {item.folder_name && <span className="px-3 py-1.5 bg-[#c6a87c]/10 text-[#c6a87c] rounded text-[10px] font-mono uppercase tracking-widest font-bold border border-[#c6a87c]/30 flex items-center gap-1.5"><Layout className="w-3 h-3" />{item.folder_name}</span>}
                               </div>
-                              <span className="text-[10px] font-mono text-neutral-500 pt-1.5 font-bold">{new Date(item.created_at).toLocaleDateString()}</span>
+                              <span className="text-[10px] font-mono text-[#5C4A3D]/50 dark:text-[#c6a87c]/50 pt-1.5 font-bold">{new Date(item.created_at).toLocaleDateString()}</span>
                             </div>
 
-                            <div className="flex-grow">
-                              <p className="text-sm sm:text-base md:text-lg font-serif leading-[1.85] text-neutral-100 whitespace-pre-wrap antialiased">
+                            <div className={`flex-grow ${isTranscript ? 'border-l-[3px] border-[#c6a87c] pl-5 italic' : ''}`}>
+                              <p className={`font-serif leading-[1.85] text-[#2D241C] dark:text-neutral-100 whitespace-pre-wrap antialiased ${isQuran ? 'text-lg sm:text-xl md:text-2xl text-center' : 'text-sm sm:text-base md:text-lg'}`}>
                                 {displayContent}
                               </p>
 
                               {needsExpansion && (
-                                <button onClick={() => toggleVaultExpand(item.id)} className="mt-5 text-[10px] font-bold uppercase tracking-widest text-[#B56D43] hover:text-[#d38253] transition-colors flex items-center gap-1.5 cursor-pointer">
+                                <button onClick={() => toggleVaultExpand(item.id)} className="mt-5 text-[10px] font-bold uppercase tracking-widest text-[#c6a87c] hover:text-[#B56D43] transition-colors flex items-center gap-1.5 cursor-pointer">
                                   {isExpanded ? 'Collapse' : 'Read Full Text'} {isExpanded ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
                                 </button>
                               )}
                             </div>
 
-                            <div className="mt-6 md:mt-8 pt-4 md:pt-5 border-t border-neutral-700/50 flex justify-end items-center gap-2 md:gap-3">
+                            {/* Actions Footer */}
+                            <div className="mt-6 md:mt-8 pt-4 md:pt-5 border-t border-[#5C4A3D]/10 dark:border-[#c6a87c]/10 flex flex-wrap justify-between items-center gap-4">
 
-                              {/* Folder Movement Dropdown (POPS UP) */}
-                              <div className="relative">
-                                <button onClick={() => setMovingItemId(movingItemId === item.id ? null : item.id)} className={`flex items-center gap-2 px-3 md:px-4 py-2.5 text-[10px] uppercase tracking-widest font-bold rounded shadow-[0_4px_10px_rgba(0,0,0,0.3)] transition-all border cursor-pointer ${movingItemId === item.id ? 'bg-neutral-900 text-[#B56D43] border-[#B56D43]/50 shadow-inner' : 'bg-neutral-800 text-neutral-400 hover:text-white border-neutral-600 hover:border-neutral-400 hover:bg-neutral-700'}`} title="Move to Folder">
-                                  <List className="w-4 h-4" /> <span className="hidden sm:inline">Folder</span>
+                              {/* Future feature indicator for the UI */}
+                              <div className="flex items-center gap-2">
+                                <button className="text-[10px] uppercase tracking-widest font-bold text-[#5C4A3D]/60 dark:text-[#c6a87c]/60 hover:text-[#c6a87c] transition-colors flex items-center gap-1.5">
+                                  <Sparkles className="w-3.5 h-3.5" /> Add Reflection
                                 </button>
-
-                                <AnimatePresence>
-                                  {movingItemId === item.id && (
-                                    <>
-                                      <div className="fixed inset-0 z-40" onClick={(e) => { e.stopPropagation(); setMovingItemId(null); }} />
-                                      <motion.div initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 5 }} transition={{ duration: 0.15 }} className="absolute right-[-60px] sm:right-0 bottom-full mb-3 w-[260px] max-w-[85vw] bg-neutral-800 border-2 border-neutral-600 rounded-md shadow-[0_15px_50px_rgba(0,0,0,0.9)] z-50 overflow-hidden">
-                                        <div className="flex items-center gap-2 px-3 py-3 border-b-2 border-neutral-900 bg-neutral-900 relative z-10">
-                                          <input type="text" value={newFolderInput} onChange={(e) => setNewFolderInput(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter' && newFolderInput.trim()) { assignToFolder(item.id, newFolderInput.trim()); setNewFolderInput(''); } }} placeholder="New folder..." className="w-full text-xs font-mono bg-neutral-950 border border-neutral-700 rounded px-3 py-2.5 outline-none text-neutral-100 placeholder-neutral-600 focus:border-[#B56D43] focus:ring-1 focus:ring-[#B56D43] transition-all shadow-inner" />
-                                          <button onClick={() => { if (newFolderInput.trim()) { assignToFolder(item.id, newFolderInput.trim()); setNewFolderInput(''); } }} className="p-2.5 bg-neutral-800 text-[#B56D43] rounded border border-neutral-700 hover:border-[#B56D43] transition-colors shadow-[0_2px_5px_rgba(0,0,0,0.5)] cursor-pointer">
-                                            <Check className="w-4 h-4" />
-                                          </button>
-                                        </div>
-                                        <div className="max-h-40 overflow-y-auto smart-scrollbar py-1 relative z-10">
-                                          {customFolders.map(f => (
-                                            <button key={f} onClick={() => assignToFolder(item.id, f)} className="w-full text-left px-4 py-3 text-[11px] font-bold uppercase tracking-widest text-neutral-400 hover:bg-neutral-700 hover:text-white transition-colors truncate flex items-center gap-3 cursor-pointer">
-                                              <Layout className="w-3.5 h-3.5 opacity-60 text-[#B56D43]" /> {f}
-                                            </button>
-                                          ))}
-                                        </div>
-                                        {item.folder_name && <button onClick={() => assignToFolder(item.id, null)} className="w-full text-left px-4 py-3 text-[10px] font-bold uppercase tracking-widest text-red-500 hover:bg-red-500/10 hover:text-red-400 transition-colors border-t-2 border-neutral-900 cursor-pointer relative z-10">Remove from Folder</button>}
-                                      </motion.div>
-                                    </>
-                                  )}
-                                </AnimatePresence>
                               </div>
 
-                              <button onClick={(e) => {
-                                navigator.clipboard.writeText(`${item.source}\n\n${item.content}`);
-                                const btn = e.currentTarget;
-                                const originalHtml = btn.innerHTML;
-                                btn.innerHTML = `<svg class="w-4 h-4 text-emerald-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg><span class="text-emerald-400 hidden sm:inline">Copied</span>`;
-                                btn.classList.add('bg-neutral-900', 'border-emerald-500/50', 'shadow-inner');
-                                setTimeout(() => {
-                                  btn.innerHTML = originalHtml;
-                                  btn.classList.remove('bg-neutral-900', 'border-emerald-500/50', 'shadow-inner');
-                                }, 2000);
-                              }} className="flex items-center gap-2 px-3 md:px-4 py-2.5 text-[10px] uppercase tracking-widest font-bold text-neutral-400 hover:text-white bg-neutral-800 hover:bg-neutral-700 shadow-[0_4px_10px_rgba(0,0,0,0.3)] rounded transition-all border border-neutral-600 hover:border-neutral-400 cursor-pointer" title="Copy Text">
-                                <Copy className="w-4 h-4" /> <span className="hidden sm:inline">Copy</span>
-                              </button>
+                              <div className="flex items-center gap-2 md:gap-3">
+                                {/* Folder Movement Dropdown */}
+                                <div className="relative">
+                                  <button onClick={() => setMovingItemId(movingItemId === item.id ? null : item.id)} className={`flex items-center gap-2 px-3 md:px-4 py-2 text-[10px] uppercase tracking-widest font-bold rounded-lg transition-all border cursor-pointer ${movingItemId === item.id ? 'bg-[#c6a87c]/10 text-[#c6a87c] border-[#c6a87c]/30' : 'bg-[#F8F5EE] dark:bg-black/20 text-[#5C4A3D]/70 dark:text-[#c6a87c]/70 hover:text-[#2D241C] dark:hover:text-[#FAFAFA] border-[#5C4A3D]/15 dark:border-white/10 hover:border-[#c6a87c]/50'}`} title="Move to Folder">
+                                    <Layout className="w-4 h-4" /> <span className="hidden sm:inline">Move</span>
+                                  </button>
 
-                              <button onClick={async () => { await supabase.from('vault_items').delete().eq('id', item.id); fetchVaultItems(); }} className="flex items-center justify-center p-2.5 text-neutral-500 hover:text-red-400 hover:bg-red-500/10 hover:border-red-500/30 rounded border border-transparent transition-all cursor-pointer md:ml-1" title="Delete Record">
-                                <Trash2 className="w-4 h-4 md:w-5 md:h-5" />
-                              </button>
+                                  <AnimatePresence>
+                                    {movingItemId === item.id && (
+                                      <>
+                                        <div className="fixed inset-0 z-40" onClick={(e) => { e.stopPropagation(); setMovingItemId(null); }} />
+                                        <motion.div initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 5 }} transition={{ duration: 0.15 }} className="absolute right-0 bottom-full mb-3 w-[260px] max-w-[85vw] bg-white dark:bg-[#0A120E] border border-[#5C4A3D]/15 dark:border-[#c6a87c]/30 rounded-xl shadow-2xl z-50 overflow-hidden">
+                                          <div className="flex items-center gap-2 px-3 py-3 border-b border-[#5C4A3D]/10 dark:border-[#c6a87c]/20 bg-[#F8F5EE]/50 dark:bg-black/20 relative z-10">
+                                            <input type="text" value={newFolderInput} onChange={(e) => setNewFolderInput(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter' && newFolderInput.trim()) { assignToFolder(item.id, newFolderInput.trim()); setNewFolderInput(''); } }} placeholder="New folder name..." className="w-full text-xs font-mono bg-white dark:bg-[#030A06] border border-[#5C4A3D]/20 dark:border-[#c6a87c]/30 rounded-lg px-3 py-2 outline-none text-[#2D241C] dark:text-[#FAFAFA] placeholder-[#5C4A3D]/40 dark:placeholder-[#c6a87c]/40 focus:border-[#c6a87c] transition-all" />
+                                            <button onClick={() => { if (newFolderInput.trim()) { assignToFolder(item.id, newFolderInput.trim()); setNewFolderInput(''); } }} className="p-2 bg-[#FDFBF7] dark:bg-[#c6a87c]/10 text-[#c6a87c] rounded-lg border border-[#5C4A3D]/15 dark:border-[#c6a87c]/30 hover:border-[#c6a87c] transition-colors cursor-pointer">
+                                              <Check className="w-4 h-4" />
+                                            </button>
+                                          </div>
+                                          <div className="max-h-40 overflow-y-auto smart-scrollbar py-1.5 relative z-10">
+                                            {customFolders.map(f => (
+                                              <button key={f} onClick={() => assignToFolder(item.id, f)} className="w-full text-left px-4 py-2.5 text-[11px] font-bold uppercase tracking-widest text-[#5C4A3D]/70 dark:text-[#c6a87c]/70 hover:bg-[#F8F5EE] dark:hover:bg-[#c6a87c]/10 hover:text-[#2D241C] dark:hover:text-[#FAFAFA] transition-colors truncate flex items-center gap-3 cursor-pointer">
+                                                <Layout className="w-3.5 h-3.5 opacity-60 text-[#c6a87c]" /> {f}
+                                              </button>
+                                            ))}
+                                          </div>
+                                          {item.folder_name && <button onClick={() => assignToFolder(item.id, null)} className="w-full text-left px-4 py-3 text-[10px] font-bold uppercase tracking-widest text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors border-t border-[#5C4A3D]/10 dark:border-[#c6a87c]/20 cursor-pointer relative z-10">Remove from Folder</button>}
+                                        </motion.div>
+                                      </>
+                                    )}
+                                  </AnimatePresence>
+                                </div>
 
+                                <button onClick={(e) => {
+                                  navigator.clipboard.writeText(`${item.source}\n\n${item.content}`);
+                                  const btn = e.currentTarget;
+                                  const originalHtml = btn.innerHTML;
+                                  btn.innerHTML = `<svg class="w-4 h-4 text-emerald-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg><span class="text-emerald-500 hidden sm:inline">Copied</span>`;
+                                  btn.classList.add('bg-emerald-50', 'dark:bg-emerald-500/10', 'border-emerald-200', 'dark:border-emerald-500/30');
+                                  setTimeout(() => {
+                                    btn.innerHTML = originalHtml;
+                                    btn.classList.remove('bg-emerald-50', 'dark:bg-emerald-500/10', 'border-emerald-200', 'dark:border-emerald-500/30');
+                                  }, 2000);
+                                }} className="flex items-center gap-2 px-3 md:px-4 py-2 text-[10px] uppercase tracking-widest font-bold text-[#5C4A3D]/70 dark:text-[#c6a87c]/70 hover:text-[#2D241C] dark:hover:text-[#FAFAFA] bg-[#F8F5EE] dark:bg-black/20 hover:bg-[#FDFBF7] dark:hover:bg-[#c6a87c]/10 rounded-lg transition-all border border-[#5C4A3D]/15 dark:border-white/10 hover:border-[#c6a87c]/50 cursor-pointer" title="Copy Text">
+                                  <Copy className="w-4 h-4" /> <span className="hidden sm:inline">Copy</span>
+                                </button>
+
+                                <button onClick={async () => { await supabase.from('vault_items').delete().eq('id', item.id); fetchVaultItems(); }} className="flex items-center justify-center p-2 text-[#5C4A3D]/40 dark:text-[#c6a87c]/40 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg transition-all cursor-pointer md:ml-1" title="Delete Record">
+                                  <Trash2 className="w-4 h-4 md:w-4 md:h-4" />
+                                </button>
+
+                              </div>
                             </div>
                           </div>
                         );
