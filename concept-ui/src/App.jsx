@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Search, Moon, Sun, Sparkles, X, ChevronRight, ChevronLeft, Home, Copy, ChevronDown, ChevronUp, List, Layout, Info, BookOpen, History, HelpCircle, Database, Filter, Share2, Check, Settings2, Menu, Clock, Trash2, LibraryBig, Youtube, Library as LibraryIcon, ArrowDown, User, Bookmark, Coins, HeartPulse, ShieldAlert } from 'lucide-react';
+import { Search, Moon, Sun, Sparkles, X, ChevronRight, ChevronLeft, Home, Copy, ChevronDown, ChevronUp, List, Layout, Info, BookOpen, History, HelpCircle, Database, Filter, Share2, Check, Settings2, Menu, Clock, Trash2, LibraryBig, Youtube, Library as LibraryIcon, ArrowDown, User, Bookmark, Coins, HeartPulse, ShieldAlert, MoreHorizontal } from 'lucide-react';
 import quranData from './quran.json';
 import verseMap from './verse_map.json';
 import transcriptData from './transcripts.json';
@@ -65,6 +65,8 @@ const HadithCard = ({ item, handleCopyHadith, searchMode, onVerseClick, onFindSi
     const { error } = await supabase.from('vault_items').insert([{
       user_id: session.user.id,
       content: textToCopy,
+      arabic_text: araText, // ADDED FOR FULL ANATOMY
+      chain: chain,         // ADDED FOR FULL ANATOMY
       source: sourceRef,
       type: 'hadith',
       note: ''
@@ -73,7 +75,7 @@ const HadithCard = ({ item, handleCopyHadith, searchMode, onVerseClick, onFindSi
     if (!error) {
       setIsSaved(true);
       setTimeout(() => setIsSaved(false), 2000);
-      window.dispatchEvent(new Event('vault-updated')); // Instantly updates the Vault UI!
+      window.dispatchEvent(new Event('vault-updated'));
     }
   };
 
@@ -1904,11 +1906,18 @@ export default function App() {
   const [movingItemId, setMovingItemId] = useState(null);
   const [isCollectionsOpen, setIsCollectionsOpen] = useState(true);
 
-  // Extract unique folders from user's saved items
+  // NEW STATES FOR UI UPGRADES
+  const [activeCardMenu, setActiveCardMenu] = useState(null);
+  const [noteSaveStatus, setNoteSaveStatus] = useState('');
+  const [showEditorArabic, setShowEditorArabic] = useState(false);
+  const [showEditorChain, setShowEditorChain] = useState(false);
+  const [localEmptyFolders, setLocalEmptyFolders] = useState([]);
+
+  // UPDATED USEMEMO TO SUPPORT EMPTY FOLDER CREATION
   const customFolders = useMemo(() => {
-    const folders = new Set(vaultItems.map(item => item.folder_name).filter(Boolean));
+    const folders = new Set([...vaultItems.map(item => item.folder_name).filter(Boolean), ...localEmptyFolders]);
     return Array.from(folders).sort();
-  }, [vaultItems]);
+  }, [vaultItems, localEmptyFolders]);
 
   const filteredVaultItems = useMemo(() => {
     let filtered = vaultItems;
@@ -2440,33 +2449,29 @@ export default function App() {
 
       {showMobileMenu && <div className="fixed inset-0 z-[70] pointer-events-auto" onClick={() => setShowMobileMenu(false)} />}
 
-      {/* --- THE SCHOLAR'S VAULT (CRAFT-INSPIRED WORKSPACE) --- */}
+      {/* --- THE SCHOLAR'S VAULT (PRO-DISPLAY WORKSPACE) --- */}
       <AnimatePresence>
         {showVault && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[6000] flex items-center justify-center p-0 sm:p-4 md:p-6 bg-black/40 dark:bg-black/60 backdrop-blur-sm pointer-events-auto">
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setActiveCardMenu(null)} className="fixed inset-0 z-[6000] flex items-center justify-center p-0 sm:p-4 md:p-6 bg-black/40 dark:bg-black/60 backdrop-blur-sm pointer-events-auto">
 
-            <motion.div initial={{ scale: 0.98, opacity: 0, y: 10 }} animate={{ scale: 1, opacity: 1, y: 0 }} exit={{ scale: 0.98, opacity: 0, y: 10 }} transition={{ type: "spring", damping: 25, stiffness: 300 }} className="relative w-full h-full sm:h-full sm:max-w-[1400px] flex flex-col md:flex-row bg-white dark:bg-[#0e0e11] sm:border border-slate-200 dark:border-[#2d2d33] sm:rounded-2xl shadow-2xl overflow-hidden">
+            <motion.div initial={{ scale: 0.98, opacity: 0, y: 10 }} animate={{ scale: 1, opacity: 1, y: 0 }} exit={{ scale: 0.98, opacity: 0, y: 10 }} transition={{ type: "spring", damping: 25, stiffness: 300 }} onClick={(e) => e.stopPropagation()} className="relative w-full h-full sm:h-full sm:max-w-[1400px] flex flex-col md:flex-row bg-white dark:bg-[#0e0e11] sm:border border-slate-200 dark:border-[#2d2d33] sm:rounded-2xl shadow-2xl overflow-hidden">
 
               {/* PANE 1: THE NAVIGATOR (SIDEBAR) */}
               <div className="w-full md:w-[260px] bg-[#f7f7f9] dark:bg-[#151518] border-b md:border-b-0 md:border-r border-slate-200 dark:border-[#2d2d33] flex flex-col shrink-0 z-20">
 
-                {/* Traffic Lights & Title */}
+                {/* Header (Traffic Lights Removed) */}
                 <div className="p-4 flex justify-between items-center shrink-0">
-                  <div className="flex items-center gap-3">
-                    <div className="flex gap-1.5">
-                      <button onClick={() => setShowVault(false)} className="w-3 h-3 rounded-full bg-red-400 hover:bg-red-500 transition-colors shadow-sm" title="Close"></button>
-                      <div className="w-3 h-3 rounded-full bg-amber-400 opacity-50"></div>
-                      <div className="w-3 h-3 rounded-full bg-green-400 opacity-50"></div>
-                    </div>
-                  </div>
-                  <button onClick={() => setShowVault(false)} className="md:hidden p-1 text-slate-400 hover:text-slate-800 dark:hover:text-white transition-colors"><X className="w-4 h-4" /></button>
+                  <h2 className="font-serif text-lg font-bold text-slate-800 dark:text-[#ededf0] flex items-center gap-2">
+                    <Bookmark className="w-4 h-4 text-[#c6a87c]" /> Vault
+                  </h2>
+                  <button onClick={() => setShowVault(false)} className="p-1.5 text-slate-400 hover:text-slate-800 dark:hover:text-white transition-colors bg-black/5 dark:bg-white/5 rounded-md"><X className="w-4 h-4" /></button>
                 </div>
 
-                {/* Search Bar (Moved to Sidebar for cleaner UI) */}
+                {/* Search Bar */}
                 <div className="px-4 pb-4">
                   <div className="relative group">
-                    <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400 dark:text-slate-500 group-focus-within:text-amber-500 transition-colors" />
-                    <input type="text" value={vaultSearch} onChange={(e) => setVaultSearch(e.target.value)} placeholder="Search Vault..." className="w-full pl-8 pr-3 py-1.5 bg-white dark:bg-[#1c1c20] border border-slate-200 dark:border-[#2d2d33] rounded-md text-xs font-sans text-slate-800 dark:text-[#ededf0] placeholder-slate-400 dark:placeholder-slate-500 focus:border-amber-500 focus:ring-1 focus:ring-amber-500 outline-none transition-all shadow-sm" />
+                    <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400 dark:text-slate-500 group-focus-within:text-blue-500 transition-colors" />
+                    <input type="text" value={vaultSearch} onChange={(e) => setVaultSearch(e.target.value)} placeholder="Search Vault..." className="w-full pl-8 pr-3 py-1.5 bg-white dark:bg-[#1c1c20] border border-slate-200 dark:border-[#2d2d33] rounded-md text-xs font-sans text-slate-800 dark:text-[#ededf0] placeholder-slate-400 dark:placeholder-slate-500 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition-all shadow-sm" />
                   </div>
                 </div>
 
@@ -2476,33 +2481,33 @@ export default function App() {
                   {/* Library Group */}
                   <div>
                     <div className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-1 px-3">Library</div>
-                    <button onClick={() => { setActiveFolder('All'); setSelectedVaultItem(null); }} className={`w-full text-left px-3 py-1.5 rounded-md text-sm font-medium transition-colors flex items-center justify-between group ${activeFolder === 'All' ? 'bg-white dark:bg-[#2d2d33] text-amber-600 dark:text-amber-500 shadow-sm' : 'text-slate-600 dark:text-[#9a9a9f] hover:bg-slate-200/50 dark:hover:bg-[#1c1c20]'}`}>
-                      <div className="flex items-center gap-2"><Layout className="w-4 h-4 opacity-70" /> All Bookmarks</div>
+                    <button onClick={() => { setActiveFolder('All'); setSelectedVaultItem(null); }} className={`w-full text-left px-3 py-1.5 rounded-md text-sm font-medium transition-colors flex items-center justify-between group ${activeFolder === 'All' ? 'bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 shadow-sm' : 'text-slate-600 dark:text-[#9a9a9f] hover:bg-slate-200/50 dark:hover:bg-[#1c1c20]'}`}>
+                      <div className="flex items-center gap-2"><Layout className={`w-4 h-4 ${activeFolder === 'All' ? 'opacity-100' : 'opacity-70'}`} /> All Bookmarks</div>
                       <span className="text-[10px] font-mono opacity-50">{vaultItems.length}</span>
                     </button>
-                    <button onClick={() => { setActiveFolder('Uncategorized'); setSelectedVaultItem(null); }} className={`w-full text-left px-3 py-1.5 rounded-md text-sm font-medium transition-colors flex items-center justify-between group ${activeFolder === 'Uncategorized' ? 'bg-white dark:bg-[#2d2d33] text-amber-600 dark:text-amber-500 shadow-sm' : 'text-slate-600 dark:text-[#9a9a9f] hover:bg-slate-200/50 dark:hover:bg-[#1c1c20]'}`}>
-                      <div className="flex items-center gap-2"><Database className="w-4 h-4 opacity-70" /> Uncategorized</div>
+                    <button onClick={() => { setActiveFolder('Uncategorized'); setSelectedVaultItem(null); }} className={`w-full text-left px-3 py-1.5 rounded-md text-sm font-medium transition-colors flex items-center justify-between group ${activeFolder === 'Uncategorized' ? 'bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 shadow-sm' : 'text-slate-600 dark:text-[#9a9a9f] hover:bg-slate-200/50 dark:hover:bg-[#1c1c20]'}`}>
+                      <div className="flex items-center gap-2"><Database className={`w-4 h-4 ${activeFolder === 'Uncategorized' ? 'opacity-100' : 'opacity-70'}`} /> Uncategorized</div>
                     </button>
                   </div>
 
-                  {/* Smart Sources Group */}
+                  {/* Smart Sources Group (Reordered & Recolored) */}
                   <div>
                     <div className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-1 px-3">Sources</div>
-                    <button onClick={() => { setActiveFolder('Quran'); setSelectedVaultItem(null); }} className={`w-full text-left px-3 py-1.5 rounded-md text-sm font-medium transition-colors flex items-center justify-between group ${activeFolder === 'Quran' ? 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 shadow-sm' : 'text-slate-600 dark:text-[#9a9a9f] hover:bg-slate-200/50 dark:hover:bg-[#1c1c20]'}`}>
-                      <div className="flex items-center gap-2"><BookOpen className={`w-4 h-4 ${activeFolder === 'Quran' ? 'text-emerald-500' : 'opacity-70'}`} /> Quran</div>
-                      <span className="text-[10px] font-mono opacity-50">{vaultItems.filter(i => i.type === 'quran').length}</span>
-                    </button>
-                    <button onClick={() => { setActiveFolder('Hadiths'); setSelectedVaultItem(null); }} className={`w-full text-left px-3 py-1.5 rounded-md text-sm font-medium transition-colors flex items-center justify-between group ${activeFolder === 'Hadiths' ? 'bg-amber-50 dark:bg-amber-500/10 text-amber-600 dark:text-amber-400 shadow-sm' : 'text-slate-600 dark:text-[#9a9a9f] hover:bg-slate-200/50 dark:hover:bg-[#1c1c20]'}`}>
-                      <div className="flex items-center gap-2"><Sparkles className={`w-4 h-4 ${activeFolder === 'Hadiths' ? 'text-amber-500' : 'opacity-70'}`} /> Hadiths</div>
+                    <button onClick={() => { setActiveFolder('Hadiths'); setSelectedVaultItem(null); }} className={`w-full text-left px-3 py-1.5 rounded-md text-sm font-medium transition-colors mb-1 flex items-center justify-between group ${activeFolder === 'Hadiths' ? 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 shadow-sm' : 'text-slate-600 dark:text-[#9a9a9f] hover:bg-slate-200/50 dark:hover:bg-[#1c1c20]'}`}>
+                      <div className="flex items-center gap-2"><Sparkles className={`w-4 h-4 ${activeFolder === 'Hadiths' ? 'text-emerald-500' : 'opacity-70'}`} /> Hadiths</div>
                       <span className="text-[10px] font-mono opacity-50">{vaultItems.filter(i => i.type === 'hadith' || !i.type).length}</span>
                     </button>
-                    <button onClick={() => { setActiveFolder('Transcripts'); setSelectedVaultItem(null); }} className={`w-full text-left px-3 py-1.5 rounded-md text-sm font-medium transition-colors flex items-center justify-between group ${activeFolder === 'Transcripts' ? 'bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 shadow-sm' : 'text-slate-600 dark:text-[#9a9a9f] hover:bg-slate-200/50 dark:hover:bg-[#1c1c20]'}`}>
-                      <div className="flex items-center gap-2"><LibraryIcon className={`w-4 h-4 ${activeFolder === 'Transcripts' ? 'text-indigo-500' : 'opacity-70'}`} /> Library</div>
+                    <button onClick={() => { setActiveFolder('Quran'); setSelectedVaultItem(null); }} className={`w-full text-left px-3 py-1.5 rounded-md text-sm font-medium transition-colors mb-1 flex items-center justify-between group ${activeFolder === 'Quran' ? 'bg-amber-50 dark:bg-amber-500/10 text-amber-600 dark:text-amber-400 shadow-sm' : 'text-slate-600 dark:text-[#9a9a9f] hover:bg-slate-200/50 dark:hover:bg-[#1c1c20]'}`}>
+                      <div className="flex items-center gap-2"><BookOpen className={`w-4 h-4 ${activeFolder === 'Quran' ? 'text-amber-500' : 'opacity-70'}`} /> Quran</div>
+                      <span className="text-[10px] font-mono opacity-50">{vaultItems.filter(i => i.type === 'quran').length}</span>
+                    </button>
+                    <button onClick={() => { setActiveFolder('Transcripts'); setSelectedVaultItem(null); }} className={`w-full text-left px-3 py-1.5 rounded-md text-sm font-medium transition-colors flex items-center justify-between group ${activeFolder === 'Transcripts' ? 'bg-[#c6a87c]/10 text-[#c6a87c] dark:text-[#d4b78f] shadow-sm' : 'text-slate-600 dark:text-[#9a9a9f] hover:bg-slate-200/50 dark:hover:bg-[#1c1c20]'}`}>
+                      <div className="flex items-center gap-2"><LibraryIcon className={`w-4 h-4 ${activeFolder === 'Transcripts' ? 'text-[#c6a87c]' : 'opacity-70'}`} /> Library</div>
                       <span className="text-[10px] font-mono opacity-50">{vaultItems.filter(i => i.type === 'transcript').length}</span>
                     </button>
                   </div>
 
-                  {/* Collections Group */}
+                  {/* Collections Group & Explicit Creation */}
                   <div>
                     <button onClick={() => setIsCollectionsOpen(!isCollectionsOpen)} className="w-full flex justify-between items-center text-[10px] font-bold text-slate-400 dark:text-slate-500 hover:text-slate-800 dark:hover:text-[#ededf0] uppercase tracking-widest mb-1 px-3 transition-colors cursor-pointer group">
                       <span>Collections</span>
@@ -2515,12 +2520,30 @@ export default function App() {
                             <span className="px-3 py-1 text-xs text-slate-400 dark:text-slate-600 italic">No custom folders.</span>
                           ) : (
                             customFolders.map(folder => (
-                              <button key={folder} onClick={() => { setActiveFolder(folder); setSelectedVaultItem(null); }} className={`w-full text-left px-3 py-1.5 rounded-md text-sm font-medium transition-colors flex items-center justify-between group ${activeFolder === folder ? 'bg-white dark:bg-[#2d2d33] text-amber-600 dark:text-amber-500 shadow-sm' : 'text-slate-600 dark:text-[#9a9a9f] hover:bg-slate-200/50 dark:hover:bg-[#1c1c20]'}`}>
-                                <div className="flex items-center gap-2 truncate"><Layout className="w-3.5 h-3.5 opacity-70 shrink-0" /> <span className="truncate">{folder}</span></div>
+                              <button key={folder} onClick={() => { setActiveFolder(folder); setSelectedVaultItem(null); }} className={`w-full text-left px-3 py-1.5 rounded-md text-sm font-medium transition-colors flex items-center justify-between group ${activeFolder === folder ? 'bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 shadow-sm' : 'text-slate-600 dark:text-[#9a9a9f] hover:bg-slate-200/50 dark:hover:bg-[#1c1c20]'}`}>
+                                <div className="flex items-center gap-2 truncate"><Layout className={`w-3.5 h-3.5 ${activeFolder === folder ? 'opacity-100' : 'opacity-70'} shrink-0`} /> <span className="truncate">{folder}</span></div>
                                 <span className="text-[10px] font-mono opacity-50 pl-2">{vaultItems.filter(i => i.folder_name === folder).length}</span>
                               </button>
                             ))
                           )}
+
+                          {/* Explicit Folder Creation Input */}
+                          <div className="px-3 py-2 mt-1 relative group">
+                            <input
+                              type="text"
+                              value={newFolderInput}
+                              onChange={(e) => setNewFolderInput(e.target.value)}
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter' && newFolderInput.trim()) {
+                                  setLocalEmptyFolders(prev => [...prev, newFolderInput.trim()]);
+                                  setActiveFolder(newFolderInput.trim());
+                                  setNewFolderInput('');
+                                }
+                              }}
+                              placeholder="+ New Folder..."
+                              className="w-full bg-transparent border-b border-transparent focus:border-blue-500 text-sm text-slate-700 dark:text-[#ededf0] placeholder-slate-400 dark:placeholder-slate-600 outline-none transition-all py-1"
+                            />
+                          </div>
                         </motion.div>
                       )}
                     </AnimatePresence>
@@ -2529,8 +2552,8 @@ export default function App() {
 
                 {/* Mobile Horizontal Sidebar Substitute */}
                 <div className="md:hidden flex items-center overflow-x-auto hide-scroll px-4 pb-3 gap-2 shrink-0 border-b border-slate-200 dark:border-[#2d2d33]">
-                  {['All', 'Quran', 'Hadiths', 'Transcripts', ...customFolders].map(f => (
-                    <button key={f} onClick={() => { setActiveFolder(f); setSelectedVaultItem(null); }} className={`whitespace-nowrap px-3 py-1 rounded-full text-xs font-medium transition-all border ${activeFolder === f ? 'bg-white dark:bg-[#2d2d33] text-amber-600 dark:text-amber-500 border-slate-300 dark:border-[#424248] shadow-sm' : 'bg-transparent text-slate-500 dark:text-[#9a9a9f] border-transparent hover:bg-slate-200/50 dark:hover:bg-[#1c1c20]'}`}>
+                  {['All', 'Hadiths', 'Quran', 'Transcripts', ...customFolders].map(f => (
+                    <button key={f} onClick={() => { setActiveFolder(f); setSelectedVaultItem(null); }} className={`whitespace-nowrap px-3 py-1 rounded-full text-xs font-medium transition-all border ${activeFolder === f ? 'bg-white dark:bg-[#2d2d33] text-blue-600 dark:text-blue-500 border-slate-300 dark:border-[#424248] shadow-sm' : 'bg-transparent text-slate-500 dark:text-[#9a9a9f] border-transparent hover:bg-slate-200/50 dark:hover:bg-[#1c1c20]'}`}>
                       {f}
                     </button>
                   ))}
@@ -2540,70 +2563,114 @@ export default function App() {
               {/* PANE 2 & 3: MAIN CONTENT AREA */}
               <div className="flex-grow flex flex-col min-w-0 bg-white dark:bg-[#0e0e11] relative">
 
-                {/* THE COMMAND PILL (Header) */}
+                {/* Header Container */}
                 <div className="px-6 py-4 flex items-center justify-between shrink-0 z-10">
                   <h1 className="text-xl md:text-2xl font-serif font-medium text-slate-800 dark:text-[#ededf0]">
                     {selectedVaultItem ? 'Reading Focus' : (activeFolder === 'All' ? 'All Bookmarks' : activeFolder)}
                   </h1>
 
-                  {/* The Command Pill - Only show when NOT in Focus Editor */}
                   {!selectedVaultItem && (
                     <div className="flex items-center bg-slate-100 dark:bg-[#1c1c20] rounded-full p-1 border border-slate-200 dark:border-[#2d2d33] shadow-sm">
-                      <button onClick={() => setVaultViewMode('grid')} className={`p-1.5 rounded-full transition-all duration-300 cursor-pointer ${vaultViewMode === 'grid' ? 'bg-white dark:bg-[#2d2d33] text-amber-600 dark:text-amber-500 shadow-sm' : 'text-slate-500 dark:text-[#9a9a9f] hover:text-slate-800 dark:hover:text-[#ededf0]'}`} title="Grid View"><Layout className="w-4 h-4" /></button>
-                      <button onClick={() => setVaultViewMode('list')} className={`p-1.5 rounded-full transition-all duration-300 cursor-pointer ${vaultViewMode === 'list' ? 'bg-white dark:bg-[#2d2d33] text-amber-600 dark:text-amber-500 shadow-sm' : 'text-slate-500 dark:text-[#9a9a9f] hover:text-slate-800 dark:hover:text-[#ededf0]'}`} title="List View"><List className="w-4 h-4" /></button>
+                      <button onClick={() => setVaultViewMode('grid')} className={`p-1.5 rounded-full transition-all duration-300 cursor-pointer ${vaultViewMode === 'grid' ? 'bg-white dark:bg-[#2d2d33] text-blue-600 dark:text-blue-500 shadow-sm' : 'text-slate-500 dark:text-[#9a9a9f] hover:text-slate-800 dark:hover:text-[#ededf0]'}`} title="Grid View"><Layout className="w-4 h-4" /></button>
+                      <button onClick={() => setVaultViewMode('list')} className={`p-1.5 rounded-full transition-all duration-300 cursor-pointer ${vaultViewMode === 'list' ? 'bg-white dark:bg-[#2d2d33] text-blue-600 dark:text-blue-500 shadow-sm' : 'text-slate-500 dark:text-[#9a9a9f] hover:text-slate-800 dark:hover:text-[#ededf0]'}`} title="List View"><List className="w-4 h-4" /></button>
                     </div>
                   )}
                 </div>
 
-                {/* CONTENT ROUTER: Show Editor OR Grid */}
+                {/* CONTENT ROUTER */}
                 <div className="flex-grow overflow-y-auto smart-scrollbar relative z-10 px-4 sm:px-6 pb-24 md:pb-12">
 
                   <AnimatePresence mode="wait">
                     {selectedVaultItem ? (
-                      /* --- PANE 3: THE SCHOLAR'S EDITOR (FOCUS CANVAS) --- */
+                      /* --- PANE 3: THE FULL ANATOMY FOCUS CANVAS --- */
                       <motion.div key="editor" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.2 }} className="max-w-3xl mx-auto h-full flex flex-col">
 
-                        {/* Editor Toolbar */}
-                        <div className="flex items-center justify-between mb-8 pb-4 border-b border-slate-100 dark:border-[#2d2d33]">
-                          <button onClick={() => { setSelectedVaultItem(null); setEditingNoteId(null); }} className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-widest text-slate-400 hover:text-amber-600 dark:text-[#9a9a9f] dark:hover:text-amber-500 transition-colors cursor-pointer">
+                        <div className="flex items-center justify-between mb-6 pb-4 border-b border-slate-100 dark:border-[#2d2d33]">
+                          <button onClick={() => { setSelectedVaultItem(null); setEditingNoteId(null); }} className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-widest text-slate-400 hover:text-blue-600 dark:text-[#9a9a9f] dark:hover:text-blue-500 transition-colors cursor-pointer">
                             <ChevronLeft className="w-4 h-4" /> Back
                           </button>
+                        </div>
 
-                          <div className="flex items-center gap-2">
-                            {/* Copy Action */}
-                            <button onClick={(e) => {
-                              navigator.clipboard.writeText(`${selectedVaultItem.source}\n\n${selectedVaultItem.content}${selectedVaultItem.note ? `\n\nNote: ${selectedVaultItem.note}` : ''}`);
-                              const btn = e.currentTarget; const originalHtml = btn.innerHTML;
-                              btn.innerHTML = `<svg class="w-3.5 h-3.5 text-emerald-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>`;
-                              setTimeout(() => btn.innerHTML = originalHtml, 2000);
-                            }} className="p-2 text-slate-400 hover:text-slate-800 dark:text-[#9a9a9f] dark:hover:text-[#ededf0] transition-colors rounded-md hover:bg-slate-100 dark:hover:bg-[#1c1c20]" title="Copy">
-                              <Copy className="w-4 h-4" />
-                            </button>
-                            {/* Delete Action */}
-                            <button onClick={async () => { await supabase.from('vault_items').delete().eq('id', selectedVaultItem.id); fetchVaultItems(); setSelectedVaultItem(null); }} className="p-2 text-slate-400 hover:text-red-500 dark:text-[#9a9a9f] dark:hover:text-red-400 transition-colors rounded-md hover:bg-red-50 dark:hover:bg-red-500/10" title="Delete">
-                              <Trash2 className="w-4 h-4" />
-                            </button>
+                        {/* Immutable Document Body (Matching HadithCard Anatomy) */}
+                        <div className="mb-10 p-6 rounded-xl bg-slate-50 dark:bg-[#151518] border border-slate-200 dark:border-[#2d2d33] shadow-sm">
+                          <div className="mb-5 border-b border-slate-200 dark:border-[#2d2d33] pb-3">
+                            <span className="text-xs sm:text-sm font-medium text-slate-500 dark:text-[#9a9a9f] leading-relaxed block">{selectedVaultItem.source}</span>
                           </div>
-                        </div>
 
-                        {/* Editor Document Header */}
-                        <div className="mb-6">
-                          <span className="text-[10px] font-mono uppercase tracking-widest font-bold text-slate-400 dark:text-[#9a9a9f]">{selectedVaultItem.source}</span>
-                        </div>
+                          {/* Optional Arabic Dropdown */}
+                          {selectedVaultItem.arabic_text && (
+                            <div className="mb-4">
+                              <button onClick={() => setShowEditorArabic(!showEditorArabic)} className="flex items-center gap-1 text-sm font-medium transition-colors cursor-pointer text-emerald-600 dark:text-emerald-500 hover:text-emerald-700 dark:hover:text-emerald-400">
+                                {showEditorArabic ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />} {showEditorArabic ? "Hide Original Arabic" : "View Original Arabic"}
+                              </button>
+                              <AnimatePresence>
+                                {showEditorArabic && (
+                                  <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="overflow-hidden">
+                                    <div className="p-4 sm:p-5 rounded-lg mt-2 mb-4 bg-white dark:bg-[#0e0e11] border border-slate-200 dark:border-[#2d2d33]">
+                                      <p className="font-arabic text-xl md:text-2xl text-right leading-[2.2] text-slate-700 dark:text-slate-300" dir="rtl" lang="ar">
+                                        {selectedVaultItem.arabic_text}
+                                      </p>
+                                    </div>
+                                  </motion.div>
+                                )}
+                              </AnimatePresence>
+                            </div>
+                          )}
 
-                        {/* Editor Content (Immutable Text) */}
-                        <div className="pl-5 border-l-2 border-slate-200 dark:border-[#2d2d33] mb-12">
-                          <p className={`font-serif leading-[1.9] text-slate-800 dark:text-[#ededf0] whitespace-pre-wrap antialiased ${selectedVaultItem.type === 'quran' ? 'text-xl sm:text-2xl text-center border-none pl-0' : 'text-base sm:text-lg'}`}>
+                          {/* Optional Chain Dropdown */}
+                          {selectedVaultItem.chain && (
+                            <div className="mb-5">
+                              <button onClick={() => setShowEditorChain(!showEditorChain)} className="flex items-center gap-1 text-xs font-semibold uppercase tracking-wider transition-colors cursor-pointer text-slate-400 hover:text-blue-500 dark:text-[#5d5d62] dark:hover:text-blue-400">
+                                {showEditorChain ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />} {showEditorChain ? "Hide Chain of Narrators" : "View Chain of Narrators"}
+                              </button>
+                              <AnimatePresence>
+                                {showEditorChain && (
+                                  <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="overflow-hidden">
+                                    <p className="mt-2 p-3 rounded-lg text-sm italic font-sans bg-white dark:bg-[#0e0e11] border border-slate-200 dark:border-[#2d2d33] text-slate-600 dark:text-[#9a9a9f]">
+                                      {selectedVaultItem.chain}
+                                    </p>
+                                  </motion.div>
+                                )}
+                              </AnimatePresence>
+                            </div>
+                          )}
+
+                          {/* Primary English Content */}
+                          <p className={`font-serif leading-[1.9] text-slate-800 dark:text-[#ededf0] whitespace-pre-wrap antialiased ${selectedVaultItem.type === 'quran' ? 'text-xl sm:text-2xl text-center' : 'text-base sm:text-lg'}`}>
                             {selectedVaultItem.content}
                           </p>
                         </div>
 
-                        {/* Editor Scholar's Margin (Note Taking) */}
-                        <div className="flex-grow flex flex-col">
-                          <div className="flex items-center gap-2 mb-4">
-                            <List className="w-4 h-4 text-amber-500" />
-                            <h3 className="text-xs font-bold uppercase tracking-widest text-slate-400 dark:text-[#9a9a9f]">Scholar's Margin</h3>
+                        {/* Editor Scholar's Margin (Note Taking with Tactile Saving UX) */}
+                        <div className="flex-grow flex flex-col pl-4 border-l-2 border-blue-500">
+                          <div className="flex items-center justify-between mb-4">
+                            <div className="flex items-center gap-2">
+                              <List className="w-4 h-4 text-blue-500" />
+                              <h3 className="text-xs font-bold uppercase tracking-widest text-slate-400 dark:text-[#9a9a9f]">Scholar's Margin</h3>
+                            </div>
+
+                            <div className="flex items-center gap-3">
+                              {noteSaveStatus && (
+                                <motion.span initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-xs font-bold text-emerald-500 flex items-center gap-1">
+                                  <Check className="w-3.5 h-3.5" /> {noteSaveStatus}
+                                </motion.span>
+                              )}
+                              <button
+                                onClick={() => {
+                                  if (editingNoteId === selectedVaultItem.id && noteText !== (selectedVaultItem.note || "")) {
+                                    setVaultItems(prev => prev.map(i => i.id === selectedVaultItem.id ? { ...i, note: noteText } : i));
+                                    supabase.from('vault_items').update({ note: noteText }).eq('id', selectedVaultItem.id);
+                                  }
+                                  setNoteSaveStatus('Saved!');
+                                  setTimeout(() => { setNoteSaveStatus(''); setEditingNoteId(null); }, 1500);
+                                }}
+                                className="px-3 py-1.5 bg-blue-500 text-white rounded-md text-xs font-bold uppercase tracking-widest shadow-sm hover:bg-blue-600 transition-colors cursor-pointer"
+                              >
+                                Save Note
+                              </button>
+                            </div>
                           </div>
+
                           <textarea
                             autoFocus
                             value={editingNoteId === selectedVaultItem.id ? noteText : (selectedVaultItem.note || "")}
@@ -2611,14 +2678,18 @@ export default function App() {
                               setEditingNoteId(selectedVaultItem.id);
                               setNoteText(e.target.value);
                             }}
-                            onBlur={() => {
-                              if (editingNoteId === selectedVaultItem.id && noteText !== (selectedVaultItem.note || "")) {
-                                setVaultItems(prev => prev.map(i => i.id === selectedVaultItem.id ? { ...i, note: noteText } : i));
-                                supabase.from('vault_items').update({ note: noteText }).eq('id', selectedVaultItem.id);
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter' && !e.shiftKey) {
+                                e.preventDefault();
+                                if (editingNoteId === selectedVaultItem.id && noteText !== (selectedVaultItem.note || "")) {
+                                  setVaultItems(prev => prev.map(i => i.id === selectedVaultItem.id ? { ...i, note: noteText } : i));
+                                  supabase.from('vault_items').update({ note: noteText }).eq('id', selectedVaultItem.id);
+                                }
+                                setNoteSaveStatus('Saved!');
+                                setTimeout(() => { setNoteSaveStatus(''); setEditingNoteId(null); }, 1500);
                               }
-                              setEditingNoteId(null);
                             }}
-                            placeholder="Type your reflections here..."
+                            placeholder="Type your reflections here... (Press Enter to save)"
                             className="flex-grow w-full bg-transparent border-none outline-none text-base sm:text-lg font-serif text-slate-700 dark:text-[#ededf0] placeholder-slate-300 dark:placeholder-[#2d2d33] resize-none"
                           />
                         </div>
@@ -2626,7 +2697,7 @@ export default function App() {
                       </motion.div>
 
                     ) : (
-                      /* --- PANE 2: THE INDEX (GRID/LIST VIEW) --- */
+                      /* --- PANE 2: THE INDEX GRID --- */
                       <motion.div key="grid" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }}>
                         {filteredVaultItems.length === 0 ? (
                           <div className="flex flex-col items-center justify-center text-center px-4 py-20 opacity-60">
@@ -2639,17 +2710,18 @@ export default function App() {
                               const itemType = item.type || 'hadith';
                               const isQuran = itemType === 'quran';
                               const isTranscript = itemType === 'transcript';
-                              const typeColor = isQuran ? 'emerald' : isTranscript ? 'indigo' : 'amber';
+                              const typeColor = isQuran ? 'amber' : isTranscript ? 'yellow' : 'emerald';
+                              const hexColor = isTranscript ? '#c6a87c' : '';
 
                               if (vaultViewMode === 'grid') {
                                 return (
-                                  <div key={item.id} onClick={() => setSelectedVaultItem(item)} className="h-[240px] flex flex-col bg-white dark:bg-[#151518] border border-slate-200 dark:border-[#2d2d33] rounded-xl shadow-sm hover:shadow-md hover:border-slate-300 dark:hover:border-[#424248] transition-all cursor-pointer overflow-hidden relative group">
-                                    {/* Semantic Top Line */}
-                                    <div className={`h-1 w-full bg-${typeColor}-500/50 dark:bg-${typeColor}-500/40`} />
+                                  <div key={item.id} onClick={() => { setSelectedVaultItem(item); setShowEditorArabic(false); setShowEditorChain(false); }} className="h-[240px] flex flex-col bg-white dark:bg-[#151518] border border-slate-200 dark:border-[#2d2d33] rounded-xl shadow-sm hover:shadow-[0_10px_40px_rgba(0,0,0,0.08)] dark:hover:shadow-[0_10px_40px_rgba(0,0,0,0.4)] hover:border-slate-300 dark:hover:border-[#424248] transition-all cursor-pointer overflow-hidden relative group">
+
+                                    <div className={`h-1 w-full ${isTranscript ? 'bg-[#c6a87c]/50 dark:bg-[#c6a87c]/40' : `bg-${typeColor}-500/50 dark:bg-${typeColor}-500/40`}`} />
 
                                     <div className="p-5 flex-grow overflow-hidden relative">
                                       <div className="flex items-center gap-2 mb-3">
-                                        <span className={`px-2 py-0.5 rounded text-[9px] font-mono uppercase tracking-widest font-bold border border-${typeColor}-200 dark:border-${typeColor}-800 text-${typeColor}-700 dark:text-${typeColor}-400 bg-${typeColor}-50 dark:bg-${typeColor}-900/10`}>
+                                        <span className={`px-2 py-0.5 rounded text-[9px] font-mono uppercase tracking-widest font-bold border ${isTranscript ? 'border-[#c6a87c]/30 text-[#c6a87c] bg-[#c6a87c]/10' : `border-${typeColor}-200 dark:border-${typeColor}-800 text-${typeColor}-700 dark:text-${typeColor}-400 bg-${typeColor}-50 dark:bg-${typeColor}-900/10`}`}>
                                           {isQuran ? <BookOpen className="w-3 h-3 inline mr-1" /> : isTranscript ? <LibraryIcon className="w-3 h-3 inline mr-1" /> : <Sparkles className="w-3 h-3 inline mr-1" />}
                                           {itemType}
                                         </span>
@@ -2658,23 +2730,62 @@ export default function App() {
                                       <p className={`font-serif text-sm text-slate-700 dark:text-[#ededf0] leading-relaxed antialiased ${isQuran ? 'text-center italic' : ''}`}>
                                         {item.content}
                                       </p>
-                                      {/* Fade Out Gradient */}
                                       <div className="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-white dark:from-[#151518] to-transparent" />
                                     </div>
 
-                                    {/* Grid Card Footer */}
-                                    <div className="px-5 py-3 border-t border-slate-100 dark:border-[#2d2d33] flex justify-between items-center bg-slate-50/50 dark:bg-[#1c1c20]/50">
-                                      <span className="text-[10px] font-mono text-slate-400 dark:text-[#5d5d62]">{new Date(item.created_at).toLocaleDateString()}</span>
-                                      {item.note && <List className="w-3.5 h-3.5 text-amber-500" title="Has Note" />}
+                                    {/* Footer with 3-Dot Menu */}
+                                    <div className="px-5 py-3 border-t border-slate-100 dark:border-[#2d2d33] flex justify-between items-center bg-slate-50/50 dark:bg-[#1c1c20]/50 relative">
+                                      <div className="flex items-center gap-3">
+                                        <span className="text-[10px] font-mono text-slate-400 dark:text-[#5d5d62]">{new Date(item.created_at).toLocaleDateString()}</span>
+                                        {item.note && <List className="w-3.5 h-3.5 text-blue-500" title="Has Note" />}
+                                      </div>
+
+                                      <div className="relative">
+                                        <button onClick={(e) => { e.stopPropagation(); setActiveCardMenu(activeCardMenu === item.id ? null : item.id); }} className="p-1.5 text-slate-400 hover:text-slate-800 dark:text-[#5d5d62] dark:hover:text-white transition-colors rounded-md hover:bg-slate-200/50 dark:hover:bg-[#2d2d33]">
+                                          <MoreHorizontal className="w-5 h-5" />
+                                        </button>
+
+                                        <AnimatePresence>
+                                          {activeCardMenu === item.id && (
+                                            <>
+                                              <div className="fixed inset-0 z-40" onClick={(e) => { e.stopPropagation(); setActiveCardMenu(null); }} />
+                                              <motion.div initial={{ opacity: 0, scale: 0.95, y: 5 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 5 }} className="absolute bottom-full right-0 mb-2 w-48 bg-white dark:bg-[#1c1c20] border border-slate-200 dark:border-[#2d2d33] rounded-xl shadow-xl z-50 overflow-hidden flex flex-col p-1">
+
+                                                <div className="group/move relative">
+                                                  <button className="w-full text-left px-3 py-2 text-xs font-semibold text-slate-700 dark:text-[#ededf0] hover:bg-slate-100 dark:hover:bg-[#2d2d33] rounded-md transition-colors flex items-center gap-2">
+                                                    <Layout className="w-3.5 h-3.5 opacity-60" /> Move to Folder...
+                                                  </button>
+                                                  <div className="hidden group-hover/move:flex flex-col absolute bottom-0 right-[95%] w-40 bg-white dark:bg-[#1c1c20] border border-slate-200 dark:border-[#2d2d33] rounded-xl shadow-xl z-50 p-1 mb-2 max-h-40 overflow-y-auto smart-scrollbar">
+                                                    {customFolders.map(f => (
+                                                      <button key={f} onClick={(e) => { e.stopPropagation(); setVaultItems(prev => prev.map(i => i.id === item.id ? { ...i, folder_name: f } : i)); supabase.from('vault_items').update({ folder_name: f }).eq('id', item.id); setActiveCardMenu(null); }} className="w-full text-left px-3 py-2 text-xs text-slate-600 dark:text-[#9a9a9f] hover:bg-slate-100 dark:hover:bg-[#2d2d33] rounded-md transition-colors truncate">
+                                                        {f}
+                                                      </button>
+                                                    ))}
+                                                  </div>
+                                                </div>
+
+                                                <button onClick={(e) => { e.stopPropagation(); navigator.clipboard.writeText(`${item.source}\n\n${item.content}`); setActiveCardMenu(null); }} className="w-full text-left px-3 py-2 text-xs font-semibold text-slate-700 dark:text-[#ededf0] hover:bg-slate-100 dark:hover:bg-[#2d2d33] rounded-md transition-colors flex items-center gap-2">
+                                                  <Copy className="w-3.5 h-3.5 opacity-60" /> Copy Text
+                                                </button>
+
+                                                <div className="my-1 border-t border-slate-100 dark:border-[#2d2d33]" />
+
+                                                <button onClick={async (e) => { e.stopPropagation(); await supabase.from('vault_items').delete().eq('id', item.id); fetchVaultItems(); setActiveCardMenu(null); }} className="w-full text-left px-3 py-2 text-xs font-semibold text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-md transition-colors flex items-center gap-2">
+                                                  <Trash2 className="w-3.5 h-3.5 opacity-60" /> Delete Bookmark
+                                                </button>
+                                              </motion.div>
+                                            </>
+                                          )}
+                                        </AnimatePresence>
+                                      </div>
                                     </div>
                                   </div>
                                 );
                               } else {
-                                // LIST VIEW
                                 return (
                                   <div key={item.id} onClick={() => setSelectedVaultItem(item)} className="flex items-center justify-between p-4 bg-white dark:bg-[#151518] border border-slate-200 dark:border-[#2d2d33] rounded-lg hover:border-slate-300 dark:hover:border-[#424248] transition-colors cursor-pointer group">
                                     <div className="flex items-center gap-4 overflow-hidden">
-                                      <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 bg-${typeColor}-50 dark:bg-${typeColor}-900/20 text-${typeColor}-600 dark:text-${typeColor}-400`}>
+                                      <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${isTranscript ? 'bg-[#c6a87c]/10 text-[#c6a87c]' : `bg-${typeColor}-50 dark:bg-${typeColor}-900/20 text-${typeColor}-600 dark:text-${typeColor}-400`}`}>
                                         {isQuran ? <BookOpen className="w-4 h-4" /> : isTranscript ? <LibraryIcon className="w-4 h-4" /> : <Sparkles className="w-4 h-4" />}
                                       </div>
                                       <div className="flex flex-col min-w-0">
@@ -2683,7 +2794,7 @@ export default function App() {
                                       </div>
                                     </div>
                                     <div className="flex items-center gap-3 shrink-0 ml-4">
-                                      {item.note && <List className="w-4 h-4 text-amber-500 opacity-50 group-hover:opacity-100 transition-opacity" />}
+                                      {item.note && <List className="w-4 h-4 text-blue-500 opacity-50 group-hover:opacity-100 transition-opacity" />}
                                       <ChevronRight className="w-4 h-4 text-slate-300 dark:text-[#5d5d62] group-hover:text-slate-500 dark:group-hover:text-[#9a9a9f] transition-colors" />
                                     </div>
                                   </div>
