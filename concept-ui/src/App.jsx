@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Search, Moon, Sun, Sparkles, X, ChevronRight, ChevronLeft, Home, Copy, ChevronDown, ChevronUp, List, Layout, Info, BookOpen, History, HelpCircle, Database, Filter, Share2, Check, Settings2, Menu, Clock, Trash2, LibraryBig, Youtube, Library as LibraryIcon, ArrowDown, User, Bookmark, Coins, HeartPulse, ShieldAlert, MoreHorizontal, PenLine, FolderPlus } from 'lucide-react';
+import { Search, Moon, Sun, Sparkles, X, ChevronRight, ChevronLeft, Home, Copy, ChevronDown, ChevronUp, List, Layout, Info, BookOpen, History, HelpCircle, Database, Filter, Share2, Check, Settings2, Menu, Clock, Trash2, LibraryBig, Youtube, Library as LibraryIcon, ArrowDown, User, Bookmark, Coins, HeartPulse, ShieldAlert, MoreHorizontal, PenLine, FolderPlus, FolderMinus } from 'lucide-react';
 import quranData from './quran.json';
 import verseMap from './verse_map.json';
 import transcriptData from './transcripts.json';
@@ -1954,7 +1954,7 @@ export default function App() {
 
   const toggleVaultExpand = (id) => setExpandedVaultItems(prev => ({ ...prev, [id]: !prev[id] }));
 
-  // MULTI-FOLDER SUPPORT LOGIC
+  // ADVANCED MULTI-FOLDER SUPPORT LOGIC
   const assignToFolder = async (itemId, folderName, mode = 'move') => {
     const item = vaultItems.find(i => i.id === itemId);
     let newFolderName = folderName;
@@ -1963,18 +1963,24 @@ export default function App() {
       let current = item.folder_name ? item.folder_name.split(',').map(f => f.trim()).filter(Boolean) : [];
       if (!current.includes(folderName)) current.push(folderName);
       newFolderName = current.join(', ');
+    } else if (mode === 'remove' && folderName) {
+      // Strips ONLY the specific folder from the comma-separated list
+      let current = item.folder_name ? item.folder_name.split(',').map(f => f.trim()).filter(Boolean) : [];
+      current = current.filter(f => f !== folderName);
+      newFolderName = current.length > 0 ? current.join(', ') : null;
     }
 
     // 1. Optimistic Update
     setVaultItems(prev => prev.map(i => i.id === itemId ? { ...i, folder_name: newFolderName } : i));
     setMovingItemId(null);
     setActiveCardMenu(null);
+    setCardMenuMode('main'); // Reset the menu mode for next time
 
     // 2. Cloud Sync
     const { error } = await supabase.from('vault_items').update({ folder_name: newFolderName }).eq('id', itemId);
     if (error) {
       alert(`Supabase Error: ${error.message}`);
-      fetchVaultItems(); // Reverts the UI
+      fetchVaultItems(); // Reverts the UI if cloud fails
     }
   };
 
@@ -2818,19 +2824,28 @@ export default function App() {
                                           {activeCardMenu === item.id && (
                                             <>
                                               <div className="fixed inset-0 z-40" onClick={(e) => { e.stopPropagation(); setActiveCardMenu(null); }} />
-                                              <motion.div initial={{ opacity: 0, scale: 0.95, y: 5 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 5 }} onClick={(e) => e.stopPropagation()} className="absolute bottom-full right-0 mb-2 w-48 bg-white dark:bg-[#1c1c20] border border-slate-200 dark:border-[#2d2d33] rounded-xl shadow-xl z-50 overflow-hidden flex flex-col p-1">
+                                              <motion.div initial={{ opacity: 0, scale: 0.95, y: 5 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 5 }} onClick={(e) => e.stopPropagation()} className="absolute bottom-full right-0 mb-2 w-52 bg-white dark:bg-[#1c1c20] border border-slate-200 dark:border-[#2d2d33] rounded-xl shadow-xl z-50 overflow-hidden flex flex-col p-1">
 
                                                 {cardMenuMode === 'main' ? (
                                                   <>
                                                     <button onClick={(e) => { e.stopPropagation(); setCardMenuMode('add'); }} className="w-full text-left px-3 py-2 text-xs font-semibold text-slate-700 dark:text-[#ededf0] hover:bg-slate-100 dark:hover:bg-[#2d2d33] rounded-md transition-colors flex items-center justify-between">
-                                                      <span className="flex items-center gap-2"><FolderPlus className="w-3.5 h-3.5 opacity-60" /> Add to Folder</span>
+                                                      <span className="flex items-center gap-2"><FolderPlus className="w-3.5 h-3.5 opacity-60" /> Add to Folder...</span>
                                                       <ChevronRight className="w-3.5 h-3.5 opacity-40" />
                                                     </button>
                                                     <button onClick={(e) => { e.stopPropagation(); setCardMenuMode('move'); }} className="w-full text-left px-3 py-2 text-xs font-semibold text-slate-700 dark:text-[#ededf0] hover:bg-slate-100 dark:hover:bg-[#2d2d33] rounded-md transition-colors flex items-center justify-between mt-1">
-                                                      <span className="flex items-center gap-2"><Layout className="w-3.5 h-3.5 opacity-60" /> Move to Folder</span>
+                                                      <span className="flex items-center gap-2"><Layout className="w-3.5 h-3.5 opacity-60" /> Move to Folder...</span>
                                                       <ChevronRight className="w-3.5 h-3.5 opacity-40" />
                                                     </button>
+
+                                                    {/* Contextual: Remove from Current Custom Folder */}
+                                                    {!['All', 'Uncategorized', 'Quran', 'Hadiths', 'Transcripts'].includes(activeFolder) && (
+                                                      <button onClick={(e) => { e.stopPropagation(); assignToFolder(item.id, activeFolder, 'remove'); }} className="w-full text-left px-3 py-2 text-xs font-semibold text-amber-600 dark:text-amber-500 hover:bg-amber-50 dark:hover:bg-amber-500/10 rounded-md transition-colors flex items-center gap-2 mt-1">
+                                                        <FolderMinus className="w-3.5 h-3.5 opacity-80" /> Remove from "{activeFolder}"
+                                                      </button>
+                                                    )}
+
                                                     <div className="my-1 border-t border-slate-100 dark:border-[#2d2d33]" />
+
                                                     <button onClick={(e) => { e.stopPropagation(); navigator.clipboard.writeText(`${item.source}\n\n${item.content}`); setActiveCardMenu(null); }} className="w-full text-left px-3 py-2 text-xs font-semibold text-slate-700 dark:text-[#ededf0] hover:bg-slate-100 dark:hover:bg-[#2d2d33] rounded-md transition-colors flex items-center gap-2">
                                                       <Copy className="w-3.5 h-3.5 opacity-60" /> Copy Text
                                                     </button>
@@ -2866,6 +2881,7 @@ export default function App() {
                                             </>
                                           )}
                                         </AnimatePresence>
+
                                       </div>
                                     </div>
                                   </div>
