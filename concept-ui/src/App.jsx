@@ -44,43 +44,10 @@ const KisaLogo = ({ className }) => (
   </svg>
 );
 
-const HadithCard = ({ item, handleCopyHadith, searchMode, onVerseClick, onFindSimilar }) => {
+const HadithCard = ({ item, handleCopyHadith, searchMode, onVerseClick, onFindSimilar, vaultItems = [] }) => {
   const [showArabic, setShowArabic] = useState(false);
   const [showChain, setShowChain] = useState(false);
   const [copied, setCopied] = useState(false);
-
-  const [isSaved, setIsSaved] = useState(false);
-
-  const handleSaveClick = async (e) => {
-    e.stopPropagation();
-    const { data: { session } } = await supabase.auth.getSession();
-
-    if (!session?.user) {
-      alert("Please Sign In from the top menu to save to your Vault.");
-      return;
-    }
-
-    const sourceRef = `Book: ${item.book}, Vol: ${item.volume}, ${item.sub_book}, Chapter: ${item.chapter} ${displayNum !== "Unknown" ? `Hadith ${displayNum}` : ''}`;
-
-    const { error } = await supabase.from('vault_items').insert([{
-      user_id: session.user.id,
-      content: textToCopy,
-      arabic_text: araText || null,
-      chain: chain || null,
-      source: sourceRef,
-      type: 'hadith',
-      note: ''
-    }]);
-
-    if (error) {
-      console.error("Supabase Save Error:", error);
-      alert(`Supabase blocked the save: ${error.message}\n\nMake sure you added the 'arabic_text' and 'chain' columns to your vault_items table!`);
-    } else {
-      setIsSaved(true);
-      setTimeout(() => setIsSaved(false), 2000);
-      window.dispatchEvent(new Event('vault-updated'));
-    }
-  };
 
   const isKeyword = searchMode === 'keyword';
 
@@ -104,6 +71,7 @@ const HadithCard = ({ item, handleCopyHadith, searchMode, onVerseClick, onFindSi
   };
 
   const { displayNum, engText, araText } = getCleanData();
+
   const splitText = (text) => {
     const markers = ["in a marfu‘ manner who has narrated the following:", "in a marfu' manner who has narrated the following:", "in a marfu‘ manner the following:", "in a marfu' manner the following:", "who has narrated the following:", "said the following:", "who said:", "who has said:", "is narrated from", "narrated that:", "following Hadith:", "the following is narrated:", "said:"];
     for (let marker of markers) {
@@ -165,6 +133,55 @@ const HadithCard = ({ item, handleCopyHadith, searchMode, onVerseClick, onFindSi
   const paragraphs = formatParagraphs(body);
   const textToCopy = chain ? `${chain}\n\n${paragraphs.join('\n\n')}` : paragraphs.join('\n\n');
 
+  // --- PERSISTENT SAVE STATE LOGIC ---
+  const sourceRef = `Book: ${item.book}, Vol: ${item.volume}, ${item.sub_book}, Chapter: ${item.chapter} ${displayNum !== "Unknown" ? `Hadith ${displayNum}` : ''}`;
+  const [isSaved, setIsSaved] = useState(false);
+
+  useEffect(() => {
+    // Automatically check if this exact hadith is already in the vault
+    setIsSaved(vaultItems.some(v => v.source === sourceRef));
+  }, [vaultItems, sourceRef]);
+
+  const handleSaveClick = async (e) => {
+    e.stopPropagation();
+    const { data: { session } } = await supabase.auth.getSession();
+
+    if (!session?.user) {
+      alert("Please Sign In from the top menu to save to your Vault.");
+      return;
+    }
+
+    // Toggle OFF (Remove from Vault)
+    if (isSaved) {
+      const savedItem = vaultItems.find(v => v.source === sourceRef);
+      if (savedItem) {
+        await supabase.from('vault_items').delete().eq('id', savedItem.id);
+        setIsSaved(false);
+        window.dispatchEvent(new Event('vault-updated'));
+      }
+      return;
+    }
+
+    // Toggle ON (Add to Vault)
+    const { error } = await supabase.from('vault_items').insert([{
+      user_id: session.user.id,
+      content: textToCopy,
+      arabic_text: araText || null,
+      chain: chain || null,
+      source: sourceRef,
+      type: 'hadith',
+      note: ''
+    }]);
+
+    if (error) {
+      console.error("Supabase Save Error:", error);
+      alert(`Supabase blocked the save: ${error.message}\n\nMake sure you added the 'arabic_text' and 'chain' columns!`);
+    } else {
+      setIsSaved(true);
+      window.dispatchEvent(new Event('vault-updated'));
+    }
+  };
+
   const handleCopyClick = (e) => {
     e.stopPropagation();
     handleCopyHadith({ ...item, hadith_number: displayNum, english_text: textToCopy });
@@ -188,8 +205,6 @@ const HadithCard = ({ item, handleCopyHadith, searchMode, onVerseClick, onFindSi
 
   return (
     <div className={`rounded-xl p-5 sm:p-6 relative shadow-sm border ${isKeyword ? 'bg-slate-50 dark:bg-slate-800/80 border-slate-200 dark:border-slate-700' : 'bg-white dark:bg-slate-800 border-slate-100 dark:border-slate-700'}`}>
-
-
       <div className={`mb-5 border-b pb-3 ${isKeyword ? 'border-slate-200 dark:border-slate-700' : 'border-slate-100 dark:border-slate-700'}`}>
         <span className="text-xs sm:text-sm md:text-base font-medium text-slate-500 dark:text-slate-400 leading-relaxed block">Book: {item.book}, Vol: {item.volume}, {item.sub_book}, Chapter: {item.chapter}{(displayNum && displayNum !== "Unknown") && `, Hadith: ${displayNum}`}</span>
       </div>
@@ -229,20 +244,27 @@ const HadithCard = ({ item, handleCopyHadith, searchMode, onVerseClick, onFindSi
           </p>
         ))}
       </div>
+
       <div className="mt-2 flex justify-between items-center pt-4 border-t border-slate-50 dark:border-slate-700/50">
         <button onClick={(e) => { e.stopPropagation(); onFindSimilar && onFindSimilar(item); }} className={`flex items-center gap-1.5 text-xs font-mono transition-colors px-3 py-1.5 rounded-md cursor-pointer shadow-sm border ${isKeyword ? 'bg-blue-50/50 border-blue-200 text-blue-600 hover:bg-blue-100 dark:bg-blue-900/20 dark:border-blue-800 dark:text-blue-400 dark:hover:bg-blue-900/40' : 'bg-indigo-50/50 border-indigo-200 text-indigo-600 hover:bg-indigo-100 dark:bg-indigo-900/20 dark:border-indigo-800 dark:text-indigo-400 dark:hover:bg-indigo-900/40'}`}>
           <Sparkles className="w-3.5 h-3.5" /><span>Find Similar</span>
         </button>
 
-        {/* This perfectly groups Save and Copy Text on the right edge */}
-        <div className="flex items-center gap-2">
-          <button onClick={handleSaveClick} className={`flex items-center gap-1.5 text-xs font-mono transition-colors px-3 py-1.5 rounded-md cursor-pointer ${isSaved ? 'text-[#c6a87c] bg-[#c6a87c]/10 border border-[#c6a87c]/20 shadow-sm' : (isKeyword ? 'text-slate-500 hover:text-[#c6a87c] hover:bg-[#c6a87c]/10 dark:hover:bg-[#c6a87c]/10 border border-transparent hover:border-[#c6a87c]/20' : 'text-slate-400 hover:text-[#c6a87c] hover:bg-[#c6a87c]/10 dark:hover:bg-[#c6a87c]/10 border border-transparent hover:border-[#c6a87c]/20')}`}>
-            {isSaved ? <Check className="w-3.5 h-3.5" /> : <Bookmark className="w-3.5 h-3.5" />}<span>{isSaved ? 'Saved' : 'Save'}</span>
-          </button>
-
+        <div className="flex items-center gap-4">
           <button onClick={handleCopyClick} className={`flex items-center gap-2 text-xs font-mono transition-colors px-3 py-1.5 rounded-md cursor-pointer ${copied ? 'text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-500/10' : (isKeyword ? 'text-slate-500 hover:text-blue-500 hover:bg-slate-200/50 dark:hover:bg-slate-700/50' : 'text-slate-400 hover:text-indigo-500 hover:bg-slate-100 dark:hover:bg-slate-700/50')}`}>
             {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}<span>{copied ? 'Copied!' : 'Copy Text'}</span>
           </button>
+
+          {/* NATIVE TACTILE SAVE BUTTON */}
+          <motion.button
+            onClick={handleSaveClick}
+            whileTap={{ scale: 1.3, rotate: -15 }}
+            transition={{ type: "spring", stiffness: 400, damping: 10 }}
+            className={`p-1 rounded-full transition-colors cursor-pointer ${isSaved ? 'text-amber-500 hover:text-amber-600 dark:hover:text-amber-400' : 'text-slate-400 hover:text-amber-500 dark:text-slate-500 dark:hover:text-amber-400'}`}
+            title={isSaved ? "Remove from Vault" : "Save Bookmark"}
+          >
+            <Bookmark className="w-5 h-5" fill={isSaved ? "currentColor" : "none"} strokeWidth={isSaved ? 0 : 2} />
+          </motion.button>
         </div>
       </div>
     </div>
@@ -2599,12 +2621,8 @@ export default function App() {
                             customFolders.map(folder => (
                               <button key={folder} onClick={() => { setActiveFolder(folder); setSelectedVaultItem(null); }} className={`w-full text-left px-3 py-1.5 rounded-md text-sm font-medium transition-colors flex items-center justify-between group ${activeFolder === folder ? 'bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 shadow-sm' : 'text-slate-600 dark:text-[#9a9a9f] hover:bg-slate-200/50 dark:hover:bg-[#1c1c20]'}`}>
                                 <div className="flex items-center gap-2 truncate"><Layout className={`w-3.5 h-3.5 ${activeFolder === folder ? 'opacity-100' : 'opacity-70'} shrink-0`} /> <span className="truncate">{folder}</span></div>
-                                <div className="flex items-center">
-                                  <span className="text-[10px] font-mono opacity-50 pl-2 group-hover:hidden">{vaultItems.filter(i => i.folder_name && i.folder_name.split(',').map(f => f.trim()).includes(folder)).length}</span>
-                                  <div onClick={(e) => deleteFolder(e, folder)} className="hidden group-hover:flex p-1 hover:bg-red-500/10 text-red-500 rounded transition-colors" title="Delete Folder">
-                                    <X className="w-3 h-3" />
-                                  </div>
-                                </div>
+                                {/* Removed the X button from here */}
+                                <span className="text-[10px] font-mono opacity-50 pl-2">{vaultItems.filter(i => i.folder_name && i.folder_name.split(',').map(f => f.trim()).includes(folder)).length}</span>
                               </button>
                             ))
                           )}
@@ -2633,18 +2651,10 @@ export default function App() {
 
                 {/* Mobile Horizontal Sidebar */}
                 <div className="md:hidden flex items-center overflow-x-auto hide-scroll px-4 pb-3 gap-2 shrink-0 border-b border-slate-200 dark:border-[#2d2d33]">
-                  {['All', 'Hadiths', 'Quran', 'Transcripts'].map(f => (
+                  {['All', 'Hadiths', 'Quran', 'Transcripts', ...customFolders].map(f => (
                     <button key={f} onClick={() => { setActiveFolder(f); setSelectedVaultItem(null); }} className={`whitespace-nowrap px-3 py-1 rounded-full text-xs font-medium transition-all border ${activeFolder === f ? 'bg-white dark:bg-[#2d2d33] text-blue-600 dark:text-blue-500 border-slate-300 dark:border-[#424248] shadow-sm' : 'bg-transparent text-slate-500 dark:text-[#9a9a9f] border-transparent hover:bg-slate-200/50 dark:hover:bg-[#1c1c20]'}`}>
                       {f}
                     </button>
-                  ))}
-                  {customFolders.map(f => (
-                    <div key={f} className={`whitespace-nowrap pl-3 pr-1 py-1 rounded-full text-xs font-medium transition-all border flex items-center gap-1 ${activeFolder === f ? 'bg-white dark:bg-[#2d2d33] text-blue-600 dark:text-blue-500 border-slate-300 dark:border-[#424248] shadow-sm' : 'bg-transparent text-slate-500 dark:text-[#9a9a9f] border-transparent hover:bg-slate-200/50 dark:hover:bg-[#1c1c20]'}`}>
-                      <button onClick={() => { setActiveFolder(f); setSelectedVaultItem(null); }} className="pr-1 outline-none">{f}</button>
-                      <button onClick={(e) => deleteFolder(e, f)} className="p-0.5 rounded-full hover:bg-red-500/10 text-slate-400 hover:text-red-500 transition-colors">
-                        <X className="w-3 h-3" />
-                      </button>
-                    </div>
                   ))}
                 </div>
               </div>
@@ -2659,9 +2669,19 @@ export default function App() {
                   </h1>
 
                   {!selectedVaultItem && (
-                    <div className="flex items-center bg-slate-100 dark:bg-[#1c1c20] rounded-full p-1 border border-slate-200 dark:border-[#2d2d33] shadow-sm">
-                      <button onClick={() => setVaultViewMode('grid')} className={`p-1.5 rounded-full transition-all duration-300 cursor-pointer ${vaultViewMode === 'grid' ? 'bg-white dark:bg-[#2d2d33] text-blue-600 dark:text-blue-500 shadow-sm' : 'text-slate-500 dark:text-[#9a9a9f] hover:text-slate-800 dark:hover:text-[#ededf0]'}`} title="Grid View"><Layout className="w-4 h-4" /></button>
-                      <button onClick={() => setVaultViewMode('list')} className={`p-1.5 rounded-full transition-all duration-300 cursor-pointer ${vaultViewMode === 'list' ? 'bg-white dark:bg-[#2d2d33] text-blue-600 dark:text-blue-500 shadow-sm' : 'text-slate-500 dark:text-[#9a9a9f] hover:text-slate-800 dark:hover:text-[#ededf0]'}`} title="List View"><List className="w-4 h-4" /></button>
+                    <div className="flex items-center gap-3">
+                      {/* Contextual Delete Folder Button */}
+                      {customFolders.includes(activeFolder) && (
+                        <button onClick={(e) => deleteFolder(e, activeFolder)} className="flex items-center justify-center p-2 rounded-full text-red-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors" title={`Delete "${activeFolder}" Folder`}>
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      )}
+
+                      {/* Grid/List Toggles */}
+                      <div className="flex items-center bg-slate-100 dark:bg-[#1c1c20] rounded-full p-1 border border-slate-200 dark:border-[#2d2d33] shadow-sm">
+                        <button onClick={() => setVaultViewMode('grid')} className={`p-1.5 rounded-full transition-all duration-300 cursor-pointer ${vaultViewMode === 'grid' ? 'bg-white dark:bg-[#2d2d33] text-blue-600 dark:text-blue-500 shadow-sm' : 'text-slate-500 dark:text-[#9a9a9f] hover:text-slate-800 dark:hover:text-[#ededf0]'}`} title="Grid View"><Layout className="w-4 h-4" /></button>
+                        <button onClick={() => setVaultViewMode('list')} className={`p-1.5 rounded-full transition-all duration-300 cursor-pointer ${vaultViewMode === 'list' ? 'bg-white dark:bg-[#2d2d33] text-blue-600 dark:text-blue-500 shadow-sm' : 'text-slate-500 dark:text-[#9a9a9f] hover:text-slate-800 dark:hover:text-[#ededf0]'}`} title="List View"><List className="w-4 h-4" /></button>
+                      </div>
                     </div>
                   )}
                 </div>
@@ -3390,7 +3410,7 @@ export default function App() {
                     <span className="ml-auto text-[10px] sm:text-xs font-mono text-[#5C4A3D]/60 dark:text-[#c6a87c]/50">{filteredItems.length} matches</span>
                   </div>
                   <div ref={modalScrollRef} onScroll={handleModalScroll} className="p-4 sm:p-6 flex flex-col gap-4 sm:gap-6 overflow-y-auto flex-grow smart-scrollbar">
-                    {filteredItems.length === 0 ? <div className="flex flex-col items-center justify-center h-full text-[#5C4A3D]/50 dark:text-[#c6a87c]/50 italic mt-10"><p>No {lengthFilter.toLowerCase()} hadiths found.</p></div> : paginatedItems.map((item, idx) => (<HadithCard key={idx} item={item} onVerseClick={handleVerseClick} handleCopyHadith={handleCopyHadith} searchMode={searchMode} onFindSimilar={handleFindSimilar} />))}
+                    {filteredItems.length === 0 ? <div className="flex flex-col items-center justify-center h-full text-[#5C4A3D]/50 dark:text-[#c6a87c]/50 italic mt-10"><p>No {lengthFilter.toLowerCase()} hadiths found.</p></div> : paginatedItems.map((item, idx) => (<HadithCard key={idx} item={item} onVerseClick={handleVerseClick} handleCopyHadith={handleCopyHadith} searchMode={searchMode} onFindSimilar={handleFindSimilar} vaultItems={vaultItems} />))}
                     {totalPages > 1 && filteredItems.length > 0 && (
                       <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-4 sm:pt-6 border-t border-[#5C4A3D]/15 dark:border-[#c6a87c]/20 mt-2 sm:mt-4">
                         <button onClick={() => { setCurrentPage(prev => Math.max(prev - 1, 1)); modalScrollRef.current.scrollTop = 0; }} disabled={safeCurrentPage === 1} className={`flex items-center justify-center gap-1 w-full sm:w-auto px-4 py-2 rounded-lg font-medium transition-colors cursor-pointer ${safeCurrentPage === 1 ? 'opacity-30 cursor-not-allowed text-[#5C4A3D]/50 dark:text-slate-500' : 'text-[#2D241C] dark:text-[#c6a87c] hover:bg-[#FDFBF7] dark:hover:bg-[#c6a87c]/10'}`}><ChevronLeft className="w-5 h-5" /> Previous</button>
@@ -3459,7 +3479,7 @@ export default function App() {
                     <div className="flex flex-col items-center justify-center h-full text-[#5C4A3D]/50 dark:text-[#c6a87c]/40 italic"><LibraryBig className="w-12 h-12 mb-4 opacity-20" /><p>No hadiths found in the database referencing this specific verse.</p></div>
                   ) : (
                     <div className="flex flex-col gap-4">
-                      {(tafsirData.clusters || []).flatMap(c => c.items || []).map((item, idx) => (<HadithCard key={idx} item={item} searchMode="keyword" handleCopyHadith={handleCopyHadith} onFindSimilar={handleFindSimilar} />))}
+                      {(tafsirData.clusters || []).flatMap(c => c.items || []).map((item, idx) => (<HadithCard key={idx} item={item} searchMode="keyword" handleCopyHadith={handleCopyHadith} onFindSimilar={handleFindSimilar} vaultItems={vaultItems} />))}
                     </div>
                   )}
                 </div>
