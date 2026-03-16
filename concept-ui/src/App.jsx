@@ -447,28 +447,43 @@ const QuranReader = ({ activeFontFamily, fontStyle, setFontStyle, handleSurahSel
 
   useEffect(() => {
     if (targetVerse && ayahs.length > 0 && currentView === 'reader') {
-      // Smart Retry Scroller: Waits for large Surahs (like Baqarah) to finish rendering
-      const tryScroll = (attempts = 0) => {
+      let previousY = -1;
+      let checks = 0;
+
+      // Layout Stabilization Engine:
+      // We check the verse's physical position every 100ms. 
+      // If the Y-position stops shifting, it means the browser has fully finished 
+      // rendering and expanding the Arabic fonts for massive Surahs.
+      const checkStabilization = setInterval(() => {
         const el = document.getElementById(`verse-${selectedSurah}-${targetVerse}`);
         if (el) {
-          // Adjust the scroll slightly to account for the fixed navigation header
-          const yOffset = el.getBoundingClientRect().top + window.scrollY - 120;
-          window.scrollTo({ top: yOffset, behavior: 'smooth' });
+          const currentY = el.getBoundingClientRect().top + window.scrollY;
 
-          el.classList.add('bg-amber-500/20', 'dark:bg-amber-500/30');
-          setTimeout(() => el.classList.remove('bg-amber-500/20', 'dark:bg-amber-500/30'), 2000);
-          setTargetVerse(null);
-        } else if (attempts < 15) {
-          // If the DOM hasn't painted yet, wait 100ms and try again (up to 1.5 seconds)
-          setTimeout(() => tryScroll(attempts + 1), 100);
+          // If the position hasn't moved more than 5px in the last 100ms (or we tried 15 times max)
+          // the layout is locked. Execute the jump.
+          if (Math.abs(currentY - previousY) < 5 || checks > 15) {
+            clearInterval(checkStabilization);
+
+            // 'auto' (instant jump) is mandatory here. 'smooth' scrolling fails 
+            // entirely if triggered while a heavy document is reflowing.
+            window.scrollTo({ top: currentY - 120, behavior: 'auto' });
+
+            el.classList.add('bg-amber-500/20', 'dark:bg-amber-500/30', 'transition-colors', 'duration-700');
+            setTimeout(() => el.classList.remove('bg-amber-500/20', 'dark:bg-amber-500/30'), 2000);
+            setTargetVerse(null);
+          } else {
+            previousY = currentY;
+            checks++;
+          }
         } else {
-          setTargetVerse(null); // Safely give up if it somehow completely fails
+          clearInterval(checkStabilization);
+          setTargetVerse(null);
         }
-      };
+      }, 100);
 
-      tryScroll();
+      return () => clearInterval(checkStabilization);
     }
-  }, [selectedSurah, targetVerse, readingMode, ayahs, currentView]);
+  }, [selectedSurah, targetVerse, currentView, ayahs.length]);
 
 
   // ==============================================
