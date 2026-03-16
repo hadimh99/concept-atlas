@@ -360,6 +360,21 @@ const QuranReader = ({ activeFontFamily, fontStyle, setFontStyle, handleSurahSel
     return list;
   }, []);
 
+  // Phase 3: Tafsir Map Calculations
+  const surahTafsirCounts = useMemo(() => {
+    const counts = {};
+    for (let i = 1; i <= 114; i++) counts[i] = 0;
+    // Scan the entire verseMap and tally up the Hadiths per Surah
+    Object.entries(verseMap).forEach(([key, count]) => {
+      const surahId = parseInt(key.split(':')[0]);
+      if (counts[surahId] !== undefined) counts[surahId] += count;
+    });
+    return counts;
+  }, []);
+
+  // Find the highest count to calculate our heat percentages
+  const maxTafsirCount = useMemo(() => Math.max(1, ...Object.values(surahTafsirCounts)), [surahTafsirCounts]);
+
   const searchableSurahs = useMemo(() => {
     return surahs.map(s => {
       let terms = [normalizeStr(s.enName)];
@@ -668,6 +683,74 @@ const QuranReader = ({ activeFontFamily, fontStyle, setFontStyle, handleSurahSel
             </div>
           </div>
         )}
+
+        {/* Phase 3: THE TAFSIR MAP (Visual Index) */}
+        {!quranSearchQuery.trim() && (
+          <div className="mb-8">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 pt-8 border-t border-slate-200 dark:border-slate-800/80">
+              <div>
+                <h3 className="font-serif text-2xl font-bold text-slate-900 dark:text-slate-50 flex items-center gap-3">
+                  <LibraryIcon className="w-6 h-6 text-amber-500" /> The Tafsir Map
+                </h3>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 font-medium uppercase tracking-widest">Full 114 Surah Index</p>
+              </div>
+              <div className="flex items-center gap-3 text-[10px] font-mono text-slate-500 bg-white dark:bg-[#1a1a1a] px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-800 shadow-sm">
+                <span className="uppercase tracking-widest font-bold">Commentary Depth:</span>
+                <span className="w-2.5 h-2.5 rounded-full bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-600"></span>
+                <span>Low</span>
+                <span className="w-2.5 h-2.5 rounded-full bg-amber-500 shadow-[0_0_8px_rgba(245,158,11,0.6)]"></span>
+                <span>High</span>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3 sm:gap-4">
+              {surahs.map(s => {
+                const count = surahTafsirCounts[s.id];
+                // Logarithmic scaling ensures massive Surahs don't completely eclipse smaller ones
+                const heatPercentage = count > 0 ? (Math.log(count + 1) / Math.log(maxTafsirCount + 1)) * 100 : 0;
+
+                return (
+                  <button
+                    key={s.id}
+                    onClick={() => openSurah(s.id)}
+                    className="relative bg-white dark:bg-[#1a1a1a] border border-slate-200 dark:border-slate-800 rounded-xl p-3 sm:p-4 hover:border-amber-500/50 hover:shadow-lg transition-all duration-300 group overflow-hidden cursor-pointer flex flex-col text-left h-full"
+                  >
+                    {/* The Thermometer Heat Fill */}
+                    <div
+                      className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-amber-500/10 dark:from-amber-500/20 to-transparent transition-all duration-500 group-hover:opacity-100"
+                      style={{ height: `${Math.max(0, heatPercentage)}%`, opacity: count > 0 ? 0.6 : 0 }}
+                    />
+                    {/* Subtle top glowing border for high-count Surahs */}
+                    {heatPercentage > 60 && (
+                      <div className="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-transparent via-amber-500 to-transparent opacity-50" />
+                    )}
+
+                    <div className="relative z-10 flex justify-between items-start mb-3">
+                      <span className="text-[10px] font-mono font-bold text-slate-400 group-hover:text-amber-600 dark:group-hover:text-amber-500 transition-colors bg-slate-50 dark:bg-slate-800/50 px-1.5 py-0.5 rounded">{s.id}</span>
+                      <span className="font-arabic text-lg sm:text-xl text-slate-800 dark:text-slate-200 group-hover:text-amber-700 dark:group-hover:text-amber-400 transition-colors drop-shadow-sm">{s.arName}</span>
+                    </div>
+
+                    <div className="relative z-10 flex flex-col mt-auto">
+                      <span className="font-bold text-xs sm:text-sm text-slate-900 dark:text-slate-50 group-hover:text-amber-600 dark:group-hover:text-amber-500 transition-colors truncate mb-0.5">{s.enName}</span>
+
+                      <div className="flex items-center justify-between mt-2 pt-2 border-t border-slate-100 dark:border-slate-800/80">
+                        <span className="text-[9px] text-slate-500 uppercase tracking-widest">{s.ayahCount} Ayahs</span>
+                        {count > 0 ? (
+                          <div className="flex items-center gap-1 bg-amber-50 dark:bg-amber-900/30 px-1.5 py-0.5 rounded text-[9px] font-bold text-amber-700 dark:text-amber-400 border border-amber-200/50 dark:border-amber-800/50 shadow-sm">
+                            <LibraryBig className="w-2.5 h-2.5" /> {count}
+                          </div>
+                        ) : (
+                          <span className="text-[9px] text-slate-400 opacity-40">-</span>
+                        )}
+                      </div>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
       </div>
     );
   }
