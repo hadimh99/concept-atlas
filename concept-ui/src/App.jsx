@@ -65,14 +65,17 @@ const HadithCard = ({ item, handleCopyHadith, searchMode, onVerseClick, onFindSi
     const { error } = await supabase.from('vault_items').insert([{
       user_id: session.user.id,
       content: textToCopy,
-      arabic_text: araText, // ADDED FOR FULL ANATOMY
-      chain: chain,         // ADDED FOR FULL ANATOMY
+      arabic_text: araText || null,
+      chain: chain || null,
       source: sourceRef,
       type: 'hadith',
       note: ''
     }]);
 
-    if (!error) {
+    if (error) {
+      console.error("Supabase Save Error:", error);
+      alert(`Supabase blocked the save: ${error.message}\n\nMake sure you added the 'arabic_text' and 'chain' columns to your vault_items table!`);
+    } else {
       setIsSaved(true);
       setTimeout(() => setIsSaved(false), 2000);
       window.dispatchEvent(new Event('vault-updated'));
@@ -2655,19 +2658,24 @@ export default function App() {
                                   <Check className="w-3.5 h-3.5" /> {noteSaveStatus}
                                 </motion.span>
                               )}
-                              <button
-                                onClick={() => {
-                                  if (editingNoteId === selectedVaultItem.id && noteText !== (selectedVaultItem.note || "")) {
+
+                              {/* Only show Save button if user has typed something different from the saved note */}
+                              {editingNoteId === selectedVaultItem.id && noteText !== (selectedVaultItem.note || "") && (
+                                <button
+                                  onMouseDown={(e) => {
+                                    e.preventDefault(); // Prevents blur from firing before onClick
                                     setVaultItems(prev => prev.map(i => i.id === selectedVaultItem.id ? { ...i, note: noteText } : i));
+                                    setSelectedVaultItem(prev => ({ ...prev, note: noteText }));
                                     supabase.from('vault_items').update({ note: noteText }).eq('id', selectedVaultItem.id);
-                                  }
-                                  setNoteSaveStatus('Saved!');
-                                  setTimeout(() => { setNoteSaveStatus(''); setEditingNoteId(null); }, 1500);
-                                }}
-                                className="px-3 py-1.5 bg-blue-500 text-white rounded-md text-xs font-bold uppercase tracking-widest shadow-sm hover:bg-blue-600 transition-colors cursor-pointer"
-                              >
-                                Save Note
-                              </button>
+
+                                    setNoteSaveStatus('Saved!');
+                                    setTimeout(() => { setNoteSaveStatus(''); setEditingNoteId(null); }, 1500);
+                                  }}
+                                  className="px-3 py-1.5 bg-blue-500 text-white rounded-md text-xs font-bold uppercase tracking-widest shadow-sm hover:bg-blue-600 transition-colors cursor-pointer"
+                                >
+                                  Save Note
+                                </button>
+                              )}
                             </div>
                           </div>
 
@@ -2678,11 +2686,21 @@ export default function App() {
                               setEditingNoteId(selectedVaultItem.id);
                               setNoteText(e.target.value);
                             }}
+                            onBlur={() => {
+                              // Auto-save quietly on blur
+                              if (editingNoteId === selectedVaultItem.id && noteText !== (selectedVaultItem.note || "")) {
+                                setVaultItems(prev => prev.map(i => i.id === selectedVaultItem.id ? { ...i, note: noteText } : i));
+                                setSelectedVaultItem(prev => ({ ...prev, note: noteText }));
+                                supabase.from('vault_items').update({ note: noteText }).eq('id', selectedVaultItem.id);
+                              }
+                              setEditingNoteId(null);
+                            }}
                             onKeyDown={(e) => {
                               if (e.key === 'Enter' && !e.shiftKey) {
                                 e.preventDefault();
                                 if (editingNoteId === selectedVaultItem.id && noteText !== (selectedVaultItem.note || "")) {
                                   setVaultItems(prev => prev.map(i => i.id === selectedVaultItem.id ? { ...i, note: noteText } : i));
+                                  setSelectedVaultItem(prev => ({ ...prev, note: noteText }));
                                   supabase.from('vault_items').update({ note: noteText }).eq('id', selectedVaultItem.id);
                                 }
                                 setNoteSaveStatus('Saved!');
@@ -2710,18 +2728,28 @@ export default function App() {
                               const itemType = item.type || 'hadith';
                               const isQuran = itemType === 'quran';
                               const isTranscript = itemType === 'transcript';
-                              const typeColor = isQuran ? 'amber' : isTranscript ? 'yellow' : 'emerald';
-                              const hexColor = isTranscript ? '#c6a87c' : '';
+
+                              // Explicitly map colors to avoid Tailwind compilation errors
+                              const getBadgeStyles = () => {
+                                if (isQuran) return "border-amber-200 dark:border-amber-800 text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20";
+                                if (isTranscript) return "border-[#c6a87c]/30 text-[#c6a87c] dark:text-[#d4b78f] bg-[#c6a87c]/10";
+                                return "border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/20";
+                              };
+                              const getGlowStyles = () => {
+                                if (isQuran) return "bg-amber-500/50 dark:bg-amber-500/40";
+                                if (isTranscript) return "bg-[#c6a87c]/50 dark:bg-[#c6a87c]/40";
+                                return "bg-emerald-500/50 dark:bg-emerald-500/40";
+                              };
 
                               if (vaultViewMode === 'grid') {
                                 return (
                                   <div key={item.id} onClick={() => { setSelectedVaultItem(item); setShowEditorArabic(false); setShowEditorChain(false); }} className="h-[240px] flex flex-col bg-white dark:bg-[#151518] border border-slate-200 dark:border-[#2d2d33] rounded-xl shadow-sm hover:shadow-[0_10px_40px_rgba(0,0,0,0.08)] dark:hover:shadow-[0_10px_40px_rgba(0,0,0,0.4)] hover:border-slate-300 dark:hover:border-[#424248] transition-all cursor-pointer overflow-hidden relative group">
 
-                                    <div className={`h-1 w-full ${isTranscript ? 'bg-[#c6a87c]/50 dark:bg-[#c6a87c]/40' : `bg-${typeColor}-500/50 dark:bg-${typeColor}-500/40`}`} />
+                                    <div className={`h-1 w-full ${getGlowStyles()}`} />
 
                                     <div className="p-5 flex-grow overflow-hidden relative">
                                       <div className="flex items-center gap-2 mb-3">
-                                        <span className={`px-2 py-0.5 rounded text-[9px] font-mono uppercase tracking-widest font-bold border ${isTranscript ? 'border-[#c6a87c]/30 text-[#c6a87c] bg-[#c6a87c]/10' : `border-${typeColor}-200 dark:border-${typeColor}-800 text-${typeColor}-700 dark:text-${typeColor}-400 bg-${typeColor}-50 dark:bg-${typeColor}-900/10`}`}>
+                                        <span className={`px-2 py-0.5 rounded text-[9px] font-mono uppercase tracking-widest font-bold border ${getBadgeStyles()}`}>
                                           {isQuran ? <BookOpen className="w-3 h-3 inline mr-1" /> : isTranscript ? <LibraryIcon className="w-3 h-3 inline mr-1" /> : <Sparkles className="w-3 h-3 inline mr-1" />}
                                           {itemType}
                                         </span>
@@ -2785,7 +2813,7 @@ export default function App() {
                                 return (
                                   <div key={item.id} onClick={() => setSelectedVaultItem(item)} className="flex items-center justify-between p-4 bg-white dark:bg-[#151518] border border-slate-200 dark:border-[#2d2d33] rounded-lg hover:border-slate-300 dark:hover:border-[#424248] transition-colors cursor-pointer group">
                                     <div className="flex items-center gap-4 overflow-hidden">
-                                      <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${isTranscript ? 'bg-[#c6a87c]/10 text-[#c6a87c]' : `bg-${typeColor}-50 dark:bg-${typeColor}-900/20 text-${typeColor}-600 dark:text-${typeColor}-400`}`}>
+                                      <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${isTranscript ? 'bg-[#c6a87c]/10 text-[#c6a87c]' : isQuran ? 'bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400' : 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400'}`}>
                                         {isQuran ? <BookOpen className="w-4 h-4" /> : isTranscript ? <LibraryIcon className="w-4 h-4" /> : <Sparkles className="w-4 h-4" />}
                                       </div>
                                       <div className="flex flex-col min-w-0">
