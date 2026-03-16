@@ -1984,6 +1984,50 @@ export default function App() {
     }
   };
 
+  // FOLDER DELETION LOGIC
+  const deleteFolder = async (e, folderToDelete) => {
+    e.stopPropagation();
+
+    // Quick confirmation to prevent accidental clicks
+    if (!window.confirm(`Delete the collection "${folderToDelete}"?\n\nYour saved bookmarks will NOT be deleted, only the folder tag will be removed.`)) return;
+
+    // 1. Remove from local empty folders state
+    setLocalEmptyFolders(prev => prev.filter(f => f !== folderToDelete));
+
+    // 2. Find all items that have this folder tag
+    const affectedItems = vaultItems.filter(item =>
+      item.folder_name && item.folder_name.split(',').map(f => f.trim()).includes(folderToDelete)
+    );
+
+    // 3. Update state and database if items exist
+    if (affectedItems.length > 0) {
+      // Optimistic UI update
+      setVaultItems(prev => prev.map(item => {
+        if (!item.folder_name) return item;
+        const folders = item.folder_name.split(',').map(f => f.trim()).filter(Boolean);
+        if (folders.includes(folderToDelete)) {
+          const newFolders = folders.filter(f => f !== folderToDelete);
+          return { ...item, folder_name: newFolders.length > 0 ? newFolders.join(', ') : null };
+        }
+        return item;
+      }));
+
+      // Fire off database updates in parallel
+      await Promise.all(affectedItems.map(item => {
+        const folders = item.folder_name.split(',').map(f => f.trim()).filter(Boolean);
+        const newFolders = folders.filter(f => f !== folderToDelete);
+        const newFolderName = newFolders.length > 0 ? newFolders.join(', ') : null;
+        return supabase.from('vault_items').update({ folder_name: newFolderName }).eq('id', item.id);
+      }));
+    }
+
+    // 4. Redirect user if they were inside the deleted folder
+    if (activeFolder === folderToDelete) {
+      setActiveFolder('All');
+      setSelectedVaultItem(null);
+    }
+  };
+
 
   const fetchVaultItems = async () => {
     if (!user) return;
@@ -2555,7 +2599,12 @@ export default function App() {
                             customFolders.map(folder => (
                               <button key={folder} onClick={() => { setActiveFolder(folder); setSelectedVaultItem(null); }} className={`w-full text-left px-3 py-1.5 rounded-md text-sm font-medium transition-colors flex items-center justify-between group ${activeFolder === folder ? 'bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 shadow-sm' : 'text-slate-600 dark:text-[#9a9a9f] hover:bg-slate-200/50 dark:hover:bg-[#1c1c20]'}`}>
                                 <div className="flex items-center gap-2 truncate"><Layout className={`w-3.5 h-3.5 ${activeFolder === folder ? 'opacity-100' : 'opacity-70'} shrink-0`} /> <span className="truncate">{folder}</span></div>
-                                <span className="text-[10px] font-mono opacity-50 pl-2">{vaultItems.filter(i => i.folder_name && i.folder_name.split(',').map(f => f.trim()).includes(folder)).length}</span>
+                                <div className="flex items-center">
+                                  <span className="text-[10px] font-mono opacity-50 pl-2 group-hover:hidden">{vaultItems.filter(i => i.folder_name && i.folder_name.split(',').map(f => f.trim()).includes(folder)).length}</span>
+                                  <div onClick={(e) => deleteFolder(e, folder)} className="hidden group-hover:flex p-1 hover:bg-red-500/10 text-red-500 rounded transition-colors" title="Delete Folder">
+                                    <X className="w-3 h-3" />
+                                  </div>
+                                </div>
                               </button>
                             ))
                           )}
@@ -2584,10 +2633,18 @@ export default function App() {
 
                 {/* Mobile Horizontal Sidebar */}
                 <div className="md:hidden flex items-center overflow-x-auto hide-scroll px-4 pb-3 gap-2 shrink-0 border-b border-slate-200 dark:border-[#2d2d33]">
-                  {['All', 'Hadiths', 'Quran', 'Transcripts', ...customFolders].map(f => (
+                  {['All', 'Hadiths', 'Quran', 'Transcripts'].map(f => (
                     <button key={f} onClick={() => { setActiveFolder(f); setSelectedVaultItem(null); }} className={`whitespace-nowrap px-3 py-1 rounded-full text-xs font-medium transition-all border ${activeFolder === f ? 'bg-white dark:bg-[#2d2d33] text-blue-600 dark:text-blue-500 border-slate-300 dark:border-[#424248] shadow-sm' : 'bg-transparent text-slate-500 dark:text-[#9a9a9f] border-transparent hover:bg-slate-200/50 dark:hover:bg-[#1c1c20]'}`}>
                       {f}
                     </button>
+                  ))}
+                  {customFolders.map(f => (
+                    <div key={f} className={`whitespace-nowrap pl-3 pr-1 py-1 rounded-full text-xs font-medium transition-all border flex items-center gap-1 ${activeFolder === f ? 'bg-white dark:bg-[#2d2d33] text-blue-600 dark:text-blue-500 border-slate-300 dark:border-[#424248] shadow-sm' : 'bg-transparent text-slate-500 dark:text-[#9a9a9f] border-transparent hover:bg-slate-200/50 dark:hover:bg-[#1c1c20]'}`}>
+                      <button onClick={() => { setActiveFolder(f); setSelectedVaultItem(null); }} className="pr-1 outline-none">{f}</button>
+                      <button onClick={(e) => deleteFolder(e, f)} className="p-0.5 rounded-full hover:bg-red-500/10 text-slate-400 hover:text-red-500 transition-colors">
+                        <X className="w-3 h-3" />
+                      </button>
+                    </div>
                   ))}
                 </div>
               </div>
