@@ -1894,6 +1894,8 @@ export default function App() {
   const [vaultItems, setVaultItems] = useState([]);
 
   const [vaultSearch, setVaultSearch] = useState('');
+  const [editingNoteId, setEditingNoteId] = useState(null);
+  const [noteText, setNoteText] = useState("");
   const [activeFolder, setActiveFolder] = useState('All');
   const [expandedVaultItems, setExpandedVaultItems] = useState({});
   const [newFolderInput, setNewFolderInput] = useState('');
@@ -2436,185 +2438,246 @@ export default function App() {
 
       {showMobileMenu && <div className="fixed inset-0 z-[70] pointer-events-auto" onClick={() => setShowMobileMenu(false)} />}
 
-      {/* --- THE SCHOLAR'S VAULT (PREMIUM WORKSPACE) --- */}
+      {/* --- THE SCHOLAR'S VAULT (PRO-DISPLAY WORKSPACE) --- */}
       <AnimatePresence>
         {showVault && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[6000] flex items-center justify-center p-0 sm:p-6 bg-[#FDFBF7]/80 dark:bg-[#020604]/90 backdrop-blur-md pointer-events-auto">
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[6000] flex items-center justify-center p-0 sm:p-4 md:p-8 bg-[#FDFBF7]/60 dark:bg-[#020604]/80 backdrop-blur-2xl pointer-events-auto">
 
-            <motion.div initial={{ scale: 0.98, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.98, y: 20 }} transition={{ duration: 0.3, ease: "easeOut" }} className="relative w-full h-full sm:h-[90vh] sm:max-w-7xl flex flex-col md:flex-row bg-[#FDFBF7] dark:bg-[#0A120E] sm:border border-[#5C4A3D]/20 dark:border-[#c6a87c]/30 sm:rounded-2xl shadow-2xl overflow-hidden">
+            <motion.div initial={{ scale: 0.98, y: 15 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.98, y: 15 }} transition={{ type: "spring", damping: 25, stiffness: 200 }} className="relative w-full h-full sm:h-full sm:max-w-[1400px] flex flex-col md:flex-row bg-[#FDFBF7]/95 dark:bg-[#0A120E]/95 sm:border border-[#5C4A3D]/15 dark:border-[#c6a87c]/20 sm:rounded-[24px] shadow-2xl overflow-hidden backdrop-blur-3xl">
 
-              {/* SIDEBAR: FOLDERS & FILTERS */}
-              <div className="w-full md:w-64 lg:w-72 bg-[#F8F5EE]/50 dark:bg-[#050A08] border-b md:border-b-0 md:border-r border-[#5C4A3D]/10 dark:border-[#c6a87c]/20 flex flex-col shrink-0 z-20 relative">
-                <div className="p-4 md:p-6 flex justify-between items-center border-b border-[#5C4A3D]/10 dark:border-[#c6a87c]/10 shrink-0">
-                  <h2 className="font-serif text-xl md:text-2xl font-bold text-[#2D241C] dark:text-[#FAFAFA] flex items-center gap-3 tracking-wide">
-                    <Bookmark className="w-5 h-5 text-[#c6a87c]" /> The Vault
+              {/* SIDEBAR: NATIVE NOTE-TAKING NAVIGATION */}
+              <div className="w-full md:w-[260px] lg:w-[280px] bg-[#F8F5EE]/50 dark:bg-[#050A08]/50 border-b md:border-b-0 md:border-r border-[#5C4A3D]/10 dark:border-[#c6a87c]/15 flex flex-col shrink-0 z-20 relative">
+                <div className="p-5 flex justify-between items-center border-b border-[#5C4A3D]/5 dark:border-[#c6a87c]/10 shrink-0">
+                  <h2 className="font-serif text-xl font-medium text-[#2D241C] dark:text-[#FAFAFA] flex items-center gap-2.5">
+                    <Bookmark className="w-4 h-4 text-[#c6a87c]" /> The Vault
                   </h2>
-                  <button onClick={() => setShowVault(false)} className="md:hidden p-2 text-[#5C4A3D]/60 hover:text-[#2D241C] dark:text-[#c6a87c]/60 dark:hover:text-[#FAFAFA] transition-colors"><X className="w-5 h-5" /></button>
+                  <button onClick={() => setShowVault(false)} className="md:hidden p-1.5 text-[#5C4A3D]/60 hover:text-[#2D241C] dark:text-[#c6a87c]/60 dark:hover:text-[#FAFAFA] transition-colors bg-black/5 dark:bg-white/5 rounded-full"><X className="w-4 h-4" /></button>
                 </div>
 
-                {/* Desktop Vertical Folder List */}
-                <div className="hidden md:block p-4 overflow-y-auto smart-scrollbar flex-grow">
-                  <div className="text-[10px] font-bold text-[#5C4A3D]/50 dark:text-[#c6a87c]/50 uppercase tracking-widest mb-3 px-3">Master Library</div>
-                  <button onClick={() => setActiveFolder('All')} className={`w-full text-left px-4 py-3 rounded-lg text-sm font-bold transition-all mb-2 flex items-center gap-3 ${activeFolder === 'All' ? 'bg-[#FDFBF7] dark:bg-[#c6a87c]/10 text-[#2D241C] dark:text-[#c6a87c] border border-[#5C4A3D]/15 dark:border-[#c6a87c]/30 shadow-sm' : 'text-[#5C4A3D]/70 dark:text-[#FAFAFA]/60 hover:bg-[#FDFBF7]/50 dark:hover:bg-white/5 border border-transparent'}`}>All Saved Records</button>
-                  <button onClick={() => setActiveFolder('Uncategorized')} className={`w-full text-left px-4 py-3 rounded-lg text-sm font-bold transition-all mb-8 flex items-center gap-3 ${activeFolder === 'Uncategorized' ? 'bg-[#FDFBF7] dark:bg-[#c6a87c]/10 text-[#2D241C] dark:text-[#c6a87c] border border-[#5C4A3D]/15 dark:border-[#c6a87c]/30 shadow-sm' : 'text-[#5C4A3D]/70 dark:text-[#FAFAFA]/60 hover:bg-[#FDFBF7]/50 dark:hover:bg-white/5 border border-transparent'}`}>Uncategorized</button>
+                {/* Desktop Sidebar Content */}
+                <div className="hidden md:flex p-4 flex-col gap-6 overflow-y-auto smart-scrollbar flex-grow">
 
-                  <button onClick={() => setIsCollectionsOpen(!isCollectionsOpen)} className="w-full flex justify-between items-center text-[10px] font-bold text-[#5C4A3D]/50 dark:text-[#c6a87c]/50 hover:text-[#2D241C] dark:hover:text-[#c6a87c] uppercase tracking-widest mb-3 px-3 transition-colors cursor-pointer group">
-                    <span>Research Collections</span>
-                    {isCollectionsOpen ? <ChevronUp className="w-3.5 h-3.5 opacity-50 group-hover:opacity-100 transition-opacity" /> : <ChevronDown className="w-3.5 h-3.5 opacity-50 group-hover:opacity-100 transition-opacity" />}
-                  </button>
+                  {/* Library Group */}
+                  <div>
+                    <div className="text-[10px] font-bold text-[#5C4A3D]/40 dark:text-[#c6a87c]/40 uppercase tracking-widest mb-2 px-3">Library</div>
+                    <button onClick={() => setActiveFolder('All')} className={`w-full text-left px-3 py-2 rounded-lg text-sm font-medium transition-all mb-1 flex items-center gap-3 ${activeFolder === 'All' ? 'bg-[#c6a87c]/15 dark:bg-[#c6a87c]/20 text-[#c6a87c] dark:text-[#d4b78f]' : 'text-[#5C4A3D]/70 dark:text-[#FAFAFA]/60 hover:bg-black/5 dark:hover:bg-white/5'}`}>
+                      <Layout className="w-4 h-4 opacity-80" /> All Bookmarks
+                    </button>
+                    <button onClick={() => setActiveFolder('Unsorted')} className={`w-full text-left px-3 py-2 rounded-lg text-sm font-medium transition-all flex items-center gap-3 ${activeFolder === 'Unsorted' ? 'bg-[#c6a87c]/15 dark:bg-[#c6a87c]/20 text-[#c6a87c] dark:text-[#d4b78f]' : 'text-[#5C4A3D]/70 dark:text-[#FAFAFA]/60 hover:bg-black/5 dark:hover:bg-white/5'}`}>
+                      <Database className="w-4 h-4 opacity-80" /> Unsorted
+                    </button>
+                  </div>
 
-                  <AnimatePresence>
-                    {isCollectionsOpen && (
-                      <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden flex flex-col gap-1.5">
-                        {customFolders.map(folder => (
-                          <button key={folder} onClick={() => setActiveFolder(folder)} className={`w-full text-left px-4 py-2.5 rounded-lg text-sm font-bold transition-all flex items-center gap-3 ${activeFolder === folder ? 'bg-[#FDFBF7] dark:bg-[#c6a87c]/10 text-[#2D241C] dark:text-[#c6a87c] border border-[#5C4A3D]/15 dark:border-[#c6a87c]/30 shadow-sm' : 'text-[#5C4A3D]/70 dark:text-[#FAFAFA]/60 hover:bg-[#FDFBF7]/50 dark:hover:bg-white/5 border border-transparent'}`}>
-                            <Layout className="w-3.5 h-3.5 opacity-70" /> <span className="truncate">{folder}</span>
-                          </button>
-                        ))}
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
+                  {/* Smart Sources Group */}
+                  <div>
+                    <div className="text-[10px] font-bold text-[#5C4A3D]/40 dark:text-[#c6a87c]/40 uppercase tracking-widest mb-2 px-3">Sources</div>
+                    <button onClick={() => setActiveFolder('Quran')} className={`w-full text-left px-3 py-2 rounded-lg text-sm font-medium transition-all mb-1 flex items-center justify-between group ${activeFolder === 'Quran' ? 'bg-emerald-500/10 dark:bg-emerald-500/15 text-emerald-600 dark:text-emerald-400' : 'text-[#5C4A3D]/70 dark:text-[#FAFAFA]/60 hover:bg-black/5 dark:hover:bg-white/5'}`}>
+                      <div className="flex items-center gap-3"><BookOpen className={`w-4 h-4 ${activeFolder === 'Quran' ? 'text-emerald-500' : 'opacity-70'}`} /> Quran</div>
+                      <span className="text-[10px] font-mono opacity-50 group-hover:opacity-100">{vaultItems.filter(i => i.type === 'quran').length}</span>
+                    </button>
+                    <button onClick={() => setActiveFolder('Hadiths')} className={`w-full text-left px-3 py-2 rounded-lg text-sm font-medium transition-all mb-1 flex items-center justify-between group ${activeFolder === 'Hadiths' ? 'bg-amber-500/10 dark:bg-amber-500/15 text-amber-600 dark:text-amber-400' : 'text-[#5C4A3D]/70 dark:text-[#FAFAFA]/60 hover:bg-black/5 dark:hover:bg-white/5'}`}>
+                      <div className="flex items-center gap-3"><Sparkles className={`w-4 h-4 ${activeFolder === 'Hadiths' ? 'text-amber-500' : 'opacity-70'}`} /> Hadiths</div>
+                      <span className="text-[10px] font-mono opacity-50 group-hover:opacity-100">{vaultItems.filter(i => i.type === 'hadith' || !i.type).length}</span>
+                    </button>
+                    <button onClick={() => setActiveFolder('Transcripts')} className={`w-full text-left px-3 py-2 rounded-lg text-sm font-medium transition-all flex items-center justify-between group ${activeFolder === 'Transcripts' ? 'bg-indigo-500/10 dark:bg-indigo-500/15 text-indigo-600 dark:text-indigo-400' : 'text-[#5C4A3D]/70 dark:text-[#FAFAFA]/60 hover:bg-black/5 dark:hover:bg-white/5'}`}>
+                      <div className="flex items-center gap-3"><LibraryIcon className={`w-4 h-4 ${activeFolder === 'Transcripts' ? 'text-indigo-500' : 'opacity-70'}`} /> Library</div>
+                      <span className="text-[10px] font-mono opacity-50 group-hover:opacity-100">{vaultItems.filter(i => i.type === 'transcript').length}</span>
+                    </button>
+                  </div>
+
+                  {/* Collections Group */}
+                  <div>
+                    <button onClick={() => setIsCollectionsOpen(!isCollectionsOpen)} className="w-full flex justify-between items-center text-[10px] font-bold text-[#5C4A3D]/40 dark:text-[#c6a87c]/40 hover:text-[#2D241C] dark:hover:text-[#c6a87c] uppercase tracking-widest mb-2 px-3 transition-colors cursor-pointer group">
+                      <span>Custom Folders</span>
+                      {isCollectionsOpen ? <ChevronUp className="w-3.5 h-3.5 opacity-50 group-hover:opacity-100 transition-opacity" /> : <ChevronDown className="w-3.5 h-3.5 opacity-50 group-hover:opacity-100 transition-opacity" />}
+                    </button>
+                    <AnimatePresence>
+                      {isCollectionsOpen && (
+                        <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden flex flex-col gap-1">
+                          {customFolders.length === 0 ? (
+                            <span className="px-3 py-2 text-xs text-[#5C4A3D]/40 dark:text-[#FAFAFA]/40 italic">No custom folders yet.</span>
+                          ) : (
+                            customFolders.map(folder => (
+                              <button key={folder} onClick={() => setActiveFolder(folder)} className={`w-full text-left px-3 py-2 rounded-lg text-sm font-medium transition-all flex items-center justify-between group ${activeFolder === folder ? 'bg-[#c6a87c]/15 dark:bg-[#c6a87c]/20 text-[#c6a87c] dark:text-[#d4b78f]' : 'text-[#5C4A3D]/70 dark:text-[#FAFAFA]/60 hover:bg-black/5 dark:hover:bg-white/5'}`}>
+                                <div className="flex items-center gap-3 truncate"><Layout className="w-3.5 h-3.5 opacity-70 shrink-0" /> <span className="truncate">{folder}</span></div>
+                                <span className="text-[10px] font-mono opacity-50 group-hover:opacity-100 pl-2">{vaultItems.filter(i => i.folder_name === folder).length}</span>
+                              </button>
+                            ))
+                          )}
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </div>
                 </div>
 
-                {/* Mobile Horizontal Folder Row */}
-                <div className="md:hidden flex items-center overflow-x-auto hide-scroll px-4 pb-4 gap-2 shrink-0 border-b border-[#5C4A3D]/10 dark:border-[#c6a87c]/10 pt-4">
-                  <button onClick={() => setActiveFolder('All')} className={`whitespace-nowrap px-4 py-2 rounded-full text-xs font-bold transition-all border ${activeFolder === 'All' ? 'bg-[#FDFBF7] dark:bg-[#c6a87c]/10 text-[#2D241C] dark:text-[#c6a87c] border-[#5C4A3D]/30 dark:border-[#c6a87c]/50 shadow-sm' : 'bg-transparent text-[#5C4A3D]/70 dark:text-[#FAFAFA]/60 border-[#5C4A3D]/10 dark:border-white/10'}`}>All Records</button>
-                  <button onClick={() => setActiveFolder('Uncategorized')} className={`whitespace-nowrap px-4 py-2 rounded-full text-xs font-bold transition-all border ${activeFolder === 'Uncategorized' ? 'bg-[#FDFBF7] dark:bg-[#c6a87c]/10 text-[#2D241C] dark:text-[#c6a87c] border-[#5C4A3D]/30 dark:border-[#c6a87c]/50 shadow-sm' : 'bg-transparent text-[#5C4A3D]/70 dark:text-[#FAFAFA]/60 border-[#5C4A3D]/10 dark:border-white/10'}`}>Uncategorized</button>
-                  {customFolders.map(folder => (
-                    <button key={folder} onClick={() => setActiveFolder(folder)} className={`whitespace-nowrap px-4 py-2 rounded-full text-xs font-bold transition-all border flex items-center gap-2 ${activeFolder === folder ? 'bg-[#FDFBF7] dark:bg-[#c6a87c]/10 text-[#2D241C] dark:text-[#c6a87c] border-[#5C4A3D]/30 dark:border-[#c6a87c]/50 shadow-sm' : 'bg-transparent text-[#5C4A3D]/70 dark:text-[#FAFAFA]/60 border-[#5C4A3D]/10 dark:border-white/10'}`}>
-                      <Layout className="w-3 h-3 opacity-70" /> {folder}
+                {/* Mobile Horizontal Sidebar Substitute */}
+                <div className="md:hidden flex items-center overflow-x-auto hide-scroll px-4 pb-4 pt-3 gap-2 shrink-0 border-b border-[#5C4A3D]/5 dark:border-[#c6a87c]/5">
+                  {['All', 'Unsorted', 'Quran', 'Hadiths', 'Transcripts', ...customFolders].map(f => (
+                    <button key={f} onClick={() => setActiveFolder(f)} className={`whitespace-nowrap px-4 py-1.5 rounded-full text-xs font-medium transition-all border ${activeFolder === f ? 'bg-[#c6a87c]/15 text-[#c6a87c] dark:text-[#d4b78f] border-[#c6a87c]/30' : 'bg-transparent text-[#5C4A3D]/70 dark:text-[#FAFAFA]/60 border-[#5C4A3D]/10 dark:border-white/10 hover:bg-black/5 dark:hover:bg-white/5'}`}>
+                      {f}
                     </button>
                   ))}
                 </div>
               </div>
 
-              {/* MAIN CONTENT AREA */}
-              <div className="flex-grow flex flex-col min-w-0 relative bg-white dark:bg-[#030A06]">
+              {/* MAIN CONTENT AREA: MASONRY & CARDS */}
+              <div className="flex-grow flex flex-col min-w-0 relative bg-transparent">
 
-                {/* Header & Search */}
-                <div className="px-6 py-4 md:py-6 border-b border-[#5C4A3D]/10 dark:border-[#c6a87c]/10 flex flex-col sm:flex-row items-center justify-between gap-4 shrink-0 z-10 bg-white/80 dark:bg-[#030A06]/80 backdrop-blur-xl">
+                {/* Header & Search Bar */}
+                <div className="px-6 py-4 md:py-5 border-b border-[#5C4A3D]/5 dark:border-[#c6a87c]/10 flex flex-col sm:flex-row items-center justify-between gap-4 shrink-0 z-10">
                   <div className="relative w-full sm:max-w-md group">
-                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-[#5C4A3D]/40 dark:text-[#c6a87c]/40 group-focus-within:text-[#c6a87c] transition-colors" />
-                    <input type="text" value={vaultSearch} onChange={(e) => setVaultSearch(e.target.value)} placeholder="Search your knowledge base..." className="w-full pl-11 pr-4 py-3 bg-[#F8F5EE]/50 dark:bg-black/20 border border-[#5C4A3D]/15 dark:border-[#c6a87c]/20 rounded-xl text-sm font-sans text-[#2D241C] dark:text-[#FAFAFA] placeholder-[#5C4A3D]/40 dark:placeholder-[#c6a87c]/40 focus:border-[#c6a87c] focus:ring-1 focus:ring-[#c6a87c] outline-none transition-all" />
+                    <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[#5C4A3D]/40 dark:text-[#c6a87c]/40 group-focus-within:text-[#c6a87c] transition-colors" />
+                    <input type="text" value={vaultSearch} onChange={(e) => setVaultSearch(e.target.value)} placeholder="Search your knowledge base..." className="w-full pl-10 pr-4 py-2 bg-white/50 dark:bg-black/20 border border-[#5C4A3D]/15 dark:border-[#c6a87c]/20 rounded-lg text-sm font-sans text-[#2D241C] dark:text-[#FAFAFA] placeholder-[#5C4A3D]/40 dark:placeholder-[#c6a87c]/40 focus:border-[#c6a87c] focus:ring-1 focus:ring-[#c6a87c] outline-none transition-all shadow-sm" />
                   </div>
 
-                  <div className="hidden md:flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-[#5C4A3D]/60 dark:text-[#c6a87c]/60">
-                    <span className="bg-[#F8F5EE] dark:bg-[#c6a87c]/10 px-3 py-1.5 rounded-md border border-[#5C4A3D]/10 dark:border-[#c6a87c]/20">{filteredVaultItems.length} Entries</span>
-                    <button onClick={() => setShowVault(false)} className="p-2.5 text-[#5C4A3D]/60 hover:text-[#2D241C] dark:text-[#c6a87c]/60 dark:hover:text-[#FAFAFA] transition-colors rounded-full hover:bg-[#F8F5EE] dark:hover:bg-[#c6a87c]/10 ml-2"><X className="w-5 h-5" /></button>
+                  <div className="hidden md:flex items-center gap-3 text-[10px] font-bold uppercase tracking-widest text-[#5C4A3D]/60 dark:text-[#c6a87c]/60">
+                    <span className="bg-black/5 dark:bg-white/5 px-3 py-1.5 rounded-md border border-[#5C4A3D]/5 dark:border-white/5">{filteredVaultItems.length} Entries</span>
+                    <button onClick={() => setShowVault(false)} className="p-2 text-[#5C4A3D]/60 hover:text-[#2D241C] dark:text-[#c6a87c]/60 dark:hover:text-[#FAFAFA] transition-colors rounded-full hover:bg-black/5 dark:hover:bg-white/10"><X className="w-5 h-5" /></button>
                   </div>
                 </div>
 
-                {/* Items List */}
+                {/* Items List (Responsive Masonry Style) */}
                 <div className="flex-grow overflow-y-auto p-4 sm:p-6 md:p-8 smart-scrollbar relative z-10">
                   {filteredVaultItems.length === 0 ? (
                     <div className="absolute inset-0 flex flex-col items-center justify-center text-center px-4 opacity-60">
-                      <Bookmark className="w-16 h-16 mb-4 text-[#c6a87c] opacity-50" />
-                      <p className="text-xl font-serif text-[#2D241C] dark:text-[#FAFAFA]">Your Vault is empty.</p>
-                      <p className="text-sm text-[#5C4A3D]/60 dark:text-[#c6a87c]/60 mt-2 max-w-sm">Save profound Hadiths, Quranic verses, or transcript reflections to build your personal library.</p>
+                      <Bookmark className="w-12 h-12 mb-4 text-[#c6a87c] opacity-50" />
+                      <p className="text-lg font-serif text-[#2D241C] dark:text-[#FAFAFA]">This section is empty.</p>
+                      <p className="text-sm text-[#5C4A3D]/60 dark:text-[#c6a87c]/60 mt-1 max-w-sm">Use Kisa to search and save insights directly to your Vault.</p>
                     </div>
                   ) : (
-                    <div className="flex flex-col gap-6 md:gap-8 max-w-4xl mx-auto pb-24 md:pb-12">
+                    <div className="columns-1 lg:columns-2 gap-6 space-y-6 max-w-[1200px] mx-auto pb-24 md:pb-12">
                       {filteredVaultItems.map((item) => {
                         const isExpanded = expandedVaultItems[item.id];
                         const safeContent = item.content || '';
-                        const needsExpansion = safeContent.length > 500;
-                        const displayContent = !needsExpansion || isExpanded ? safeContent : safeContent.substring(0, 500) + '...';
+                        const needsExpansion = safeContent.length > 400;
+                        const displayContent = !needsExpansion || isExpanded ? safeContent : safeContent.substring(0, 400) + '...';
 
-                        // Detect type for UI rendering
                         const itemType = item.type || 'hadith';
                         const isQuran = itemType === 'quran';
                         const isTranscript = itemType === 'transcript';
 
-                        return (
-                          <div key={item.id} className="bg-[#FDFBF7] dark:bg-[#0A120E] border border-[#5C4A3D]/15 dark:border-[#c6a87c]/20 rounded-2xl p-6 sm:p-8 shadow-sm hover:shadow-md transition-all group relative flex flex-col">
+                        // Semantic Colors
+                        const typeColor = isQuran ? 'emerald' : isTranscript ? 'indigo' : 'amber';
+                        const isEditingNote = editingNoteId === item.id;
 
-                            <div className="flex flex-wrap justify-between items-start gap-3 mb-6 pb-5 border-b border-[#5C4A3D]/10 dark:border-[#c6a87c]/10">
-                              <div className="flex flex-wrap items-center gap-2">
-                                {/* Type Badge */}
-                                <span className={`px-3 py-1.5 rounded text-[10px] font-mono uppercase tracking-widest font-bold border ${isQuran ? 'bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400 border-amber-200 dark:border-amber-800/50' : isTranscript ? 'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-400 border-indigo-200 dark:border-indigo-800/50' : 'bg-[#F8F5EE] dark:bg-[#c6a87c]/10 text-[#5C4A3D] dark:text-[#c6a87c] border-[#5C4A3D]/20 dark:border-[#c6a87c]/30'}`}>
-                                  {isQuran ? <BookOpen className="w-3.5 h-3.5 inline mr-1.5" /> : isTranscript ? <LibraryIcon className="w-3.5 h-3.5 inline mr-1.5" /> : <Database className="w-3.5 h-3.5 inline mr-1.5" />}
-                                  {itemType}
-                                </span>
-                                {/* Source Badge */}
-                                <span className="px-3 py-1.5 bg-white dark:bg-black/30 text-[#2D241C] dark:text-slate-300 rounded text-[10px] font-mono uppercase tracking-widest font-bold border border-[#5C4A3D]/10 dark:border-white/10 shadow-sm">{item.source}</span>
-                                {/* Folder Badge */}
-                                {item.folder_name && <span className="px-3 py-1.5 bg-[#c6a87c]/10 text-[#c6a87c] rounded text-[10px] font-mono uppercase tracking-widest font-bold border border-[#c6a87c]/30 flex items-center gap-1.5"><Layout className="w-3 h-3" />{item.folder_name}</span>}
+                        return (
+                          <div key={item.id} className="break-inside-avoid bg-white/60 dark:bg-[#0A120E]/60 backdrop-blur-xl border border-[#5C4A3D]/10 dark:border-[#c6a87c]/15 rounded-2xl shadow-sm hover:shadow-md transition-all group relative flex flex-col overflow-hidden">
+
+                            {/* Semantic Glow Edge */}
+                            <div className={`absolute left-0 top-0 bottom-0 w-1 bg-${typeColor}-500/20 dark:bg-${typeColor}-500/30 group-hover:bg-${typeColor}-500/40 transition-colors`} />
+
+                            <div className="p-5 sm:p-6">
+                              {/* Header */}
+                              <div className="flex flex-wrap justify-between items-start gap-2 mb-4">
+                                <div className="flex flex-wrap items-center gap-2">
+                                  <span className={`px-2 py-1 rounded text-[9px] font-mono uppercase tracking-widest font-bold border border-${typeColor}-200/50 dark:border-${typeColor}-800/50 text-${typeColor}-700 dark:text-${typeColor}-400 bg-${typeColor}-50 dark:bg-${typeColor}-900/10`}>
+                                    {isQuran ? <BookOpen className="w-3 h-3 inline mr-1" /> : isTranscript ? <LibraryIcon className="w-3 h-3 inline mr-1" /> : <Sparkles className="w-3 h-3 inline mr-1" />}
+                                    {itemType}
+                                  </span>
+                                  <span className="px-2 py-1 bg-black/5 dark:bg-white/5 text-[#2D241C] dark:text-[#FAFAFA] rounded text-[9px] font-mono uppercase tracking-widest font-bold border border-[#5C4A3D]/5 dark:border-white/5">{item.source}</span>
+                                </div>
+                                <span className="text-[10px] font-mono text-[#5C4A3D]/40 dark:text-[#c6a87c]/40 font-bold mt-1">{new Date(item.created_at).toLocaleDateString()}</span>
                               </div>
-                              <span className="text-[10px] font-mono text-[#5C4A3D]/50 dark:text-[#c6a87c]/50 pt-1.5 font-bold">{new Date(item.created_at).toLocaleDateString()}</span>
+
+                              {/* Reading Canvas */}
+                              <div className="pl-1">
+                                <p className={`font-serif leading-[1.8] text-[#2D241C] dark:text-neutral-200 whitespace-pre-wrap antialiased ${isQuran ? 'text-lg sm:text-xl text-center my-4' : 'text-sm sm:text-base'}`}>
+                                  {displayContent}
+                                </p>
+
+                                {needsExpansion && (
+                                  <button onClick={() => toggleVaultExpand(item.id)} className="mt-3 text-[10px] font-bold uppercase tracking-widest text-[#c6a87c] hover:text-[#B56D43] transition-colors flex items-center gap-1 cursor-pointer">
+                                    {isExpanded ? 'Show Less' : 'Read More'} {isExpanded ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+                                  </button>
+                                )}
+                              </div>
                             </div>
 
-                            <div className={`flex-grow ${isTranscript ? 'border-l-[3px] border-[#c6a87c] pl-5 italic' : ''}`}>
-                              <p className={`font-serif leading-[1.85] text-[#2D241C] dark:text-neutral-100 whitespace-pre-wrap antialiased ${isQuran ? 'text-lg sm:text-xl md:text-2xl text-center' : 'text-sm sm:text-base md:text-lg'}`}>
-                                {displayContent}
-                              </p>
+                            {/* --- THE SCHOLAR'S MARGIN (PERSONAL NOTES) --- */}
+                            {(item.note || isEditingNote) ? (
+                              <div className="mx-4 mb-2 bg-[#F8F5EE]/80 dark:bg-[#c6a87c]/5 border-l-2 border-[#c6a87c] rounded-r-xl p-4 relative group/note">
+                                <h4 className="text-[9px] font-bold uppercase tracking-widest text-[#c6a87c] mb-2 flex items-center gap-1.5">
+                                  <List className="w-3 h-3" /> Personal Note
+                                </h4>
+                                {isEditingNote ? (
+                                  <textarea
+                                    autoFocus
+                                    value={noteText}
+                                    onChange={(e) => setNoteText(e.target.value)}
+                                    onBlur={() => {
+                                      setEditingNoteId(null);
+                                      if (noteText !== (item.note || "")) {
+                                        setVaultItems(prev => prev.map(i => i.id === item.id ? { ...i, note: noteText } : i));
+                                        supabase.from('vault_items').update({ note: noteText }).eq('id', item.id);
+                                      }
+                                    }}
+                                    placeholder="Write your reflections here..."
+                                    className="w-full bg-transparent border-none outline-none text-sm font-sans text-[#2D241C] dark:text-[#FAFAFA] placeholder-[#5C4A3D]/40 resize-none overflow-hidden"
+                                    rows={3}
+                                  />
+                                ) : (
+                                  <p onClick={() => { setEditingNoteId(item.id); setNoteText(item.note); }} className="text-sm font-sans text-[#5C4A3D] dark:text-neutral-300 whitespace-pre-wrap cursor-text">
+                                    {item.note}
+                                  </p>
+                                )}
+                              </div>
+                            ) : null}
 
-                              {needsExpansion && (
-                                <button onClick={() => toggleVaultExpand(item.id)} className="mt-5 text-[10px] font-bold uppercase tracking-widest text-[#c6a87c] hover:text-[#B56D43] transition-colors flex items-center gap-1.5 cursor-pointer">
-                                  {isExpanded ? 'Collapse' : 'Read Full Text'} {isExpanded ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+                            {/* Obvious Action Bar */}
+                            <div className="mt-auto px-4 py-3 bg-black/5 dark:bg-[#c6a87c]/5 border-t border-[#5C4A3D]/5 dark:border-[#c6a87c]/10 flex flex-wrap items-center justify-between gap-2">
+
+                              {/* Left Side: Note Toggle */}
+                              {!item.note && !isEditingNote && (
+                                <button onClick={() => { setEditingNoteId(item.id); setNoteText(""); }} className="text-[10px] uppercase tracking-widest font-bold text-[#5C4A3D]/60 dark:text-[#c6a87c]/60 hover:text-[#c6a87c] dark:hover:text-[#c6a87c] transition-colors flex items-center gap-1.5 px-2 py-1.5 rounded hover:bg-black/5 dark:hover:bg-white/5 cursor-pointer">
+                                  <List className="w-3.5 h-3.5" /> Add Note
                                 </button>
                               )}
-                            </div>
 
-                            {/* Actions Footer */}
-                            <div className="mt-6 md:mt-8 pt-4 md:pt-5 border-t border-[#5C4A3D]/10 dark:border-[#c6a87c]/10 flex flex-wrap justify-between items-center gap-4">
-
-                              {/* Future feature indicator for the UI */}
-                              <div className="flex items-center gap-2">
-                                <button className="text-[10px] uppercase tracking-widest font-bold text-[#5C4A3D]/60 dark:text-[#c6a87c]/60 hover:text-[#c6a87c] transition-colors flex items-center gap-1.5">
-                                  <Sparkles className="w-3.5 h-3.5" /> Add Reflection
-                                </button>
-                              </div>
-
-                              <div className="flex items-center gap-2 md:gap-3">
-                                {/* Folder Movement Dropdown */}
+                              {/* Right Side: Primary Actions */}
+                              <div className="flex items-center gap-1.5 ml-auto">
+                                {/* Move Folder */}
                                 <div className="relative">
-                                  <button onClick={() => setMovingItemId(movingItemId === item.id ? null : item.id)} className={`flex items-center gap-2 px-3 md:px-4 py-2 text-[10px] uppercase tracking-widest font-bold rounded-lg transition-all border cursor-pointer ${movingItemId === item.id ? 'bg-[#c6a87c]/10 text-[#c6a87c] border-[#c6a87c]/30' : 'bg-[#F8F5EE] dark:bg-black/20 text-[#5C4A3D]/70 dark:text-[#c6a87c]/70 hover:text-[#2D241C] dark:hover:text-[#FAFAFA] border-[#5C4A3D]/15 dark:border-white/10 hover:border-[#c6a87c]/50'}`} title="Move to Folder">
-                                    <Layout className="w-4 h-4" /> <span className="hidden sm:inline">Move</span>
+                                  <button onClick={() => setMovingItemId(movingItemId === item.id ? null : item.id)} className={`flex items-center justify-center p-2 rounded-lg transition-colors border cursor-pointer ${movingItemId === item.id ? 'bg-[#c6a87c]/15 text-[#c6a87c] border-[#c6a87c]/30' : 'bg-white dark:bg-black/20 text-[#5C4A3D]/70 dark:text-[#c6a87c]/70 hover:text-[#2D241C] dark:hover:text-[#FAFAFA] border-[#5C4A3D]/10 dark:border-white/10 hover:border-[#c6a87c]/50'}`} title="Move to Folder">
+                                    <Layout className="w-3.5 h-3.5" />
                                   </button>
-
                                   <AnimatePresence>
                                     {movingItemId === item.id && (
                                       <>
                                         <div className="fixed inset-0 z-40" onClick={(e) => { e.stopPropagation(); setMovingItemId(null); }} />
-                                        <motion.div initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 5 }} transition={{ duration: 0.15 }} className="absolute right-0 bottom-full mb-3 w-[260px] max-w-[85vw] bg-white dark:bg-[#0A120E] border border-[#5C4A3D]/15 dark:border-[#c6a87c]/30 rounded-xl shadow-2xl z-50 overflow-hidden">
-                                          <div className="flex items-center gap-2 px-3 py-3 border-b border-[#5C4A3D]/10 dark:border-[#c6a87c]/20 bg-[#F8F5EE]/50 dark:bg-black/20 relative z-10">
-                                            <input type="text" value={newFolderInput} onChange={(e) => setNewFolderInput(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter' && newFolderInput.trim()) { assignToFolder(item.id, newFolderInput.trim()); setNewFolderInput(''); } }} placeholder="New folder name..." className="w-full text-xs font-mono bg-white dark:bg-[#030A06] border border-[#5C4A3D]/20 dark:border-[#c6a87c]/30 rounded-lg px-3 py-2 outline-none text-[#2D241C] dark:text-[#FAFAFA] placeholder-[#5C4A3D]/40 dark:placeholder-[#c6a87c]/40 focus:border-[#c6a87c] transition-all" />
-                                            <button onClick={() => { if (newFolderInput.trim()) { assignToFolder(item.id, newFolderInput.trim()); setNewFolderInput(''); } }} className="p-2 bg-[#FDFBF7] dark:bg-[#c6a87c]/10 text-[#c6a87c] rounded-lg border border-[#5C4A3D]/15 dark:border-[#c6a87c]/30 hover:border-[#c6a87c] transition-colors cursor-pointer">
-                                              <Check className="w-4 h-4" />
-                                            </button>
+                                        <motion.div initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 5 }} transition={{ duration: 0.15 }} className="absolute right-0 bottom-full mb-2 w-[220px] bg-white dark:bg-[#0A120E] border border-[#5C4A3D]/15 dark:border-[#c6a87c]/20 rounded-xl shadow-xl z-50 overflow-hidden">
+                                          <div className="flex items-center gap-2 p-2 border-b border-[#5C4A3D]/5 dark:border-[#c6a87c]/10 bg-[#F8F5EE]/50 dark:bg-black/20 relative z-10">
+                                            <input type="text" value={newFolderInput} onChange={(e) => setNewFolderInput(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter' && newFolderInput.trim()) { assignToFolder(item.id, newFolderInput.trim()); setNewFolderInput(''); } }} placeholder="New folder..." className="w-full text-xs font-mono bg-white dark:bg-[#030A06] border border-[#5C4A3D]/10 dark:border-[#c6a87c]/20 rounded-md px-2.5 py-1.5 outline-none text-[#2D241C] dark:text-[#FAFAFA] placeholder-[#5C4A3D]/40 focus:border-[#c6a87c] transition-all" />
+                                            <button onClick={() => { if (newFolderInput.trim()) { assignToFolder(item.id, newFolderInput.trim()); setNewFolderInput(''); } }} className="p-1.5 bg-[#FDFBF7] dark:bg-[#c6a87c]/10 text-[#c6a87c] rounded-md hover:bg-[#c6a87c]/20 transition-colors cursor-pointer"><Check className="w-3.5 h-3.5" /></button>
                                           </div>
-                                          <div className="max-h-40 overflow-y-auto smart-scrollbar py-1.5 relative z-10">
+                                          <div className="max-h-40 overflow-y-auto smart-scrollbar py-1 relative z-10">
                                             {customFolders.map(f => (
-                                              <button key={f} onClick={() => assignToFolder(item.id, f)} className="w-full text-left px-4 py-2.5 text-[11px] font-bold uppercase tracking-widest text-[#5C4A3D]/70 dark:text-[#c6a87c]/70 hover:bg-[#F8F5EE] dark:hover:bg-[#c6a87c]/10 hover:text-[#2D241C] dark:hover:text-[#FAFAFA] transition-colors truncate flex items-center gap-3 cursor-pointer">
-                                                <Layout className="w-3.5 h-3.5 opacity-60 text-[#c6a87c]" /> {f}
+                                              <button key={f} onClick={() => assignToFolder(item.id, f)} className="w-full text-left px-3 py-2 text-[10px] font-bold uppercase tracking-widest text-[#5C4A3D]/70 dark:text-[#c6a87c]/70 hover:bg-[#F8F5EE] dark:hover:bg-[#c6a87c]/10 hover:text-[#2D241C] dark:hover:text-[#FAFAFA] transition-colors truncate cursor-pointer flex items-center gap-2">
+                                                <Layout className="w-3 h-3 opacity-50" /> {f}
                                               </button>
                                             ))}
                                           </div>
-                                          {item.folder_name && <button onClick={() => assignToFolder(item.id, null)} className="w-full text-left px-4 py-3 text-[10px] font-bold uppercase tracking-widest text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors border-t border-[#5C4A3D]/10 dark:border-[#c6a87c]/20 cursor-pointer relative z-10">Remove from Folder</button>}
+                                          {item.folder_name && <button onClick={() => assignToFolder(item.id, null)} className="w-full text-left px-3 py-2 text-[10px] font-bold uppercase tracking-widest text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors border-t border-[#5C4A3D]/5 dark:border-[#c6a87c]/10 cursor-pointer">Remove from Folder</button>}
                                         </motion.div>
                                       </>
                                     )}
                                   </AnimatePresence>
                                 </div>
 
+                                {/* Copy */}
                                 <button onClick={(e) => {
-                                  navigator.clipboard.writeText(`${item.source}\n\n${item.content}`);
-                                  const btn = e.currentTarget;
-                                  const originalHtml = btn.innerHTML;
-                                  btn.innerHTML = `<svg class="w-4 h-4 text-emerald-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg><span class="text-emerald-500 hidden sm:inline">Copied</span>`;
+                                  navigator.clipboard.writeText(`${item.source}\n\n${item.content}${item.note ? `\n\nNote: ${item.note}` : ''}`);
+                                  const btn = e.currentTarget; const originalHtml = btn.innerHTML;
+                                  btn.innerHTML = `<svg class="w-3.5 h-3.5 text-emerald-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>`;
                                   btn.classList.add('bg-emerald-50', 'dark:bg-emerald-500/10', 'border-emerald-200', 'dark:border-emerald-500/30');
-                                  setTimeout(() => {
-                                    btn.innerHTML = originalHtml;
-                                    btn.classList.remove('bg-emerald-50', 'dark:bg-emerald-500/10', 'border-emerald-200', 'dark:border-emerald-500/30');
-                                  }, 2000);
-                                }} className="flex items-center gap-2 px-3 md:px-4 py-2 text-[10px] uppercase tracking-widest font-bold text-[#5C4A3D]/70 dark:text-[#c6a87c]/70 hover:text-[#2D241C] dark:hover:text-[#FAFAFA] bg-[#F8F5EE] dark:bg-black/20 hover:bg-[#FDFBF7] dark:hover:bg-[#c6a87c]/10 rounded-lg transition-all border border-[#5C4A3D]/15 dark:border-white/10 hover:border-[#c6a87c]/50 cursor-pointer" title="Copy Text">
-                                  <Copy className="w-4 h-4" /> <span className="hidden sm:inline">Copy</span>
+                                  setTimeout(() => { btn.innerHTML = originalHtml; btn.classList.remove('bg-emerald-50', 'dark:bg-emerald-500/10', 'border-emerald-200', 'dark:border-emerald-500/30'); }, 2000);
+                                }} className="flex items-center justify-center p-2 rounded-lg transition-all border border-[#5C4A3D]/10 dark:border-white/10 bg-white dark:bg-black/20 text-[#5C4A3D]/70 dark:text-[#c6a87c]/70 hover:text-[#2D241C] dark:hover:text-[#FAFAFA] hover:border-[#c6a87c]/50 cursor-pointer" title="Copy">
+                                  <Copy className="w-3.5 h-3.5" />
                                 </button>
 
-                                <button onClick={async () => { await supabase.from('vault_items').delete().eq('id', item.id); fetchVaultItems(); }} className="flex items-center justify-center p-2 text-[#5C4A3D]/40 dark:text-[#c6a87c]/40 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg transition-all cursor-pointer md:ml-1" title="Delete Record">
-                                  <Trash2 className="w-4 h-4 md:w-4 md:h-4" />
+                                {/* Delete */}
+                                <button onClick={async () => { await supabase.from('vault_items').delete().eq('id', item.id); fetchVaultItems(); }} className="flex items-center justify-center p-2 rounded-lg transition-all border border-transparent hover:bg-red-50 dark:hover:bg-red-500/10 text-[#5C4A3D]/40 dark:text-[#c6a87c]/40 hover:text-red-500 hover:border-red-200 dark:hover:border-red-500/30 cursor-pointer ml-1" title="Delete">
+                                  <Trash2 className="w-3.5 h-3.5" />
                                 </button>
-
                               </div>
                             </div>
                           </div>
