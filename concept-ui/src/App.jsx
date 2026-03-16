@@ -450,27 +450,47 @@ const QuranReader = ({ activeFontFamily, fontStyle, setFontStyle, handleSurahSel
       let previousY = -1;
       let checks = 0;
 
-      // Layout Stabilization Engine:
-      // We check the verse's physical position every 100ms. 
-      // If the Y-position stops shifting, it means the browser has fully finished 
-      // rendering and expanding the Arabic fonts for massive Surahs.
+      // 1. Force scroll to top instantly so the user sees the Bismillah 
+      // while the browser secretly calculates the heavy layout.
+      window.scrollTo(0, 0);
+
       const checkStabilization = setInterval(() => {
         const el = document.getElementById(`verse-${selectedSurah}-${targetVerse}`);
         if (el) {
           const currentY = el.getBoundingClientRect().top + window.scrollY;
 
-          // If the position hasn't moved more than 5px in the last 100ms (or we tried 15 times max)
-          // the layout is locked. Execute the jump.
           if (Math.abs(currentY - previousY) < 5 || checks > 15) {
             clearInterval(checkStabilization);
 
-            // 'auto' (instant jump) is mandatory here. 'smooth' scrolling fails 
-            // entirely if triggered while a heavy document is reflowing.
-            window.scrollTo({ top: currentY - 120, behavior: 'auto' });
+            // 2. THE CINEMATIC SCROLL ENGINE
+            const targetY = currentY - 120; // Account for sticky header
+            const startY = window.scrollY;
+            const distance = targetY - startY;
 
-            el.classList.add('bg-amber-500/20', 'dark:bg-amber-500/30', 'transition-colors', 'duration-700');
-            setTimeout(() => el.classList.remove('bg-amber-500/20', 'dark:bg-amber-500/30'), 2000);
-            setTargetVerse(null);
+            // Dynamically calculate speed: Further away = faster top speed, capped at 1.8 seconds
+            const duration = Math.min(1800, Math.max(800, Math.abs(distance) * 0.15));
+
+            let start = null;
+            const cinematicScroll = (timestamp) => {
+              if (!start) start = timestamp;
+              const progress = timestamp - start;
+              const t = Math.min(progress / duration, 1);
+
+              // Ease-Out-Quart formula for a premium "warp and brake" feel
+              const easeOut = 1 - Math.pow(1 - t, 4);
+              window.scrollTo(0, startY + (distance * easeOut));
+
+              if (progress < duration) {
+                window.requestAnimationFrame(cinematicScroll);
+              } else {
+                // 3. The Landing Highlight
+                el.classList.add('bg-amber-500/20', 'dark:bg-amber-500/30', 'transition-colors', 'duration-1000');
+                setTimeout(() => el.classList.remove('bg-amber-500/20', 'dark:bg-amber-500/30'), 2000);
+                setTargetVerse(null);
+              }
+            };
+
+            window.requestAnimationFrame(cinematicScroll);
           } else {
             previousY = currentY;
             checks++;
@@ -483,7 +503,7 @@ const QuranReader = ({ activeFontFamily, fontStyle, setFontStyle, handleSurahSel
 
       return () => clearInterval(checkStabilization);
     }
-  }, [selectedSurah, targetVerse, currentView, ayahs.length]);
+  }, [selectedSurah, targetVerse, readingMode, ayahs, currentView]);
 
 
   // ==============================================
