@@ -271,7 +271,60 @@ const HadithCard = ({ item, handleCopyHadith, searchMode, onVerseClick, onFindSi
   );
 };
 
-const QuranReader = ({ activeFontFamily, fontStyle, setFontStyle, handleSurahSelectHook, externalSurahTarget, onTafsirClick }) => {
+const QuranBookmarkButton = ({ surahId, surahName, verseNum, arText, enText, vaultItems = [], isSurah = false }) => {
+  const sourceRef = isSurah ? `Surah ${surahName}` : `Surah ${surahName}, Verse ${verseNum}`;
+  const isSaved = vaultItems.some(v => v.source === sourceRef && v.type === 'quran');
+
+  const handleSaveClick = async (e) => {
+    e.stopPropagation();
+    const { data: { session } } = await supabase.auth.getSession();
+
+    if (!session?.user) {
+      alert("Please Sign In from the top menu to save to your Vault.");
+      return;
+    }
+
+    if (isSaved) {
+      const savedItem = vaultItems.find(v => v.source === sourceRef && v.type === 'quran');
+      if (savedItem) {
+        await supabase.from('vault_items').delete().eq('id', savedItem.id);
+        window.dispatchEvent(new Event('vault-updated'));
+      }
+      return;
+    }
+
+    const { error } = await supabase.from('vault_items').insert([{
+      user_id: session.user.id,
+      content: isSurah ? `Complete chapter of Surah ${surahName}` : enText,
+      arabic_text: isSurah ? null : arText,
+      chain: null,
+      source: sourceRef,
+      type: 'quran',
+      note: ''
+    }]);
+
+    if (error) {
+      console.error("Supabase Save Error:", error);
+      alert(`Supabase blocked the save: ${error.message}`);
+    } else {
+      window.dispatchEvent(new Event('vault-updated'));
+    }
+  };
+
+  return (
+    <motion.button
+      onClick={handleSaveClick}
+      whileTap={{ scale: 1.3, rotate: -15 }}
+      transition={{ type: "spring", stiffness: 400, damping: 10 }}
+      className={`p-1.5 rounded-full transition-colors cursor-pointer ${isSaved ? 'text-orange-500 hover:text-orange-600 dark:text-orange-500 dark:hover:text-orange-400' : 'text-slate-400 hover:text-orange-500 dark:text-slate-500 dark:hover:text-orange-400'}`}
+      title={isSaved ? "Remove from Vault" : "Save to Vault"}
+    >
+      <Bookmark className={isSurah ? "w-5 h-5" : "w-4 h-4 sm:w-5 sm:h-5"} fill={isSaved ? "currentColor" : "none"} strokeWidth={isSaved ? 0 : 2} />
+    </motion.button>
+  );
+};
+
+const QuranReader = ({ activeFontFamily, fontStyle, setFontStyle, handleSurahSelectHook, externalSurahTarget, onTafsirClick, vaultItems }) => {
   const [currentView, setCurrentView] = useState('dashboard');
   const [selectedSurah, setSelectedSurah] = useState(1);
   const [showTranslation, setShowTranslation] = useState(true);
@@ -817,8 +870,11 @@ const QuranReader = ({ activeFontFamily, fontStyle, setFontStyle, handleSurahSel
         )}
       </AnimatePresence>
 
-      <div className="text-center mb-12 flex flex-col items-center">
-        <p className="text-amber-800 dark:text-amber-500 font-mono text-[10px] sm:text-xs tracking-[0.2em] uppercase font-bold mb-3 sm:mb-4">Surah {surahs.find(s => s.id === selectedSurah)?.enName}</p>
+      <div className="text-center mb-12 flex flex-col items-center relative">
+        <div className="flex items-center justify-center gap-3 mb-3 sm:mb-4">
+          <p className="text-amber-800 dark:text-amber-500 font-mono text-[10px] sm:text-xs tracking-[0.2em] uppercase font-bold m-0">Surah {surahs.find(s => s.id === selectedSurah)?.enName}</p>
+          <QuranBookmarkButton surahId={selectedSurah} surahName={surahs.find(s => s.id === selectedSurah)?.enName} isSurah={true} vaultItems={vaultItems} />
+        </div>
         <h1 className="text-2xl sm:text-3xl md:text-4xl font-arabic text-slate-900 dark:text-slate-50 mb-4 sm:mb-5 leading-[1.5] drop-shadow-sm" style={{ fontFamily: activeFontFamily }} dir="rtl" lang="ar">{surahs.find(s => s.id === selectedSurah)?.arName}</h1>
         {surahBismillah && (<h2 className="font-arabic text-4xl sm:text-5xl md:text-6xl text-slate-700 dark:text-slate-300 leading-[1.5] mt-2 opacity-90" style={{ fontFamily: activeFontFamily }} dir="rtl" lang="ar">{surahBismillah}</h2>)}
       </div>
@@ -872,8 +928,10 @@ const QuranReader = ({ activeFontFamily, fontStyle, setFontStyle, handleSurahSel
                 <div className="sm:pl-20">
                   <p className="font-arabic text-3xl sm:text-4xl lg:text-[40px] text-right leading-[2.4] sm:leading-[2.5] text-slate-900 dark:text-slate-100 mb-6" dir="rtl" lang="ar" style={{ fontFamily: activeFontFamily }}>{ayah.ar} <span className="text-amber-700 dark:text-amber-500 opacity-80 ml-2 text-xl font-sans">﴾{toArabicNum(idx + 1)}﴿</span></p>
                   <AnimatePresence>{showTranslation && (<motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="overflow-hidden"><div className="border-t border-[#d4c5b0]/50 dark:border-[#2a2a2a]/50 pt-5 mt-3"><p className="text-lg sm:text-xl text-slate-800 dark:text-slate-300 leading-relaxed font-serif">{ayah.en}</p></div></motion.div>)}</AnimatePresence>
-                  {relatedCount > 0 && (<div className="mt-4 flex justify-end"><button onClick={() => onTafsirClick(selectedSurah, idx + 1)} className="flex items-center gap-1.5 text-[10px] sm:text-xs uppercase tracking-wider font-bold text-amber-700 hover:text-amber-900 dark:text-amber-500 dark:hover:text-amber-400 transition-colors bg-amber-100/50 dark:bg-amber-900/20 px-3 py-1.5 rounded-md cursor-pointer shadow-sm"><LibraryBig className="w-3.5 h-3.5" /> Related Hadiths <span className="bg-amber-200 dark:bg-amber-800 text-amber-900 dark:text-amber-100 px-1.5 py-0.5 rounded text-[10px] ml-1">{relatedCount}</span></button></div>)}
-                </div>
+                  <div className="mt-4 flex justify-end items-center gap-3">
+                    <QuranBookmarkButton surahId={selectedSurah} surahName={surahs.find(s => s.id === selectedSurah)?.enName} verseNum={idx + 1} arText={ayah.ar} enText={ayah.en} vaultItems={vaultItems} />
+                    {relatedCount > 0 && (<button onClick={() => onTafsirClick(selectedSurah, idx + 1)} className="flex items-center gap-1.5 text-[10px] sm:text-xs uppercase tracking-wider font-bold text-amber-700 hover:text-amber-900 dark:text-amber-500 dark:hover:text-amber-400 transition-colors bg-amber-100/50 dark:bg-amber-900/20 px-3 py-1.5 rounded-md cursor-pointer shadow-sm"><LibraryBig className="w-3.5 h-3.5" /> Related Hadiths <span className="bg-amber-200 dark:bg-amber-800 text-amber-900 dark:text-amber-100 px-1.5 py-0.5 rounded text-[10px] ml-1">{relatedCount}</span></button>)}
+                  </div>                </div>
               </div>
             );
           })}
@@ -3147,7 +3205,7 @@ export default function App() {
       </header>
 
       <main ref={containerRef} className={`relative w-full flex-grow flex flex-col ${lockMainScreen ? 'items-center justify-center h-screen overflow-hidden' : 'min-h-screen'}`}>
-        {activeTab === 'quran' && <QuranReader activeFontFamily={activeFontFamily} fontStyle={fontStyle} setFontStyle={setFontStyle} handleSurahSelectHook={(id, name) => saveToHistory({ type: 'quran', surahId: id, surahName: name, timestamp: Date.now() })} externalSurahTarget={quranTarget} onTafsirClick={handleTafsirClick} />}
+        {activeTab === 'quran' && <QuranReader activeFontFamily={activeFontFamily} fontStyle={fontStyle} setFontStyle={setFontStyle} handleSurahSelectHook={(id, name) => saveToHistory({ type: 'quran', surahId: id, surahName: name, timestamp: Date.now() })} externalSurahTarget={quranTarget} onTafsirClick={handleTafsirClick} vaultItems={vaultItems} />}
 
         {activeTab === 'library' && <TranscriptLibrary transcripts={transcriptData} />}
 
