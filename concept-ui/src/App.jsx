@@ -3277,8 +3277,7 @@ export default function App() {
       </header>
 
       <main ref={containerRef} className={`relative w-full flex-grow flex flex-col ${lockMainScreen ? 'items-center justify-center h-screen overflow-hidden' : 'min-h-screen'}`}>
-        {activeTab === 'quran' && <QuranReader activeFontFamily={activeFontFamily} fontStyle={fontStyle} setFontStyle={setFontStyle} handleSurahSelectHook={(id, name) => saveToHistory({ type: 'quran', surahId: id, surahName: name, timestamp: Date.now() })} externalSurahTarget={quranTarget} externalVerseTarget={quranVerseTarget} onTafsirClick={handleTafsirClick} vaultItems={vaultItems} />}
-        {activeTab === 'library' && <TranscriptLibrary transcripts={transcriptData} />}
+        {activeTab === 'quran' && <QuranReader activeFontFamily={activeFontFamily} fontStyle={fontStyle} setFontStyle={setFontStyle} handleSurahSelectHook={(id, name) => saveToHistory({ type: 'quran', surahId: id, surahName: name, timestamp: Date.now() })} externalSurahTarget={quranTarget} externalVerseTarget={quranVerseTarget} onTafsirClick={handleTafsirClick} vaultItems={vaultItems} />}        {activeTab === 'library' && <TranscriptLibrary transcripts={transcriptData} />}
 
         <AnimatePresence>
           {activeTab === 'search' && !data && !loading && (
