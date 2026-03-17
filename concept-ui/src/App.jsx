@@ -1029,11 +1029,13 @@ const TranscriptLibrary = ({ transcripts, vaultItems, externalDocTarget, externa
       if (text.length > 0 && activeDoc) {
         const range = selection.getRangeAt(0);
         const rect = range.getBoundingClientRect();
-        // Spawns the popup slightly above the center of the selected text
+        const isMobile = window.innerWidth < 768; // Detect mobile screens
+
         setSelectionPopup({
           text,
           x: rect.left + (rect.width / 2),
           y: rect.top - 15,
+          isMobile
         });
       } else {
         setSelectionPopup(null);
@@ -1997,12 +1999,16 @@ const TranscriptLibrary = ({ transcripts, vaultItems, externalDocTarget, externa
                     initial={{ opacity: 0, y: 10, scale: 0.9 }}
                     animate={{ opacity: 1, y: 0, scale: 1 }}
                     exit={{ opacity: 0, scale: 0.9 }}
-                    style={{ position: 'fixed', left: selectionPopup.x, top: selectionPopup.y, transform: 'translate(-50%, -100%)' }}
+                    style={
+                      selectionPopup.isMobile
+                        ? { position: 'fixed', bottom: '120px', left: '50%', transform: 'translateX(-50%)' }
+                        : { position: 'fixed', left: selectionPopup.x, top: selectionPopup.y, transform: 'translate(-50%, -100%)' }
+                    }
                     className="z-[5000] pointer-events-auto"
                   >
                     <button
                       onClick={handleSaveHighlight}
-                      className="flex items-center gap-2 bg-[#2D241C] dark:bg-[#c6a87c] text-[#FDFBF7] dark:text-[#0A120E] px-4 py-2 rounded-lg shadow-2xl hover:scale-105 transition-transform text-xs font-bold uppercase tracking-widest cursor-pointer whitespace-nowrap"
+                      className="flex items-center gap-2 bg-[#2D241C] dark:bg-[#c6a87c] text-[#FDFBF7] dark:text-[#0A120E] px-5 py-3 md:px-4 md:py-2 rounded-full md:rounded-lg shadow-2xl hover:scale-105 transition-transform text-sm md:text-xs font-bold uppercase tracking-widest cursor-pointer whitespace-nowrap border border-[#5C4A3D]/20 dark:border-transparent"
                     >
                       <Bookmark className="w-4 h-4" /> Save Highlight
                     </button>
