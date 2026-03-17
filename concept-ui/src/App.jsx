@@ -324,7 +324,7 @@ const QuranBookmarkButton = ({ surahId, surahName, verseNum, arText, enText, vau
   );
 };
 
-const QuranReader = ({ activeFontFamily, fontStyle, setFontStyle, handleSurahSelectHook, externalSurahTarget, onTafsirClick, vaultItems }) => {
+const QuranReader = ({ activeFontFamily, fontStyle, setFontStyle, handleSurahSelectHook, externalSurahTarget, externalVerseTarget, onTafsirClick, vaultItems }) => {
   const [currentView, setCurrentView] = useState('dashboard');
   const [selectedSurah, setSelectedSurah] = useState(1);
   const [showTranslation, setShowTranslation] = useState(true);
@@ -352,8 +352,11 @@ const QuranReader = ({ activeFontFamily, fontStyle, setFontStyle, handleSurahSel
     if (externalSurahTarget) {
       setSelectedSurah(externalSurahTarget);
       setCurrentView('reader');
+      if (externalVerseTarget) {
+        setTimeout(() => setTargetVerse(externalVerseTarget), 100);
+      }
     }
-  }, [externalSurahTarget]);
+  }, [externalSurahTarget, externalVerseTarget]);
 
   useEffect(() => {
     if (currentView !== 'reader') return;
@@ -2203,6 +2206,7 @@ export default function App() {
   const [showSearchDropdown, setShowSearchDropdown] = useState(false);
   const [appHistory, setAppHistory] = useState([]);
   const [quranTarget, setQuranTarget] = useState(null);
+  const [quranVerseTarget, setQuranVerseTarget] = useState(null);
 
   const [anchorHadith, setAnchorHadith] = useState(null);
   const [showAnchor, setShowAnchor] = useState(false);
@@ -2842,10 +2846,23 @@ export default function App() {
                           {/* NEW: Quran-Specific Action Bar (Hadiths + Bookmark) */}
                           {selectedVaultItem.type === 'quran' && (
                             <div className="mt-8 flex justify-end items-center gap-4 pt-5 border-t border-slate-200 dark:border-[#2d2d33]">
-                              {vaultRelatedCount > 0 && quranDetails && (
+                              {quranDetails && (
                                 <button
                                   onClick={() => {
                                     setShowVault(false);
+                                    setActiveTab('quran');
+                                    setQuranTarget(quranDetails.surahId);
+                                    setQuranVerseTarget(quranDetails.verseNum);
+                                  }}
+                                  className="flex items-center gap-1.5 text-xs uppercase tracking-wider font-bold text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 transition-colors bg-blue-100/50 dark:bg-blue-900/20 px-3 py-1.5 rounded-md cursor-pointer shadow-sm"
+                                >
+                                  <BookOpen className="w-4 h-4" /> Go to Verse
+                                </button>
+                              )}
+                              {vaultRelatedCount > 0 && quranDetails && (
+                                <button
+                                  onClick={() => {
+                                    // Removed setShowVault(false) to keep Vault open behind the popup
                                     handleTafsirClick(quranDetails.surahId, quranDetails.verseNum);
                                   }}
                                   className="flex items-center gap-1.5 text-xs uppercase tracking-wider font-bold text-amber-700 hover:text-amber-900 dark:text-amber-500 dark:hover:text-amber-400 transition-colors bg-amber-100/50 dark:bg-amber-900/20 px-3 py-1.5 rounded-md cursor-pointer shadow-sm"
@@ -3260,8 +3277,7 @@ export default function App() {
       </header>
 
       <main ref={containerRef} className={`relative w-full flex-grow flex flex-col ${lockMainScreen ? 'items-center justify-center h-screen overflow-hidden' : 'min-h-screen'}`}>
-        {activeTab === 'quran' && <QuranReader activeFontFamily={activeFontFamily} fontStyle={fontStyle} setFontStyle={setFontStyle} handleSurahSelectHook={(id, name) => saveToHistory({ type: 'quran', surahId: id, surahName: name, timestamp: Date.now() })} externalSurahTarget={quranTarget} onTafsirClick={handleTafsirClick} vaultItems={vaultItems} />}
-
+        {activeTab === 'quran' && <QuranReader activeFontFamily={activeFontFamily} fontStyle={fontStyle} setFontStyle={setFontStyle} handleSurahSelectHook={(id, name) => saveToHistory({ type: 'quran', surahId: id, surahName: name, timestamp: Date.now() })} externalSurahTarget={quranTarget} externalVerseTarget={quranVerseTarget} onTafsirClick={handleTafsirClick} vaultItems={vaultItems} />}
         {activeTab === 'library' && <TranscriptLibrary transcripts={transcriptData} />}
 
         <AnimatePresence>
@@ -3575,9 +3591,9 @@ export default function App() {
         {/* --- REVERSE QURAN TAFSIR POPUP --- */}
         <AnimatePresence>
           {(tafsirLoading || tafsirData) && tafsirTarget && (
-            <div className="fixed inset-0 z-[4000] flex items-center justify-center pointer-events-auto p-4 sm:p-0">
+            <div className="fixed inset-0 z-[7000] flex items-center justify-center pointer-events-auto p-4 sm:p-0">
               <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => { setTafsirData(null); setTafsirLoading(false); setTafsirTarget(null); }} className="absolute inset-0 bg-[#2D241C]/60 dark:bg-[#020604]/80 backdrop-blur-md cursor-pointer" />
-              <motion.div initial={{ opacity: 0, scale: 0.95, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 20 }} className="relative bg-[#EAE4D3] dark:bg-[#030A06] border border-[#5C4A3D]/20 dark:border-[#c6a87c]/20 w-full sm:w-[90vw] max-w-[700px] h-[80vh] flex flex-col shadow-2xl rounded-2xl z-[4001] overflow-hidden">
+              <motion.div initial={{ opacity: 0, scale: 0.95, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 20 }} className="relative bg-[#EAE4D3] dark:bg-[#030A06] border border-[#5C4A3D]/20 dark:border-[#c6a87c]/20 w-full sm:w-[90vw] max-w-[700px] h-[80vh] flex flex-col shadow-2xl rounded-2xl z-[7001] overflow-hidden">
                 <div className="flex justify-between items-center bg-[#FDFBF7]/60 dark:bg-[#c6a87c]/5 backdrop-blur-xl pt-5 pb-4 px-6 z-10 border-b border-[#5C4A3D]/15 dark:border-[#c6a87c]/20 shrink-0">
                   <div>
                     <h3 className="font-mono text-sm tracking-widest uppercase text-amber-600 dark:text-amber-500 font-bold mb-0.5 flex items-center gap-2"><LibraryBig className="w-4 h-4" /> Related Narrations</h3>
