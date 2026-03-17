@@ -3271,11 +3271,11 @@ export default function App() {
                                           );
                                         })}
                                       </div>
-                                      <p className="text-xs font-mono text-slate-400 dark:text-[#9a9a9f] font-bold mb-3 truncate">{item.source}</p>
+                                      <p className="text-xs font-mono text-slate-400 dark:text-[#9a9a9f] font-bold mb-2 truncate">{item.source}</p>
                                       {isQuran ? (
-                                        <div className="flex flex-col gap-3">
+                                        <div className="flex flex-col gap-2">
                                           {item.arabic_text && (
-                                            <p className="font-arabic text-xl sm:text-2xl text-right leading-[1.8] text-slate-800 dark:text-slate-100" dir="rtl" lang="ar" style={{ fontFamily: activeFontFamily }}>
+                                            <p className="font-arabic text-lg sm:text-xl text-right leading-[1.6] text-slate-800 dark:text-slate-100" dir="rtl" lang="ar" style={{ fontFamily: activeFontFamily }}>
                                               {item.arabic_text}
                                             </p>
                                           )}
