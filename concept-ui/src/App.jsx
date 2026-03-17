@@ -2415,6 +2415,7 @@ export default function App() {
     await supabase.auth.signOut();
     setUser(null);
     setShowVault(false);
+    if (sourceFilter === 'My Vault') setSourceFilter('All Twelver Sources');
   };
 
   const [viewMode, setViewMode] = useState(typeof window !== 'undefined' && window.innerWidth < 800 ? 'list' : 'map');
@@ -2607,6 +2608,54 @@ export default function App() {
     setLoading(true);
     setData(null);
     setActiveCluster(null);
+
+    // --- NEW: VAULT-GROUNDED SEARCH INTERCEPT ---
+    if (currentSource === 'My Vault') {
+      setTimeout(() => {
+        if (searchIdRef.current !== currentSearchId) return;
+
+        const q = searchQuery.toLowerCase();
+
+        // Scan text, source headers, AND user's personal notes
+        const matches = vaultItems.filter(item =>
+          (item.content && item.content.toLowerCase().includes(q)) ||
+          (item.note && item.note.toLowerCase().includes(q)) ||
+          (item.source && item.source.toLowerCase().includes(q))
+        );
+
+        // Map local items to fit perfectly inside HadithCard UI
+        const formattedItems = matches.map(v => {
+          let hNum = "";
+          const numMatch = v.source?.match(/Hadith\s+(\d+)/i) || v.source?.match(/Verse\s+(\d+)/i);
+          if (numMatch) hNum = numMatch[1];
+
+          return {
+            id: v.id,
+            book: "My Vault",
+            volume: v.type ? v.type.charAt(0).toUpperCase() + v.type.slice(1) : "Saved",
+            sub_book: "Bookmark",
+            chapter: v.source.replace(/ (Hadith|Verse) \d+$/, ''),
+            hadith_number: hNum,
+            // Surface the user's personal note right inside the search results!
+            english_text: v.note ? `**[Your Note: ${v.note}]**\n\n${v.content}` : v.content,
+            arabic_text: v.arabic_text || "",
+            chain: v.chain || "",
+            vector: []
+          };
+        });
+
+        const result = {
+          clusters: [{ theme_label: `Vault Matches for "${searchQuery}"`, items: formattedItems }],
+          total_results: formattedItems.length
+        };
+
+        setData(result);
+        setViewMode('list'); // Force list view for vault searches
+        setLoading(false);
+      }, 400); // 400ms delay for a smooth UI loading transition
+      return;
+    }
+    // --------------------------------------------
 
     try {
       const payload = { query: textToEmbed, source: currentSource, searchMode: currentMode };
@@ -3636,8 +3685,9 @@ export default function App() {
                       <AnimatePresence>
                         {showDropdown && (
                           <motion.div initial={{ opacity: 0, y: -5 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -5 }} className="absolute top-[100px] sm:top-14 right-2 sm:right-0 w-[calc(100%-16px)] sm:w-[220px] rounded-xl border shadow-xl overflow-hidden z-50 backdrop-blur-2xl bg-[#FDFBF7]/95 dark:bg-[#040F0B]/95 border-[#5C4A3D]/15 dark:border-[#c6a87c]/20">
-                            {SOURCES.map((source) => (
-                              <div key={source} onClick={() => { setSourceFilter(source); setShowDropdown(false); }} className={`px-4 py-3 text-sm cursor-pointer transition-colors ${sourceFilter === source ? 'bg-[#EAE4D3]/60 dark:bg-[#c6a87c]/15 text-[#2D241C] dark:text-[#FAFAFA] font-bold' : 'text-[#5C4A3D] dark:text-[#c6a87c]/80 hover:bg-[#F8F5EE] dark:hover:bg-[#c6a87c]/10 dark:hover:text-[#c6a87c]'}`}>
+                            {(user ? ["All Twelver Sources", "My Vault", "al-Kafi", "Bihar al-Anwar", "Basa'ir al-Darajat"] : SOURCES).map((source) => (
+                              <div key={source} onClick={() => { setSourceFilter(source); setShowDropdown(false); }} className={`px-4 py-3 text-sm cursor-pointer transition-colors flex items-center gap-2 ${sourceFilter === source ? 'bg-[#EAE4D3]/60 dark:bg-[#c6a87c]/15 text-[#2D241C] dark:text-[#FAFAFA] font-bold' : 'text-[#5C4A3D] dark:text-[#c6a87c]/80 hover:bg-[#F8F5EE] dark:hover:bg-[#c6a87c]/10 dark:hover:text-[#c6a87c]'}`}>
+                                {source === "My Vault" && <Bookmark className="w-3.5 h-3.5" />}
                                 {source}
                               </div>
                             ))}
