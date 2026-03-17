@@ -3271,11 +3271,24 @@ export default function App() {
                                           );
                                         })}
                                       </div>
-                                      <p className="text-xs font-mono text-slate-400 dark:text-[#9a9a9f] font-bold mb-2 truncate">{item.source}</p>
-                                      <p className={`font-serif text-sm text-slate-700 dark:text-[#ededf0] leading-relaxed antialiased ${isQuran ? 'text-center italic' : ''}`}>
-                                        {item.content}
-                                      </p>
-                                      <div className="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-white dark:from-[#151518] to-transparent" />
+                                      <p className="text-xs font-mono text-slate-400 dark:text-[#9a9a9f] font-bold mb-3 truncate">{item.source}</p>
+                                      {isQuran ? (
+                                        <div className="flex flex-col gap-3">
+                                          {item.arabic_text && (
+                                            <p className="font-arabic text-xl sm:text-2xl text-right leading-[1.8] text-slate-800 dark:text-slate-100" dir="rtl" lang="ar" style={{ fontFamily: activeFontFamily }}>
+                                              {item.arabic_text}
+                                            </p>
+                                          )}
+                                          <p className="font-serif text-sm text-slate-600 dark:text-[#9a9a9f] leading-relaxed antialiased text-center italic">
+                                            {item.content}
+                                          </p>
+                                        </div>
+                                      ) : (
+                                        <p className="font-serif text-sm text-slate-700 dark:text-[#ededf0] leading-relaxed antialiased">
+                                          {item.content}
+                                        </p>
+                                      )}
+                                      <div className="absolute bottom-0 left-0 right-0 h-20 bg-gradient-to-t from-white dark:from-[#151518] to-transparent pointer-events-none" />
                                     </div>
 
                                     {/* Footer with Click-Driven Kebab Menu */}
