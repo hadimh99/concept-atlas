@@ -3273,13 +3273,13 @@ export default function App() {
                                       </div>
                                       <p className="text-xs font-mono text-slate-400 dark:text-[#9a9a9f] font-bold mb-2 truncate">{item.source}</p>
                                       {isQuran ? (
-                                        <div className="flex flex-col gap-2">
+                                        <div className="flex flex-col gap-1.5">
                                           {item.arabic_text && (
-                                            <p className="font-arabic text-lg sm:text-xl text-right leading-[1.6] text-slate-800 dark:text-slate-100" dir="rtl" lang="ar" style={{ fontFamily: activeFontFamily }}>
+                                            <p className="font-arabic text-sm sm:text-base text-right leading-snug text-slate-800 dark:text-slate-100" dir="rtl" lang="ar" style={{ fontFamily: activeFontFamily }}>
                                               {item.arabic_text}
                                             </p>
                                           )}
-                                          <p className="font-serif text-sm text-slate-600 dark:text-[#9a9a9f] leading-relaxed antialiased text-center italic">
+                                          <p className="font-serif text-xs sm:text-sm text-slate-600 dark:text-[#9a9a9f] leading-relaxed antialiased text-center italic">
                                             {item.content}
                                           </p>
                                         </div>
