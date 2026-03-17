@@ -929,9 +929,9 @@ const QuranReader = ({ activeFontFamily, fontStyle, setFontStyle, handleSurahSel
                   <p className="font-arabic text-3xl sm:text-4xl lg:text-[40px] text-right leading-[2.4] sm:leading-[2.5] text-slate-900 dark:text-slate-100 mb-6" dir="rtl" lang="ar" style={{ fontFamily: activeFontFamily }}>{ayah.ar} <span className="text-amber-700 dark:text-amber-500 opacity-80 ml-2 text-xl font-sans">﴾{toArabicNum(idx + 1)}﴿</span></p>
                   <AnimatePresence>{showTranslation && (<motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="overflow-hidden"><div className="border-t border-[#d4c5b0]/50 dark:border-[#2a2a2a]/50 pt-5 mt-3"><p className="text-lg sm:text-xl text-slate-800 dark:text-slate-300 leading-relaxed font-serif">{ayah.en}</p></div></motion.div>)}</AnimatePresence>
                   <div className="mt-4 flex justify-end items-center gap-3">
-                    <QuranBookmarkButton surahId={selectedSurah} surahName={surahs.find(s => s.id === selectedSurah)?.enName} verseNum={idx + 1} arText={ayah.ar} enText={ayah.en} vaultItems={vaultItems} />
                     {relatedCount > 0 && (<button onClick={() => onTafsirClick(selectedSurah, idx + 1)} className="flex items-center gap-1.5 text-[10px] sm:text-xs uppercase tracking-wider font-bold text-amber-700 hover:text-amber-900 dark:text-amber-500 dark:hover:text-amber-400 transition-colors bg-amber-100/50 dark:bg-amber-900/20 px-3 py-1.5 rounded-md cursor-pointer shadow-sm"><LibraryBig className="w-3.5 h-3.5" /> Related Hadiths <span className="bg-amber-200 dark:bg-amber-800 text-amber-900 dark:text-amber-100 px-1.5 py-0.5 rounded text-[10px] ml-1">{relatedCount}</span></button>)}
-                  </div>                </div>
+                    <QuranBookmarkButton surahId={selectedSurah} surahName={surahs.find(s => s.id === selectedSurah)?.enName} verseNum={idx + 1} arText={ayah.ar} enText={ayah.en} vaultItems={vaultItems} />
+                  </div>  </div>
               </div>
             );
           })}
@@ -2213,6 +2213,24 @@ export default function App() {
 
   const searchIdRef = useRef(0);
 
+  // --- NEW: Parse Quran Details for Vault Action Bar ---
+  let quranDetails = null;
+  let vaultRelatedCount = 0;
+  if (selectedVaultItem?.type === 'quran' && selectedVaultItem.source?.includes('Verse')) {
+    const match = selectedVaultItem.source.match(/Surah (.+), Verse (\d+)/);
+    if (match) {
+      const vNum = parseInt(match[2]);
+      let sId = null;
+      for (let i = 1; i <= 114; i++) {
+        if (quranData[`${i}:1`]?.surahName === match[1]) { sId = i; break; }
+      }
+      if (sId) {
+        quranDetails = { surahId: sId, verseNum: vNum };
+        vaultRelatedCount = verseMap[`${sId}:${vNum}`] || 0;
+      }
+    }
+  }
+
   const activeFontFamily =
     fontStyle === 'scheherazade' ? '"Scheherazade New", "Noto Naskh Arabic", sans-serif' :
       fontStyle === 'uthmani' ? '"Amiri Quran", "Amiri", serif' :
@@ -2770,24 +2788,32 @@ export default function App() {
                             </span>
                           </div>
 
-                          {/* Arabic Dropdown */}
+                          {/* Arabic Display (Persistent for Quran, Dropdown for others) */}
                           {selectedVaultItem.arabic_text && (
-                            <div className="mb-4">
-                              <button onClick={() => setShowEditorArabic(!showEditorArabic)} className="flex items-center gap-1 text-sm font-medium transition-colors cursor-pointer text-emerald-600 dark:text-emerald-500 hover:text-emerald-700 dark:hover:text-emerald-400">
-                                {showEditorArabic ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />} {showEditorArabic ? "Hide Original Arabic" : "View Original Arabic"}
-                              </button>
-                              <AnimatePresence>
-                                {showEditorArabic && (
-                                  <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="overflow-hidden">
-                                    <div className="p-4 sm:p-5 rounded-lg mt-2 mb-4 bg-white dark:bg-[#0e0e11] border border-slate-200 dark:border-[#2d2d33]">
-                                      <p className="font-arabic text-xl md:text-2xl text-right leading-[2.2] text-slate-700 dark:text-slate-300" dir="rtl" lang="ar">
-                                        {selectedVaultItem.arabic_text}
-                                      </p>
-                                    </div>
-                                  </motion.div>
-                                )}
-                              </AnimatePresence>
-                            </div>
+                            selectedVaultItem.type === 'quran' ? (
+                              <div className="mb-8">
+                                <p className="font-arabic text-3xl sm:text-4xl text-right leading-[2.4] sm:leading-[2.5] text-[#2D241C] dark:text-slate-100" dir="rtl" lang="ar" style={{ fontFamily: activeFontFamily }}>
+                                  {selectedVaultItem.arabic_text}
+                                </p>
+                              </div>
+                            ) : (
+                              <div className="mb-4">
+                                <button onClick={() => setShowEditorArabic(!showEditorArabic)} className="flex items-center gap-1 text-sm font-medium transition-colors cursor-pointer text-emerald-600 dark:text-emerald-500 hover:text-emerald-700 dark:hover:text-emerald-400">
+                                  {showEditorArabic ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />} {showEditorArabic ? "Hide Original Arabic" : "View Original Arabic"}
+                                </button>
+                                <AnimatePresence>
+                                  {showEditorArabic && (
+                                    <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="overflow-hidden">
+                                      <div className="p-4 sm:p-5 rounded-lg mt-2 mb-4 bg-white dark:bg-[#0e0e11] border border-slate-200 dark:border-[#2d2d33]">
+                                        <p className="font-arabic text-xl md:text-2xl text-right leading-[2.2] text-slate-700 dark:text-slate-300" dir="rtl" lang="ar">
+                                          {selectedVaultItem.arabic_text}
+                                        </p>
+                                      </div>
+                                    </motion.div>
+                                  )}
+                                </AnimatePresence>
+                              </div>
+                            )
                           )}
 
                           {/* Chain Dropdown */}
@@ -2812,6 +2838,35 @@ export default function App() {
                           <p className={`font-serif leading-[1.9] text-slate-800 dark:text-[#ededf0] whitespace-pre-wrap antialiased ${selectedVaultItem.type === 'quran' ? 'text-xl sm:text-2xl text-center' : 'text-base sm:text-lg'}`}>
                             {selectedVaultItem.content}
                           </p>
+
+                          {/* NEW: Quran-Specific Action Bar (Hadiths + Bookmark) */}
+                          {selectedVaultItem.type === 'quran' && (
+                            <div className="mt-8 flex justify-end items-center gap-4 pt-5 border-t border-slate-200 dark:border-[#2d2d33]">
+                              {vaultRelatedCount > 0 && quranDetails && (
+                                <button
+                                  onClick={() => {
+                                    setShowVault(false);
+                                    handleTafsirClick(quranDetails.surahId, quranDetails.verseNum);
+                                  }}
+                                  className="flex items-center gap-1.5 text-xs uppercase tracking-wider font-bold text-amber-700 hover:text-amber-900 dark:text-amber-500 dark:hover:text-amber-400 transition-colors bg-amber-100/50 dark:bg-amber-900/20 px-3 py-1.5 rounded-md cursor-pointer shadow-sm"
+                                >
+                                  <LibraryBig className="w-4 h-4" /> Related Hadiths
+                                  <span className="bg-amber-200 dark:bg-amber-800 text-amber-900 dark:text-amber-100 px-1.5 py-0.5 rounded text-[10px] ml-1">{vaultRelatedCount}</span>
+                                </button>
+                              )}
+                              <button
+                                onClick={async () => {
+                                  await supabase.from('vault_items').delete().eq('id', selectedVaultItem.id);
+                                  fetchVaultItems();
+                                  setSelectedVaultItem(null);
+                                }}
+                                className="p-1.5 rounded-full text-orange-500 hover:text-orange-600 dark:text-orange-500 transition-colors cursor-pointer"
+                                title="Remove from Vault"
+                              >
+                                <Bookmark className="w-5 h-5" fill="currentColor" strokeWidth={0} />
+                              </button>
+                            </div>
+                          )}
                         </div>
 
                         {/* Editor Scholar's Margin (Note Taking) */}
