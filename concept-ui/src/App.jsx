@@ -944,7 +944,54 @@ const QuranReader = ({ activeFontFamily, fontStyle, setFontStyle, handleSurahSel
   );
 };
 
-const TranscriptLibrary = ({ transcripts }) => {
+const TranscriptBookmarkButton = ({ doc, vaultItems = [] }) => {
+  const sourceRef = doc.title;
+  const isSaved = vaultItems.some(v => v.source === sourceRef && v.type === 'transcript' && v.content === '[Full Transcript Bookmarked]');
+
+  const handleSaveClick = async (e) => {
+    e.stopPropagation();
+    const { data: { session } } = await supabase.auth.getSession();
+
+    if (!session?.user) {
+      alert("Please Sign In to save to your Vault.");
+      return;
+    }
+
+    if (isSaved) {
+      const savedItem = vaultItems.find(v => v.source === sourceRef && v.type === 'transcript' && v.content === '[Full Transcript Bookmarked]');
+      if (savedItem) {
+        await supabase.from('vault_items').delete().eq('id', savedItem.id);
+        window.dispatchEvent(new Event('vault-updated'));
+      }
+      return;
+    }
+
+    const { error } = await supabase.from('vault_items').insert([{
+      user_id: session.user.id,
+      content: '[Full Transcript Bookmarked]',
+      source: sourceRef,
+      type: 'transcript',
+      note: ''
+    }]);
+
+    if (error) console.error("Supabase Error:", error);
+    else window.dispatchEvent(new Event('vault-updated'));
+  };
+
+  return (
+    <motion.button
+      onClick={handleSaveClick}
+      whileTap={{ scale: 1.3, rotate: -15 }}
+      transition={{ type: "spring", stiffness: 400, damping: 10 }}
+      className={`p-1.5 rounded-full transition-colors cursor-pointer ${isSaved ? 'text-[#c6a87c] hover:text-[#b09265]' : 'text-zinc-400 hover:text-[#c6a87c]'}`}
+      title={isSaved ? "Remove from Vault" : "Save Full Transcript to Vault"}
+    >
+      <Bookmark className="w-5 h-5" fill={isSaved ? "currentColor" : "none"} strokeWidth={isSaved ? 0 : 2} />
+    </motion.button>
+  );
+};
+
+const TranscriptLibrary = ({ transcripts, vaultItems }) => {
   const [currentView, setCurrentView] = useState('home');
   const [activeDoc, setActiveDoc] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
@@ -967,6 +1014,75 @@ const TranscriptLibrary = ({ transcripts }) => {
 
   const [resumeToast, setResumeToast] = useState(false);
   const [isExploding, setIsExploding] = useState(false);
+
+  // --- NEW: Text Selection Highlight State ---
+  const [selectionPopup, setSelectionPopup] = useState(null);
+  const [highlightToast, setHighlightToast] = useState(false);
+
+  useEffect(() => {
+    if (currentView !== 'reader') return;
+
+    const handleSelection = () => {
+      const selection = window.getSelection();
+      const text = selection.toString().trim();
+
+      if (text.length > 0 && activeDoc) {
+        const range = selection.getRangeAt(0);
+        const rect = range.getBoundingClientRect();
+        // Spawns the popup slightly above the center of the selected text
+        setSelectionPopup({
+          text,
+          x: rect.left + (rect.width / 2),
+          y: rect.top - 15,
+        });
+      } else {
+        setSelectionPopup(null);
+      }
+    };
+
+    // Close popup on scroll to prevent it from floating disconnected
+    const handleScroll = () => {
+      if (selectionPopup) setSelectionPopup(null);
+    };
+
+    document.addEventListener('mouseup', handleSelection);
+    document.addEventListener('touchend', handleSelection);
+    window.addEventListener('scroll', handleScroll, { passive: true });
+
+    return () => {
+      document.removeEventListener('mouseup', handleSelection);
+      document.removeEventListener('touchend', handleSelection);
+      window.removeEventListener('scroll', handleScroll);
+    };
+  }, [currentView, activeDoc, selectionPopup]);
+
+  const handleSaveHighlight = async () => {
+    if (!selectionPopup) return;
+    const { data: { session } } = await supabase.auth.getSession();
+
+    if (!session?.user) {
+      alert("Please Sign In from the top menu to save highlights.");
+      return;
+    }
+
+    const { error } = await supabase.from('vault_items').insert([{
+      user_id: session.user.id,
+      content: selectionPopup.text,
+      source: activeDoc.title,
+      type: 'transcript',
+      note: ''
+    }]);
+
+    if (!error) {
+      window.dispatchEvent(new Event('vault-updated'));
+      setSelectionPopup(null);
+      window.getSelection().removeAllRanges(); // Deselect text
+      setHighlightToast(true);
+      setTimeout(() => setHighlightToast(false), 2500);
+    } else {
+      alert(`Supabase Error: ${error.message}`);
+    }
+  };
 
   const maxScrollYRef = useRef(0);
   const returnDesktopRef = useRef(null);
@@ -1799,9 +1915,14 @@ const TranscriptLibrary = ({ transcripts }) => {
                   {seriesTitle}
                 </span>
               )}
-              <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-zinc-900 dark:text-white leading-[1.15] mb-6 tracking-tight">
-                {mainTitle}
-              </h1>
+              <div className="flex items-start justify-between gap-4 mb-6">
+                <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-zinc-900 dark:text-white leading-[1.15] tracking-tight">
+                  {mainTitle}
+                </h1>
+                <div className="shrink-0 mt-2 sm:mt-1">
+                  <TranscriptBookmarkButton doc={activeDoc} vaultItems={vaultItems} />
+                </div>
+              </div>
               <div className="flex flex-wrap items-center gap-3 sm:gap-4 text-[10px] sm:text-[11px] lg:text-xs font-bold uppercase tracking-widest pb-6">
                 <span className="text-zinc-700 dark:text-zinc-300">{activeDoc.speaker}</span>
                 <span className="text-zinc-300 dark:text-zinc-600 hidden sm:inline">|</span>
@@ -1814,6 +1935,35 @@ const TranscriptLibrary = ({ transcripts }) => {
                 )}
               </div>
               <hr className="w-full border-t-[2px] border-zinc-200 dark:border-zinc-700" />
+
+              {/* NEW: Highlight Selection Floating Button */}
+              <AnimatePresence>
+                {selectionPopup && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 10, scale: 0.9 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.9 }}
+                    style={{ position: 'fixed', left: selectionPopup.x, top: selectionPopup.y, transform: 'translate(-50%, -100%)' }}
+                    className="z-[5000] pointer-events-auto"
+                  >
+                    <button
+                      onClick={handleSaveHighlight}
+                      className="flex items-center gap-2 bg-[#2D241C] dark:bg-[#c6a87c] text-[#FDFBF7] dark:text-[#0A120E] px-4 py-2 rounded-lg shadow-2xl hover:scale-105 transition-transform text-xs font-bold uppercase tracking-widest cursor-pointer whitespace-nowrap"
+                    >
+                      <Bookmark className="w-4 h-4" /> Save Highlight
+                    </button>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+
+              {/* NEW: Success Toast for Highlight */}
+              <AnimatePresence>
+                {highlightToast && (
+                  <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} className="fixed bottom-24 left-1/2 -translate-x-1/2 z-[5000] bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 px-5 py-3 rounded-full shadow-2xl text-[10px] sm:text-xs font-bold uppercase tracking-widest flex items-center gap-2">
+                    <Check className="w-4 h-4 text-emerald-500" /> Saved to Vault
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </header>
 
             {tocItems.length > 0 && (
@@ -3277,7 +3427,7 @@ export default function App() {
       </header>
 
       <main ref={containerRef} className={`relative w-full flex-grow flex flex-col ${lockMainScreen ? 'items-center justify-center h-screen overflow-hidden' : 'min-h-screen'}`}>
-        {activeTab === 'quran' && <QuranReader activeFontFamily={activeFontFamily} fontStyle={fontStyle} setFontStyle={setFontStyle} handleSurahSelectHook={(id, name) => saveToHistory({ type: 'quran', surahId: id, surahName: name, timestamp: Date.now() })} externalSurahTarget={quranTarget} externalVerseTarget={quranVerseTarget} onTafsirClick={handleTafsirClick} vaultItems={vaultItems} />}        {activeTab === 'library' && <TranscriptLibrary transcripts={transcriptData} />}
+        {activeTab === 'quran' && <QuranReader activeFontFamily={activeFontFamily} fontStyle={fontStyle} setFontStyle={setFontStyle} handleSurahSelectHook={(id, name) => saveToHistory({ type: 'quran', surahId: id, surahName: name, timestamp: Date.now() })} externalSurahTarget={quranTarget} externalVerseTarget={quranVerseTarget} onTafsirClick={handleTafsirClick} vaultItems={vaultItems} />}       {activeTab === 'library' && <TranscriptLibrary transcripts={transcriptData} vaultItems={vaultItems} />}
 
         <AnimatePresence>
           {activeTab === 'search' && !data && !loading && (
