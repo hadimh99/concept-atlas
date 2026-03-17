@@ -991,7 +991,7 @@ const TranscriptBookmarkButton = ({ doc, vaultItems = [] }) => {
   );
 };
 
-const TranscriptLibrary = ({ transcripts, vaultItems }) => {
+const TranscriptLibrary = ({ transcripts, vaultItems, externalDocTarget, externalHighlightTarget }) => {
   const [currentView, setCurrentView] = useState('home');
   const [activeDoc, setActiveDoc] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
@@ -1275,6 +1275,60 @@ const TranscriptLibrary = ({ transcripts, vaultItems }) => {
 
     return () => clearInterval(timer);
   }, [currentView, activeDoc]);
+
+  // --- NEW: Cinematic Navigation from Vault ---
+  useEffect(() => {
+    if (externalDocTarget && currentView !== 'reader') {
+      const targetDoc = transcripts.find(t => t.id === externalDocTarget);
+      if (targetDoc) openReader(targetDoc);
+    }
+  }, [externalDocTarget]);
+
+  useEffect(() => {
+    if (externalHighlightTarget && currentView === 'reader' && activeDoc) {
+      let checks = 0;
+      // Use the first 40 chars of the highlight to reliably find the specific DOM element
+      const targetSnippet = externalHighlightTarget.substring(0, 40).trim();
+
+      const checkStabilization = setInterval(() => {
+        const elements = Array.from(document.querySelectorAll('.transcript-block'));
+        const targetEl = elements.find(el => el.textContent.includes(targetSnippet));
+
+        if (targetEl) {
+          clearInterval(checkStabilization);
+          const currentY = targetEl.getBoundingClientRect().top + window.scrollY;
+          const targetY = currentY - 120;
+          const startY = window.scrollY;
+          const distance = targetY - startY;
+          const duration = Math.min(1800, Math.max(800, Math.abs(distance) * 0.15));
+
+          let start = null;
+          const cinematicScroll = (timestamp) => {
+            if (!start) start = timestamp;
+            const progress = timestamp - start;
+            const t = Math.min(progress / duration, 1);
+            const easeOut = 1 - Math.pow(1 - t, 4);
+            window.scrollTo(0, startY + (distance * easeOut));
+
+            if (progress < duration) {
+              window.requestAnimationFrame(cinematicScroll);
+            } else {
+              targetEl.classList.add('bg-amber-500/20', 'dark:bg-[#c6a87c]/30', 'transition-colors', 'duration-1000', 'rounded-lg');
+              setTimeout(() => targetEl.classList.remove('bg-amber-500/20', 'dark:bg-[#c6a87c]/30'), 2500);
+              setResumeToast(true);
+              setTimeout(() => setResumeToast(false), 3000);
+            }
+          };
+          window.requestAnimationFrame(cinematicScroll);
+        } else if (checks > 15) {
+          clearInterval(checkStabilization); // Stop trying if element isn't found
+        }
+        checks++;
+      }, 100);
+
+      return () => clearInterval(checkStabilization);
+    }
+  }, [externalHighlightTarget, currentView, activeDoc]);
 
   // Smoother, slower Firework Handler
   const handleMarkAsRead = () => {
@@ -1994,18 +2048,18 @@ const TranscriptLibrary = ({ transcripts, vaultItems }) => {
 
             <div className={`text-zinc-800 dark:text-zinc-300 antialiased ${fontFamily === 'serif' ? 'font-serif' : 'font-sans'}`} style={{ fontSize: `${fontSize}px`, lineHeight: 1.85 }}>
               {(activeDoc.content || []).map((block, idx) => {
-                if (block.type === 'h2') return <h2 id={`segment-${idx}`} key={idx} className="segment-header font-bold text-zinc-900 dark:text-white mt-14 mb-6 tracking-tight scroll-mt-24 font-sans" style={{ fontSize: `${fontSize * 1.3}px`, lineHeight: 1.3 }}>{block.text}</h2>;
+                if (block.type === 'h2') return <h2 id={`segment-${idx}`} key={idx} className="transcript-block segment-header font-bold text-zinc-900 dark:text-white mt-14 mb-6 tracking-tight scroll-mt-24 font-sans" style={{ fontSize: `${fontSize * 1.3}px`, lineHeight: 1.3 }}>{block.text}</h2>;
                 if (block.type === 'summary') return (
-                  <div key={idx} className="bg-zinc-50 dark:bg-[#1c1c1e] border-l-4 border-[#c6a87c] p-6 sm:p-8 my-10 rounded-r-xl shadow-sm">
+                  <div key={idx} className="transcript-block bg-zinc-50 dark:bg-[#1c1c1e] border-l-4 border-[#c6a87c] p-6 sm:p-8 my-10 rounded-r-xl shadow-sm">
                     <span className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-[#c6a87c] mb-3"><Sparkles className="w-3.5 h-3.5" /> Segment Summary</span>
                     <p className="text-zinc-700 dark:text-zinc-300 font-medium" style={{ fontSize: `${Math.max(15, fontSize - 2)}px`, lineHeight: 1.7 }}>{parseFormatting(block.text)}</p>
                   </div>
                 );
                 if (block.type === 'quote') return (
-                  <blockquote key={idx} className="pl-6 sm:pl-8 py-2 my-10 border-l-[3px] border-[#c6a87c] font-medium text-zinc-900 dark:text-zinc-100 italic font-serif" style={{ fontSize: `${fontSize * 1.15}px`, lineHeight: 1.6 }}>"{parseFormatting(block.text)}"</blockquote>
+                  <blockquote key={idx} className="transcript-block pl-6 sm:pl-8 py-2 my-10 border-l-[3px] border-[#c6a87c] font-medium text-zinc-900 dark:text-zinc-100 italic font-serif" style={{ fontSize: `${fontSize * 1.15}px`, lineHeight: 1.6 }}>"{parseFormatting(block.text)}"</blockquote>
                 );
                 if (block.type === 'divider') return <div key={idx} className="flex justify-center py-10"><span className="w-12 h-1 rounded-full bg-zinc-300 dark:bg-zinc-700"></span></div>;
-                return <p key={idx} className="mb-6 text-left">{parseFormatting(block.text)}</p>;
+                return <p key={idx} className="transcript-block mb-6 text-left">{parseFormatting(block.text)}</p>;
               })}
             </div>
 
@@ -2357,7 +2411,8 @@ export default function App() {
   const [appHistory, setAppHistory] = useState([]);
   const [quranTarget, setQuranTarget] = useState(null);
   const [quranVerseTarget, setQuranVerseTarget] = useState(null);
-
+  const [transcriptTarget, setTranscriptTarget] = useState(null);
+  const [transcriptHighlight, setTranscriptHighlight] = useState(null);
   const [anchorHadith, setAnchorHadith] = useState(null);
   const [showAnchor, setShowAnchor] = useState(false);
   const [showAnchorModal, setShowAnchorModal] = useState(false);
@@ -2988,60 +3043,118 @@ export default function App() {
                             </div>
                           )}
 
-                          {/* Primary English Content */}
-                          <p className={`font-serif leading-[1.9] text-slate-800 dark:text-[#ededf0] whitespace-pre-wrap antialiased ${selectedVaultItem.type === 'quran' ? 'text-xl sm:text-2xl text-center' : 'text-base sm:text-lg'}`}>
-                            {selectedVaultItem.content}
-                          </p>
+                          {/* Primary English Content (Smart Formatting) */}
+                          {selectedVaultItem.type === 'transcript' ? (
+                            selectedVaultItem.content === '[Full Transcript Bookmarked]' ? (
+                              <div className="flex flex-col items-center justify-center py-10 opacity-70">
+                                <LibraryIcon className="w-12 h-12 mb-3 text-[#c6a87c]" />
+                                <p className="font-serif text-lg text-slate-600 dark:text-[#9a9a9f]">Full Transcript Bookmarked</p>
+                              </div>
+                            ) : (
+                              <div className="flex flex-col gap-5">
+                                {selectedVaultItem.content.split(/\n+/).map((para, i) => {
+                                  const pTrimmed = para.trim();
+                                  if (!pTrimmed) return null;
 
-                          {/* NEW: Quran-Specific Action Bar (Hadiths + Bookmark) */}
-                          {selectedVaultItem.type === 'quran' && (
-                            <div className="mt-8 flex justify-end items-center gap-4 pt-5 border-t border-slate-200 dark:border-[#2d2d33]">
-                              {quranDetails && (
-                                <button
-                                  onClick={() => {
-                                    setShowVault(false);
-                                    setActiveTab('quran');
-                                    setQuranTarget(quranDetails.surahId);
-                                    setQuranVerseTarget(quranDetails.verseNum);
-                                  }}
-                                  className="flex items-center gap-1.5 text-xs uppercase tracking-wider font-bold text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 transition-colors bg-blue-100/50 dark:bg-blue-900/20 px-3 py-1.5 rounded-md cursor-pointer shadow-sm"
-                                >
-                                  <BookOpen className="w-4 h-4" /> Go to Verse
-                                </button>
-                              )}
-                              {vaultRelatedCount > 0 && quranDetails && (
-                                <button
-                                  onClick={() => {
-                                    // Removed setShowVault(false) to keep Vault open behind the popup
-                                    handleTafsirClick(quranDetails.surahId, quranDetails.verseNum);
-                                  }}
-                                  className="flex items-center gap-1.5 text-xs uppercase tracking-wider font-bold text-amber-700 hover:text-amber-900 dark:text-amber-500 dark:hover:text-amber-400 transition-colors bg-amber-100/50 dark:bg-amber-900/20 px-3 py-1.5 rounded-md cursor-pointer shadow-sm"
-                                >
-                                  <LibraryBig className="w-4 h-4" /> Related Hadiths
-                                  <span className="bg-amber-200 dark:bg-amber-800 text-amber-900 dark:text-amber-100 px-1.5 py-0.5 rounded text-[10px] ml-1">{vaultRelatedCount}</span>
-                                </button>
-                              )}
-                              <button
-                                onClick={async () => {
-                                  await supabase.from('vault_items').delete().eq('id', selectedVaultItem.id);
-                                  fetchVaultItems();
-                                  setSelectedVaultItem(null);
-                                }}
-                                className="p-1.5 rounded-full text-orange-500 hover:text-orange-600 dark:text-orange-500 transition-colors cursor-pointer"
-                                title="Remove from Vault"
-                              >
-                                <Bookmark className="w-5 h-5" fill="currentColor" strokeWidth={0} />
-                              </button>
-                            </div>
+                                  // Cross-reference original transcript to rebuild formatting
+                                  const sourceDoc = transcriptData.find(t => t.title === selectedVaultItem.source);
+                                  let matchedBlockType = 'p';
+
+                                  if (sourceDoc?.content) {
+                                    const match = sourceDoc.content.find(b => b.text && (b.text.includes(pTrimmed) || pTrimmed.includes(b.text)));
+                                    if (match) matchedBlockType = match.type;
+                                  }
+
+                                  // Bold parser mirroring the transcript view
+                                  const parseBold = (text) => text.split(/(\*\*.*?\*\*)/g).map((part, index) => {
+                                    if (part.startsWith('**') && part.endsWith('**')) return <strong key={index} className="font-bold text-slate-900 dark:text-white">{part.slice(2, -2)}</strong>;
+                                    return part;
+                                  });
+
+                                  if (matchedBlockType === 'quote') {
+                                    return <blockquote key={i} className="pl-5 py-2 my-2 border-l-[3px] border-[#c6a87c] font-medium text-slate-800 dark:text-[#ededf0] italic font-serif text-base sm:text-lg leading-[1.9]">"{parseBold(pTrimmed.replace(/^"|"$/g, ''))}"</blockquote>;
+                                  }
+                                  if (matchedBlockType === 'summary') {
+                                    return <div key={i} className="bg-slate-100 dark:bg-[#1c1c20] border-l-4 border-[#c6a87c] p-5 my-2 rounded-r-lg shadow-sm"><p className="font-serif text-base sm:text-lg">{parseBold(pTrimmed)}</p></div>;
+                                  }
+                                  return <p key={i} className="font-serif text-base sm:text-lg leading-[1.9] text-slate-800 dark:text-[#ededf0]">{parseBold(pTrimmed)}</p>;
+                                })}
+                              </div>
+                            )
+                          ) : (
+                            <p className={`font-serif leading-[1.9] text-slate-800 dark:text-[#ededf0] whitespace-pre-wrap antialiased ${selectedVaultItem.type === 'quran' ? 'text-xl sm:text-2xl text-center' : 'text-base sm:text-lg'}`}>
+                              {selectedVaultItem.content}
+                            </p>
                           )}
+
+                          {/* Unified Navigation & Action Bar */}
+                          <div className="mt-10 flex justify-end items-center gap-4 pt-5 border-t border-slate-200 dark:border-[#2d2d33]">
+
+                            {/* Transcript Navigation */}
+                            {selectedVaultItem.type === 'transcript' && (
+                              <button
+                                onClick={() => {
+                                  const doc = transcriptData.find(t => t.title === selectedVaultItem.source);
+                                  if (doc) {
+                                    setShowVault(false);
+                                    setActiveTab('library');
+                                    setTranscriptTarget(doc.id);
+                                    setTranscriptHighlight(selectedVaultItem.content === '[Full Transcript Bookmarked]' ? null : selectedVaultItem.content);
+                                  }
+                                }}
+                                className="flex items-center gap-1.5 text-xs uppercase tracking-wider font-bold text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 transition-colors bg-blue-100/50 dark:bg-blue-900/20 px-3 py-1.5 rounded-md cursor-pointer shadow-sm"
+                              >
+                                <LibraryIcon className="w-4 h-4" /> {selectedVaultItem.content === '[Full Transcript Bookmarked]' ? 'Read Transcript' : 'Go to Highlight'}
+                              </button>
+                            )}
+
+                            {/* Quran Navigation */}
+                            {selectedVaultItem.type === 'quran' && quranDetails && (
+                              <button
+                                onClick={() => {
+                                  setShowVault(false);
+                                  setActiveTab('quran');
+                                  setQuranTarget(quranDetails.surahId);
+                                  setQuranVerseTarget(quranDetails.verseNum);
+                                }}
+                                className="flex items-center gap-1.5 text-xs uppercase tracking-wider font-bold text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 transition-colors bg-blue-100/50 dark:bg-blue-900/20 px-3 py-1.5 rounded-md cursor-pointer shadow-sm"
+                              >
+                                <BookOpen className="w-4 h-4" /> Go to Verse
+                              </button>
+                            )}
+
+                            {/* Quran Related Hadiths */}
+                            {selectedVaultItem.type === 'quran' && vaultRelatedCount > 0 && quranDetails && (
+                              <button
+                                onClick={() => handleTafsirClick(quranDetails.surahId, quranDetails.verseNum)}
+                                className="flex items-center gap-1.5 text-xs uppercase tracking-wider font-bold text-amber-700 hover:text-amber-900 dark:text-amber-500 dark:hover:text-amber-400 transition-colors bg-amber-100/50 dark:bg-amber-900/20 px-3 py-1.5 rounded-md cursor-pointer shadow-sm"
+                              >
+                                <LibraryBig className="w-4 h-4" /> Related Hadiths
+                                <span className="bg-amber-200 dark:bg-amber-800 text-amber-900 dark:text-amber-100 px-1.5 py-0.5 rounded text-[10px] ml-1">{vaultRelatedCount}</span>
+                              </button>
+                            )}
+
+                            {/* Universal Remove Button */}
+                            <button
+                              onClick={async () => {
+                                await supabase.from('vault_items').delete().eq('id', selectedVaultItem.id);
+                                fetchVaultItems();
+                                setSelectedVaultItem(null);
+                              }}
+                              className={`p-1.5 rounded-full transition-colors cursor-pointer ${selectedVaultItem.type === 'transcript' ? 'text-[#c6a87c] hover:text-[#b09265]' : selectedVaultItem.type === 'quran' ? 'text-orange-500 hover:text-orange-600' : 'text-emerald-500 hover:text-emerald-600'}`}
+                              title="Remove from Vault"
+                            >
+                              <Bookmark className="w-5 h-5" fill="currentColor" strokeWidth={0} />
+                            </button>
+                          </div>
                         </div>
 
-                        {/* Editor Scholar's Margin (Note Taking) */}
+                        {/* Editor Your Notes (Note Taking) */}
                         <div className="flex-grow flex flex-col pl-4 border-l-2 border-blue-500 relative mb-12">
                           <div className="flex items-center justify-between mb-4">
                             <div className="flex items-center gap-2">
                               <PenLine className="w-4 h-4 text-blue-500" />
-                              <h3 className="text-xs font-bold uppercase tracking-widest text-slate-400 dark:text-[#9a9a9f]">Scholar's Margin</h3>
+                              <h3 className="text-xs font-bold uppercase tracking-widest text-slate-400 dark:text-[#9a9a9f]">Your Notes</h3>
                             </div>
 
                             <div className="flex items-center gap-3">
@@ -3427,7 +3540,7 @@ export default function App() {
       </header>
 
       <main ref={containerRef} className={`relative w-full flex-grow flex flex-col ${lockMainScreen ? 'items-center justify-center h-screen overflow-hidden' : 'min-h-screen'}`}>
-        {activeTab === 'quran' && <QuranReader activeFontFamily={activeFontFamily} fontStyle={fontStyle} setFontStyle={setFontStyle} handleSurahSelectHook={(id, name) => saveToHistory({ type: 'quran', surahId: id, surahName: name, timestamp: Date.now() })} externalSurahTarget={quranTarget} externalVerseTarget={quranVerseTarget} onTafsirClick={handleTafsirClick} vaultItems={vaultItems} />}       {activeTab === 'library' && <TranscriptLibrary transcripts={transcriptData} vaultItems={vaultItems} />}
+        {activeTab === 'quran' && <QuranReader activeFontFamily={activeFontFamily} fontStyle={fontStyle} setFontStyle={setFontStyle} handleSurahSelectHook={(id, name) => saveToHistory({ type: 'quran', surahId: id, surahName: name, timestamp: Date.now() })} externalSurahTarget={quranTarget} externalVerseTarget={quranVerseTarget} onTafsirClick={handleTafsirClick} vaultItems={vaultItems} />}       {activeTab === 'library' && <TranscriptLibrary transcripts={transcriptData} vaultItems={vaultItems} externalDocTarget={transcriptTarget} externalHighlightTarget={transcriptHighlight} />}
 
         <AnimatePresence>
           {activeTab === 'search' && !data && !loading && (
