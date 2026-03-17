@@ -1029,7 +1029,7 @@ const TranscriptLibrary = ({ transcripts, vaultItems, externalDocTarget, externa
       if (text.length > 0 && activeDoc) {
         const range = selection.getRangeAt(0);
         const rect = range.getBoundingClientRect();
-        const isMobile = window.innerWidth < 768; // Detect mobile screens
+        const isMobile = window.innerWidth < 768; // Detect if on a mobile device
 
         setSelectionPopup({
           text,
@@ -1992,27 +1992,48 @@ const TranscriptLibrary = ({ transcripts, vaultItems, externalDocTarget, externa
               </div>
               <hr className="w-full border-t-[2px] border-zinc-200 dark:border-zinc-700" />
 
-              {/* NEW: Highlight Selection Floating Button */}
+              {/* NEW: Highlight Selection UI (Responsive) */}
               <AnimatePresence>
                 {selectionPopup && (
-                  <motion.div
-                    initial={{ opacity: 0, y: 10, scale: 0.9 }}
-                    animate={{ opacity: 1, y: 0, scale: 1 }}
-                    exit={{ opacity: 0, scale: 0.9 }}
-                    style={
-                      selectionPopup.isMobile
-                        ? { position: 'fixed', bottom: '120px', left: '50%', transform: 'translateX(-50%)' }
-                        : { position: 'fixed', left: selectionPopup.x, top: selectionPopup.y, transform: 'translate(-50%, -100%)' }
-                    }
-                    className="z-[5000] pointer-events-auto"
-                  >
-                    <button
-                      onClick={handleSaveHighlight}
-                      className="flex items-center gap-2 bg-[#2D241C] dark:bg-[#c6a87c] text-[#FDFBF7] dark:text-[#0A120E] px-5 py-3 md:px-4 md:py-2 rounded-full md:rounded-lg shadow-2xl hover:scale-105 transition-transform text-sm md:text-xs font-bold uppercase tracking-widest cursor-pointer whitespace-nowrap border border-[#5C4A3D]/20 dark:border-transparent"
+                  selectionPopup.isMobile ? (
+                    /* Mobile: Premium Sticky Bottom Action Bar */
+                    <motion.div
+                      initial={{ y: "100%" }}
+                      animate={{ y: 0 }}
+                      exit={{ y: "100%" }}
+                      transition={{ type: "spring", damping: 25, stiffness: 250 }}
+                      className="fixed bottom-0 left-0 w-full z-[5000] pointer-events-auto"
                     >
-                      <Bookmark className="w-4 h-4" /> Save Highlight
-                    </button>
-                  </motion.div>
+                      <div className="bg-[#FDFBF7]/95 dark:bg-[#030A06]/95 backdrop-blur-2xl border-t border-[#5C4A3D]/15 dark:border-[#c6a87c]/20 px-5 pt-4 pb-8 sm:pb-6 flex items-center justify-between shadow-[0_-10px_40px_rgba(0,0,0,0.1)] dark:shadow-[0_-10px_40px_rgba(0,0,0,0.5)]">
+                        <div className="flex flex-col overflow-hidden pr-4 max-w-[60%]">
+                          <span className="text-[9px] uppercase tracking-widest font-bold text-[#5C4A3D]/60 dark:text-[#c6a87c]/60 mb-1 flex items-center gap-1.5"><Sparkles className="w-3 h-3" /> Text Selected</span>
+                          <span className="text-sm font-serif text-[#2D241C] dark:text-[#FAFAFA] truncate italic">"{selectionPopup.text}"</span>
+                        </div>
+                        <button
+                          onClick={handleSaveHighlight}
+                          className="shrink-0 flex items-center gap-2 bg-[#2D241C] dark:bg-[#c6a87c] text-[#FDFBF7] dark:text-[#0A120E] px-4 py-3 rounded-xl shadow-lg hover:scale-105 transition-transform text-[10px] font-bold uppercase tracking-widest cursor-pointer whitespace-nowrap"
+                        >
+                          <Bookmark className="w-4 h-4" /> Save to Vault
+                        </button>
+                      </div>
+                    </motion.div>
+                  ) : (
+                    /* Desktop: Floating Tooltip */
+                    <motion.div
+                      initial={{ opacity: 0, y: 10, scale: 0.9 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      exit={{ opacity: 0, scale: 0.9 }}
+                      style={{ position: 'fixed', left: selectionPopup.x, top: selectionPopup.y, transform: 'translate(-50%, -100%)' }}
+                      className="z-[5000] pointer-events-auto"
+                    >
+                      <button
+                        onClick={handleSaveHighlight}
+                        className="flex items-center gap-2 bg-[#2D241C] dark:bg-[#c6a87c] text-[#FDFBF7] dark:text-[#0A120E] px-4 py-2 rounded-lg shadow-2xl hover:scale-105 transition-transform text-xs font-bold uppercase tracking-widest cursor-pointer whitespace-nowrap"
+                      >
+                        <Bookmark className="w-4 h-4" /> Save to Vault
+                      </button>
+                    </motion.div>
+                  )
                 )}
               </AnimatePresence>
 
