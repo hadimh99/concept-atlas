@@ -136,10 +136,13 @@ const HadithCard = ({ item, handleCopyHadith, searchMode, onVerseClick, onFindSi
   // --- PERSISTENT SAVE STATE LOGIC ---
   const sourceRef = `Book: ${item.book}, Vol: ${item.volume}, ${item.sub_book}, Chapter: ${item.chapter} ${displayNum !== "Unknown" ? `Hadith ${displayNum}` : ''}`;
   const [isSaved, setIsSaved] = useState(false);
+  const [savedNote, setSavedNote] = useState("");
 
   useEffect(() => {
     // Automatically check if this exact hadith is already in the vault
-    setIsSaved(vaultItems.some(v => v.source === sourceRef));
+    const vItem = vaultItems.find(v => v.source === sourceRef);
+    setIsSaved(!!vItem);
+    setSavedNote(vItem?.note || "");
   }, [vaultItems, sourceRef]);
 
   const handleSaveClick = async (e) => {
@@ -236,6 +239,22 @@ const HadithCard = ({ item, handleCopyHadith, searchMode, onVerseClick, onFindSi
           )}
         </AnimatePresence>
       </div>
+
+      {/* NEW: Display Personal Vault Note in Main Feed */}
+      <AnimatePresence>
+        {savedNote && (
+          <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="overflow-hidden">
+            <div className={`mb-5 p-4 rounded-lg border-l-4 shadow-sm ${isKeyword ? 'bg-blue-50 dark:bg-blue-900/20 border-blue-500' : 'bg-indigo-50 dark:bg-indigo-900/20 border-indigo-500'}`}>
+              <div className="flex items-center gap-2 mb-2">
+                <PenLine className={`w-4 h-4 ${isKeyword ? 'text-blue-500' : 'text-indigo-500'}`} />
+                <span className={`text-xs font-bold uppercase tracking-widest ${isKeyword ? 'text-blue-600 dark:text-blue-400' : 'text-indigo-600 dark:text-indigo-400'}`}>Your Vault Note</span>
+              </div>
+              <p className="font-serif text-sm sm:text-base text-slate-700 dark:text-slate-300 leading-relaxed whitespace-pre-wrap">{savedNote}</p>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       <div className="mb-6">
         {paragraphs.map((para, idx) => (
           <p key={idx} className={`text-base sm:text-lg md:text-xl leading-[1.8] text-slate-900 dark:text-slate-50 ${idx !== paragraphs.length - 1 ? 'mb-5' : ''}`} style={{ fontFamily: "'Times New Roman', Times, serif" }}>
@@ -2261,8 +2280,13 @@ export default function App() {
 
     if (vaultSearch.trim()) {
       const q = vaultSearch.toLowerCase();
-      filtered = filtered.filter(item => (item.content && item.content.toLowerCase().includes(q)) || (item.source && item.source.toLowerCase().includes(q)));
+      filtered = filtered.filter(item =>
+        (item.content && item.content.toLowerCase().includes(q)) ||
+        (item.source && item.source.toLowerCase().includes(q)) ||
+        (item.note && item.note.toLowerCase().includes(q))
+      );
     }
+
     return filtered;
   }, [vaultItems, activeFolder, vaultSearch]);
 
