@@ -451,7 +451,7 @@ const QuranReader = ({ activeFontFamily, fontStyle, setFontStyle, handleSurahSel
                                     <div className="absolute -right-6 -bottom-6 opacity-[0.03] dark:opacity-5"><BookOpen className="w-48 h-48" /></div>
                                     <span className="text-[10px] font-bold uppercase tracking-widest text-indigo-500 mb-2">Deep Dive</span>
                                     <span className="font-bold text-xl text-slate-800 dark:text-slate-200 group-hover:text-indigo-600 transition-colors mb-3">Surah Al-Baqarah</span>
-                                    <span className="text-sm text-slate-500 leading-relaxed relative z-10">Explore the longest chapter of the Quran, mathematically mapped with over 450+ verified narrations from the Ahl al-Bayt in Kisa's database.</span>
+                                    <span className="text-sm text-slate-500 leading-relaxed relative z-10">Explore the longest chapter of the Quran, mathematically mapped with over 198+ verified narrations from the Ahl al-Bayt in Al-Kisa's database.</span>
                                 </div>
                             )}
                         </div>
