@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Search, Moon, Sun, Sparkles, X, ChevronRight, ChevronLeft, Home, Copy, ChevronDown, ChevronUp, List, Layout, BookOpen, History, HelpCircle, Share2, Check, Menu, Clock, Trash2, Library as LibraryIcon, ArrowDown, User, Bookmark, Youtube, Database, Download } from 'lucide-react';
 import { supabase } from '../supabaseClient';
 import { jsPDF } from 'jspdf';
+import RevisionModule from './RevisionModule';
 
 
 const TranscriptBookmarkButton = ({ doc, vaultItems = [] }) => {
@@ -1470,6 +1471,11 @@ const TranscriptLibrary = ({
                                 if (block.type === 'divider') return <div key={idx} className="flex justify-center py-10"><span className="w-12 h-1 rounded-full bg-zinc-300 dark:bg-zinc-700"></span></div>;
                                 return <p key={idx} className="transcript-block mb-6 text-left">{parseFormatting(block.text)}</p>;
                             })}
+                        </div>
+
+                        {/* --- THE REVISION & MASTERY MODULE --- */}
+                        <div className="print-hide">
+                            <RevisionModule />
                         </div>
 
                         <div className="print-hide mt-16 pt-12 border-t border-zinc-200 dark:border-zinc-800/80 flex flex-col items-center min-h-[140px] justify-center">
