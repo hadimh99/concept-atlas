@@ -6,6 +6,7 @@ import { Search, Moon, Sun, Sparkles, X, ChevronRight, ChevronLeft, Home, Copy, 
 import { supabase } from '../supabaseClient';
 import { jsPDF } from 'jspdf';
 import RevisionModule from './RevisionModule';
+import MasteryRing from './MasteryRing';
 
 
 const TranscriptBookmarkButton = ({ doc, vaultItems = [] }) => {
@@ -599,7 +600,9 @@ const TranscriptLibrary = ({
 
                         const newStatus = currentStatus === 'completed' ? 'completed' : (scrolled > 2 ? 'in-progress' : 'unread');
 
+                        // THE FIX: We spread the existing data first so it doesn't delete your quiz score!
                         currentSavedData[activeDoc.id] = {
+                            ...currentSavedData[activeDoc.id],
                             position: y,
                             percentage: scrolled,
                             status: newStatus,
@@ -1088,14 +1091,16 @@ const TranscriptLibrary = ({
 
                                                             <div>
                                                                 <div className="flex justify-between items-start mb-4">
-                                                                    <span className="text-[10px] font-bold uppercase tracking-widest bg-zinc-100 dark:bg-zinc-800 text-zinc-500 px-2 py-1 rounded">
+                                                                    <span className="text-[10px] font-bold uppercase tracking-widest bg-zinc-100 dark:bg-zinc-800 text-zinc-500 px-2 py-1 rounded mt-1">
                                                                         {doc.speaker}
                                                                     </span>
-                                                                    {status === 'completed' ? (
-                                                                        <Check className="w-4 h-4 text-emerald-500" />
-                                                                    ) : (
-                                                                        <BookOpen className="w-4 h-4 text-zinc-300 dark:text-zinc-600 group-hover:text-[#c6a87c] transition-colors" />
-                                                                    )}
+
+                                                                    <div className="shrink-0 -mr-1 -mt-1">
+                                                                        <MasteryRing
+                                                                            score={readingProgress[doc.id]?.quizScore}
+                                                                            total={readingProgress[doc.id]?.quizTotal}
+                                                                        />
+                                                                    </div>
                                                                 </div>
                                                                 <h3 className="text-base sm:text-lg font-bold text-zinc-900 dark:text-white leading-snug mb-2 group-hover:text-[#c6a87c] transition-colors line-clamp-3">
                                                                     {displayTitle}
@@ -1210,7 +1215,7 @@ const TranscriptLibrary = ({
                 </div>
             </header>
 
-            <div className="w-full max-w-[1400px] mx-auto mb-6 px-4 sm:px-0 flex justify-start pointer-events-auto">
+            <div className="md:hidden w-full max-w-[1400px] mx-auto mb-6 px-4 sm:px-0 flex justify-start pointer-events-auto">
                 <button
                     onClick={closeReader}
                     className="flex items-center gap-2 text-zinc-500 hover:text-[#c6a87c] transition-colors text-xs sm:text-sm font-bold uppercase tracking-widest cursor-pointer"
@@ -1293,8 +1298,20 @@ const TranscriptLibrary = ({
             </AnimatePresence>
 
             <div className="w-full max-w-[1400px] mx-auto flex items-start gap-0 md:gap-8 lg:gap-12">
-                <motion.div animate={{ width: isArchiveOpen ? 320 : 0, opacity: isArchiveOpen ? 1 : 0 }} transition={{ duration: 0.4, ease: "easeInOut" }} className="hidden md:block shrink-0 overflow-hidden sticky top-32 self-start h-[calc(100vh-140px)]">
-                    <div className="w-[320px] h-full bg-white dark:bg-[#252528] border border-zinc-200 dark:border-zinc-800/80 rounded-2xl flex flex-col shadow-sm">
+                <motion.div
+                    animate={{ width: isArchiveOpen ? 320 : 0, opacity: isArchiveOpen ? 1 : 0 }}
+                    transition={{ duration: 0.4, ease: "easeInOut" }}
+                    className="hidden md:flex shrink-0 overflow-hidden sticky top-28 self-start h-[calc(100vh-120px)] flex-col gap-4"
+                >
+                    {/* --- NEW: Sticky Back Button --- */}
+                    <button
+                        onClick={closeReader}
+                        className="flex items-center gap-2 text-zinc-500 hover:text-[#c6a87c] transition-colors text-xs sm:text-sm font-bold uppercase tracking-widest cursor-pointer pl-1 w-max"
+                    >
+                        <ChevronLeft className="w-4 h-4" /> Back to Dashboard
+                    </button>
+
+                    <div className="w-[320px] flex-1 bg-white dark:bg-[#252528] border border-zinc-200 dark:border-zinc-800/80 rounded-2xl flex flex-col shadow-sm min-h-0">
                         <LibraryTools isMobile={false} />
                     </div>
                 </motion.div>
@@ -1475,7 +1492,19 @@ const TranscriptLibrary = ({
 
                         {/* --- THE REVISION & MASTERY MODULE --- */}
                         <div className="print-hide">
-                            <RevisionModule />
+                            <RevisionModule
+                                docId={activeDoc.id}
+                                onComplete={(score, total) => {
+                                    const currentSavedData = JSON.parse(localStorage.getItem('kisa_progress') || '{}');
+                                    currentSavedData[activeDoc.id] = {
+                                        ...currentSavedData[activeDoc.id],
+                                        quizScore: score,
+                                        quizTotal: total
+                                    };
+                                    localStorage.setItem('kisa_progress', JSON.stringify(currentSavedData));
+                                    setReadingProgress(currentSavedData);
+                                }}
+                            />
                         </div>
 
                         <div className="print-hide mt-16 pt-12 border-t border-zinc-200 dark:border-zinc-800/80 flex flex-col items-center min-h-[140px] justify-center">

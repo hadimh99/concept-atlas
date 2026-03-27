@@ -1,54 +1,9 @@
 // src/components/RevisionModule.jsx
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Lightbulb, PencilLine, CheckCircle, XCircle, BrainCircuit, ChevronUp, ChevronDown, Activity, Award, AlertCircle, Compass, BookOpen, RotateCcw } from 'lucide-react';
-
-// --- V2 DYNAMIC NOTEBOOK LM DATA ---
-const data = {
-    "flashcards": [
-        { "term": "Qara'in", "definition": "Historical contexts or circumstantial forensic evidence used to uncover buried truths, which Sheikh al-Ghizzi prioritizes over easily manipulated chains of narration." },
-        { "term": "Asanid", "definition": "Chains of narration, described by the Sheikh as a fabricated 'game' used by historians and hadith scholars to obscure facts regarding the oppression of the Ahlulbayt." },
-        { "term": "Tadlis", "definition": "Deception or the deliberate hiding of facts, specifically referenced when al-Bukhari intentionally removed Ali and al-Abbas's condemnation of Abu Bakr and Umar from an otherwise identical hadith." },
-        { "term": "Al-Tashayyu'", "definition": "Shiism, which according to the Sheikh solely and absolutely represents the Infallible Ahlulbayt, and cannot be perfectly represented by any fallible scholar or cleric." },
-        { "term": "Murji'ah", "definition": "A group cursed by Imam al-Sadiq because they validate the killers of the Ahlulbayt by calling them believers, thereby making themselves active partners in the crime." }
-    ],
-    "quiz": [
-        {
-            "id": 1, "difficulty": "Easy", "type": "single",
-            "question": "According to Sheikh al-Ghizzi, what 'game' was fabricated by historians to hide the oppression of Fatima?",
-            "options": ["The game of comparing Qara'in (contexts)", "The game of sources and chains of narration (Asanid)", "The game of translating texts into multiple languages", "The game of gathering firewood at the doors of opponents"],
-            "correct": [1],
-            "hint": "The Sheikh states he does not want to get lost in the methodology of hadith scholars who rely on a specific chain of transmission to validate or invalidate history.",
-            "explanation": "Sheikh al-Ghizzi explicitly rejects the traditional method of historians who rely solely on sources and chains of narration, calling it a 'game' fabricated to place the Fatimi File in the archive of heedlessness."
-        },
-        {
-            "id": 2, "difficulty": "Medium", "type": "single",
-            "question": "How does the Sheikh apply the Quranic principle of complicity (found in Surah Al-Baqarah and Al Imran) to the tragedy of the Ahlulbayt?",
-            "options": ["By stating that only those who physically raised a sword against the Ahlulbayt bear the sin of their murder.", "By claiming that the historical texts themselves are complicit and must be entirely discarded.", "By demonstrating that anyone who defends, loves, or approves of the killers is considered a direct partner in their crimes.", "By arguing that Muslims must physically avenge the Ahlulbayt to rid themselves of complicity."],
-            "correct": [2],
-            "hint": "Imam al-Sadiq explains that Allah punished later generations of Jews for the actions of their early ancestors because 'they followed them and took them as masters.'",
-            "explanation": "Using verses about the Jews of Medina and exegesis from Imam al-Sadiq, the Sheikh proves that being pleased with an oppressor's actions binds a person to that crime, making their clothes smeared with the blood of the Ahlulbayt."
-        },
-        {
-            "id": 3, "difficulty": "Hard", "type": "single",
-            "question": "What specific forensic evidence does the Sheikh provide to prove al-Bukhari committed 'Tadlis' (deception)?",
-            "options": ["Al-Bukhari fabricated a completely new chain of narration for the confrontation at Fatima's door.", "Al-Bukhari attributed a hadith about Fatima's death to a weak Shia narrator to discredit it.", "Al-Bukhari kept the exact same chain and text as Sahih Muslim but deliberately deleted the words where Ali and al-Abbas called Abu Bakr and Umar 'liars, sinful, treacherous, and dishonest.'", "Al-Bukhari completely removed the entire dialogue between Umar, Ali, and al-Abbas to protect the reputation of the caliphs."],
-            "correct": [2],
-            "hint": "The Sheikh compares two nearly identical hadiths from Sahih Muslim and Sahih al-Bukhari to show what was intentionally omitted from the latter.",
-            "explanation": "The Sheikh demonstrates the failure of relying solely on chains of narration by showing that al-Bukhari transmitted the exact same hadith as Muslim, but deliberately censored the explicit condemnations made by Imam Ali and al-Abbas."
-        },
-        {
-            "id": 4, "difficulty": "Expert", "type": "multi",
-            "question": "Based on the various forensic texts (Qara'in) presented by Sheikh al-Ghizzi, which of the following explicit details regarding the oppression of Fatima are confirmed by the sources he cited? (Select all that apply)",
-            "options": ["Fatima refused to return the obligatory Islamic greeting (Salam) to Abu Bakr and Umar when they entered her home.", "Umar confessed in a letter to Muawiyah that he struck Fatima, kicked her door, and slapped her.", "Sahih al-Bukhari explicitly states that Fatima was violently beaten and died from the strikes.", "The Prophet explicitly prophesied in Fara'id al-Simtayn that Fatima would be murdered and miscarry her fetus."],
-            "correct": [0, 1, 3],
-            "hint": "Review what Ibn Qutaybah recorded about the visit of the two caliphs, the contents of the suppressed letter in Bihar al-Anwar, and al-Juwayni's hadith. Note what Sahih al-Bukhari actually admitted to.",
-            "explanation": "Ibn Qutaybah confirms she refused to return the Salam (Option A). The suppressed letter in Bihar al-Anwar contains Umar's detailed confession of violence (Option B). Al-Juwayni's Fara'id al-Simtayn contains the Prophet's explicit prophecy of her murder and miscarriage (Option D). Option C is incorrect because Sahih al-Bukhari only mentions that Fatima 'abandoned' Abu Bakr and did not speak to him, entirely omitting the physical violence."
-        }
-    ]
-};
-// ---------------------------------------------------
+import revisionData from '../revision_data.json';
 
 const Flashcard = ({ term, definition }) => {
     const [isFlipped, setIsFlipped] = useState(false);
@@ -182,13 +137,23 @@ const QuizQuestion = ({ question, idx, onReportAnswer }) => {
     );
 };
 
-const MasteryReport = ({ results, totalQuestions, onReviewClick, onCompleteClick, onRetakeClick }) => {
+const MasteryReport = ({ results, totalQuestions, onReviewClick, onCompleteClick, onRetakeClick, onComplete }) => {
     const score = Object.values(results).filter(r => r.isCorrect).length;
     const confValues = { 'Low': 1, 'Medium': 2, 'High': 3 };
     const avgConf = Object.values(results).reduce((acc, r) => acc + confValues[r.confidence], 0) / totalQuestions;
 
     const isHighScore = (score / totalQuestions) >= 0.75;
     const isHighConf = avgConf >= 2.25;
+
+    // --- THIS IS THE FIX ---
+    // By leaving the dependency array empty [], we ensure this ONLY fires once 
+    // when the report first appears on screen, preventing the infinite loop.
+    useEffect(() => {
+        if (onComplete) {
+            onComplete(score, totalQuestions);
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
 
     let archetype = { title: "", icon: null, message: "", style: "", action: "", onClick: null };
 
@@ -228,11 +193,17 @@ const MasteryReport = ({ results, totalQuestions, onReviewClick, onCompleteClick
     );
 };
 
-const RevisionModule = () => {
+const RevisionModule = ({ docId, onComplete }) => {
+    // 1. Pull the data dynamically based on the current episode
+    const data = revisionData[docId];
+
     const [activeTab, setActiveTab] = useState('quiz');
     const [isExpanded, setIsExpanded] = useState(true);
     const [results, setResults] = useState({});
-    const [quizAttempt, setQuizAttempt] = useState(0); // Engine to remount quiz
+    const [quizAttempt, setQuizAttempt] = useState(0);
+
+    // 2. If this episode has no quiz in the JSON, render nothing!
+    if (!data) return null;
 
     const handleReportAnswer = (id, isCorrect, confidence) => {
         setResults(prev => ({ ...prev, [id]: { isCorrect, confidence } }));
@@ -270,7 +241,6 @@ const RevisionModule = () => {
                 {isExpanded && (
                     <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden">
 
-                        {/* Tabs are now permanently visible */}
                         <div className="flex items-center justify-center mb-8 bg-zinc-50 dark:bg-black/20 border border-zinc-200 dark:border-zinc-800 rounded-full p-1.5 max-w-sm mx-auto shadow-inner">
                             <button onClick={() => setActiveTab('quiz')} className={`flex-1 flex items-center justify-center gap-2 px-5 py-2.5 rounded-full text-xs sm:text-sm font-bold uppercase tracking-widest transition-all cursor-pointer ${activeTab === 'quiz' ? 'bg-white dark:bg-[#1c1c1e] text-zinc-900 dark:text-white shadow-lg border border-zinc-200 dark:border-zinc-700' : 'text-zinc-500 hover:text-zinc-800 dark:text-zinc-400 dark:hover:text-white'}`}>
                                 <PencilLine className={`w-4 h-4 ${activeTab === 'quiz' ? 'text-[#c6a87c]' : 'opacity-60'}`} /> Knowledge Check
@@ -295,12 +265,10 @@ const RevisionModule = () => {
                                         <MasteryReport
                                             results={results}
                                             totalQuestions={data.quiz.length}
-                                            onReviewClick={() => {
-                                                setActiveTab('flashcards');
-                                                // Removed aggressive scroll so user doesn't feel trapped or disoriented
-                                            }}
+                                            onReviewClick={() => setActiveTab('flashcards')}
                                             onCompleteClick={() => setIsExpanded(false)}
                                             onRetakeClick={handleRetake}
+                                            onComplete={onComplete} // 3. Passing the save function down properly
                                         />
                                     )}
                                 </motion.div>
