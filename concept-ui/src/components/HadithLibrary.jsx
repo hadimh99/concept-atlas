@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Book, ChevronRight, ChevronLeft, ChevronDown, ChevronUp, Menu, X, Copy, Check, PenTool, History, Clock, Search, List, MapPin } from 'lucide-react';
+import { Book, ChevronRight, ChevronLeft, ChevronDown, ChevronUp, Menu, X, Copy, Check, PenTool, History, Clock, Search, List, MapPin, Sparkles } from 'lucide-react';
 
 const HadithLibrary = ({ hadithData = [] }) => {
     // --- CORE ROUTING STATE ---
@@ -20,13 +20,17 @@ const HadithLibrary = ({ hadithData = [] }) => {
     const [copiedId, setCopiedId] = useState(null);
     const topRef = useRef(null);
 
-    // --- PROGRESS STATE ---
+    // --- PROGRESS & PHYSICS STATE ---
     const [readingProgress, setReadingProgress] = useState(() => {
         const saved = localStorage.getItem('kisa_hadith_progress');
         return saved ? JSON.parse(saved) : {};
     });
 
     const [isExploding, setIsExploding] = useState(false);
+    const [resumeToast, setResumeToast] = useState(false);
+    const lastSaveTimeRef = useRef(0);
+
+    const getChapterKey = (loc) => `${loc.book}|${loc.volume}|${loc.category}|${loc.chapter}`;
 
     // --- BULLETPROOF DATA ENGINE ---
     const { hierarchy, flatChapters, dashboardData } = useMemo(() => {
@@ -90,6 +94,23 @@ const HadithLibrary = ({ hadithData = [] }) => {
         ).slice(0, 50);
     }, [searchQuery, hadithData]);
 
+    // --- AUTO-RESUME MEMOIZATION ---
+    const resumeLocation = useMemo(() => {
+        const progressEntries = Object.entries(readingProgress);
+        if (progressEntries.length === 0) return null;
+
+        // Sort by most recently accessed
+        progressEntries.sort((a, b) => (b[1].lastAccessed || 0) - (a[1].lastAccessed || 0));
+        const lastId = progressEntries[0][0];
+        const lastStatus = progressEntries[0][1].status;
+
+        if (lastStatus === 'in-progress') {
+            const [book, volume, category, chapter] = lastId.split('|');
+            return { book, volume, category, chapter };
+        }
+        return null;
+    }, [readingProgress]);
+
     // --- NAVIGATION LOGIC ---
     const openReader = (loc) => {
         if (!loc || !loc.book) return;
@@ -103,17 +124,132 @@ const HadithLibrary = ({ hadithData = [] }) => {
     };
 
     const closeReader = () => {
+        // 1. Instantly capture the final scroll position the millisecond they click back
+        if (activeLocation && activeLocation.chapter) {
+            const chapterKey = getChapterKey(activeLocation);
+            const currentSavedData = JSON.parse(localStorage.getItem('kisa_hadith_progress') || '{}');
+
+            const y = window.scrollY;
+            const height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+            const scrolled = height > 0 ? (y / height) * 100 : 0;
+
+            const currentStatus = currentSavedData[chapterKey]?.status || 'unread';
+            // Ensure they actually scrolled past 2% to trigger the "Continue" banner
+            const newStatus = currentStatus === 'completed' ? 'completed' : (scrolled > 2 ? 'in-progress' : 'unread');
+
+            currentSavedData[chapterKey] = {
+                ...currentSavedData[chapterKey],
+                position: y,
+                percentage: scrolled,
+                status: newStatus,
+                lastAccessed: Date.now()
+            };
+
+            // 2. Force save to database AND force React state to update immediately
+            localStorage.setItem('kisa_hadith_progress', JSON.stringify(currentSavedData));
+            setReadingProgress(currentSavedData);
+        }
+
+        // 3. Now return to the dashboard
         setCurrentView('home');
         setSearchQuery('');
     };
 
+    // --- CINEMATIC AUTO-RESUME & SCROLL PHYSICS ENGINE ---
     useEffect(() => {
-        if (currentView === 'reader' && activeLocation.chapter) {
+        if (currentView !== 'reader' || !activeLocation.chapter) return;
+
+        const chapterKey = getChapterKey(activeLocation);
+        const savedData = JSON.parse(localStorage.getItem('kisa_hadith_progress') || '{}');
+        const docData = savedData[chapterKey];
+
+        // 1. Layout Stabilization & Cinematic Warp
+        if (docData && docData.position > 300) {
+            // Force the view to the top first so the user actually sees the descent
+            window.scrollTo(0, 0);
+
+            // Wait 300ms for the DOM and heavy Arabic fonts to paint completely
+            setTimeout(() => {
+                const startY = 0;
+                const targetY = docData.position;
+                const distance = targetY - startY;
+
+                // Calculate dynamic duration: minimum 800ms, maximum 1800ms depending on scroll depth
+                const duration = Math.min(1800, Math.max(800, Math.abs(distance) * 0.15));
+                let start = null;
+
+                const cinematicScroll = (timestamp) => {
+                    if (!start) start = timestamp;
+                    const progress = timestamp - start;
+                    const t = Math.min(progress / duration, 1);
+
+                    // The magic Ease-Out-Quart formula for buttery smooth deceleration
+                    const easeOut = 1 - Math.pow(1 - t, 4);
+                    window.scrollTo(0, startY + (distance * easeOut));
+
+                    if (progress < duration) {
+                        window.requestAnimationFrame(cinematicScroll);
+                    } else {
+                        // We arrived! Find the exact Hadith card currently sitting in the viewport
+                        const elements = Array.from(document.querySelectorAll('.hadith-block'));
+                        const targetEl = elements.find(el => {
+                            const rect = el.getBoundingClientRect();
+                            return rect.top >= 0 && rect.top < window.innerHeight / 2;
+                        }) || elements[0];
+
+                        // Trigger the illuminating highlight flash
+                        if (targetEl) {
+                            targetEl.classList.add('bg-[#c6a87c]/20', 'dark:bg-[#c6a87c]/20', 'transition-colors', 'duration-1000');
+                            setTimeout(() => targetEl.classList.remove('bg-[#c6a87c]/20', 'dark:bg-[#c6a87c]/20'), 2500);
+                        }
+
+                        setResumeToast(true);
+                        setTimeout(() => setResumeToast(false), 3000);
+                    }
+                };
+                window.requestAnimationFrame(cinematicScroll);
+            }, 300);
+        } else {
             window.scrollTo(0, 0);
         }
-    }, [activeLocation, currentView]);
 
-    const getChapterKey = (loc) => `${loc.book}|${loc.volume}|${loc.category}|${loc.chapter}`;
+        // 2. Scroll Tracking Telemetry
+        let ticking = false;
+        const handleScroll = () => {
+            if (!ticking) {
+                window.requestAnimationFrame(() => {
+                    const y = window.scrollY;
+                    const height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+                    const scrolled = height > 0 ? (y / height) * 100 : 0;
+
+                    const now = Date.now();
+                    if (now - lastSaveTimeRef.current > 1000) {
+                        const currentSavedData = JSON.parse(localStorage.getItem('kisa_hadith_progress') || '{}');
+                        const currentStatus = currentSavedData[chapterKey]?.status;
+
+                        const newStatus = currentStatus === 'completed' ? 'completed' : (scrolled > 2 ? 'in-progress' : 'unread');
+
+                        currentSavedData[chapterKey] = {
+                            ...currentSavedData[chapterKey],
+                            position: y,
+                            percentage: scrolled,
+                            status: newStatus,
+                            lastAccessed: now
+                        };
+
+                        localStorage.setItem('kisa_hadith_progress', JSON.stringify(currentSavedData));
+                        setReadingProgress(currentSavedData); // Always keep React in perfect sync
+                        lastSaveTimeRef.current = now;
+                    }
+                    ticking = false;
+                });
+                ticking = true;
+            }
+        };
+
+        window.addEventListener('scroll', handleScroll, { passive: true });
+        return () => window.removeEventListener('scroll', handleScroll);
+    }, [currentView, activeLocation]);
 
     // --- SEAMLESS PREV / NEXT LOGIC ---
     const currentIndex = flatChapters.findIndex(c =>
@@ -125,9 +261,12 @@ const HadithLibrary = ({ hadithData = [] }) => {
 
     const handleNext = () => {
         if (!nextChapterInfo) return;
-        // Silently mark current chapter as complete for the dashboard progress bars
+        // Silently mark current chapter as complete
         const chapterKey = getChapterKey(activeLocation);
-        const newProg = { ...readingProgress, [chapterKey]: { status: 'completed', lastAccessed: Date.now() } };
+        const newProg = {
+            ...readingProgress,
+            [chapterKey]: { status: 'completed', lastAccessed: Date.now(), position: 0, percentage: 100 }
+        };
         setReadingProgress(newProg);
         localStorage.setItem('kisa_hadith_progress', JSON.stringify(newProg));
         openReader(nextChapterInfo);
@@ -136,29 +275,6 @@ const HadithLibrary = ({ hadithData = [] }) => {
     const handlePrev = () => {
         if (!prevChapterInfo) return;
         openReader(prevChapterInfo);
-    };
-
-    const handleMarkAsRead = () => {
-        if (!activeLocation.chapter) return;
-        setIsExploding(true);
-
-        setTimeout(() => {
-            setIsExploding(false);
-            const chapterKey = getChapterKey(activeLocation);
-            const now = Date.now();
-
-            const currentSavedData = { ...readingProgress };
-            if (!currentSavedData[chapterKey] || currentSavedData[chapterKey].status !== 'completed') {
-                currentSavedData[chapterKey] = { status: 'completed', lastAccessed: now };
-                localStorage.setItem('kisa_hadith_progress', JSON.stringify(currentSavedData));
-                setReadingProgress(currentSavedData);
-            }
-
-            const nextChapterInfo = getNextChapterInfo();
-            if (nextChapterInfo) openReader(nextChapterInfo);
-            else closeReader();
-
-        }, 1200);
     };
 
     const handleCopyId = (id) => {
@@ -313,6 +429,45 @@ const HadithLibrary = ({ hadithData = [] }) => {
                     <p className="text-zinc-500 dark:text-zinc-400 text-lg">Explore foundational Twelver Shia collections.</p>
                 </div>
 
+                {/* --- NEW: CINEMATIC AUTO-RESUME BANNER --- */}
+                {resumeLocation && !searchQuery.trim() && (
+                    <motion.div
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        onClick={() => openReader(resumeLocation)}
+                        className="w-full bg-gradient-to-r from-[#c6a87c]/10 to-transparent border border-[#c6a87c]/30 hover:bg-[#c6a87c]/20 rounded-2xl p-6 sm:p-8 mb-12 cursor-pointer transition-all duration-300 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6 shadow-sm group"
+                    >
+                        <div className="flex-1 w-full pr-4">
+                            <div className="flex items-center flex-wrap gap-2 mb-3">
+                                <div className="flex items-center gap-1.5">
+                                    <Clock className="w-4 h-4 text-[#c6a87c]" />
+                                    <span className="text-[#c6a87c] font-bold text-[10px] sm:text-xs uppercase tracking-widest">
+                                        Continue Reading
+                                    </span>
+                                </div>
+                                <span className="text-zinc-300 dark:text-zinc-700 hidden sm:inline">•</span>
+                                <span className="text-zinc-500 dark:text-zinc-400 font-bold text-[10px] sm:text-xs uppercase tracking-widest bg-white/50 dark:bg-black/20 px-2 py-0.5 rounded-md border border-zinc-200/50 dark:border-zinc-700/50">
+                                    {resumeLocation.book}
+                                </span>
+                            </div>
+
+                            <h2 className="text-xl sm:text-2xl font-bold text-zinc-900 dark:text-white transition-colors group-hover:text-[#c6a87c] mb-2 leading-snug line-clamp-2">
+                                {resumeLocation.chapter}
+                            </h2>
+                            <p className="text-xs sm:text-sm font-serif text-zinc-500 dark:text-zinc-400">
+                                {resumeLocation.volume} • {resumeLocation.category}
+                            </p>
+
+                            <div className="w-full max-w-[200px] h-1.5 bg-zinc-200 dark:bg-zinc-800 rounded-full mt-5 overflow-hidden">
+                                <div className="h-full bg-[#c6a87c] transition-all duration-500" style={{ width: `${readingProgress[getChapterKey(resumeLocation)]?.percentage || 0}%` }} />
+                            </div>
+                        </div>
+                        <div className="w-12 h-12 rounded-full bg-white dark:bg-[#1c1c1e] shadow-md border border-[#c6a87c]/30 flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
+                            <ChevronRight className="w-6 h-6 text-[#c6a87c]" />
+                        </div>
+                    </motion.div>
+                )}
+
                 <form onSubmit={(e) => { e.preventDefault(); document.activeElement?.blur(); }} className="relative mb-12">
                     <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
                         <Search className="h-5 w-5 text-zinc-400" />
@@ -453,6 +608,18 @@ const HadithLibrary = ({ hadithData = [] }) => {
     return (
         <div className="w-full min-h-screen pt-20 sm:pt-32 pb-32 flex flex-col items-center font-sans relative px-0 sm:px-6 lg:px-8" ref={topRef}>
 
+            {/* THE RESUMED TOAST */}
+            <AnimatePresence>
+                {resumeToast && (
+                    <motion.div
+                        initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }}
+                        className="fixed top-24 left-1/2 -translate-x-1/2 z-[400] bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 px-4 py-2.5 rounded-full shadow-2xl text-[10px] sm:text-xs font-bold uppercase tracking-widest flex items-center gap-2"
+                    >
+                        <Sparkles className="w-3.5 h-3.5 text-[#c6a87c]" /> Resumed where you left off
+                    </motion.div>
+                )}
+            </AnimatePresence>
+
             <div className="md:hidden w-full max-w-[1400px] mx-auto mb-6 px-4 sm:px-0 flex justify-start pointer-events-auto">
                 <button onClick={closeReader} className="flex items-center gap-2 text-zinc-500 hover:text-[#c6a87c] transition-colors text-xs sm:text-sm font-bold uppercase tracking-widest cursor-pointer">
                     <ChevronLeft className="w-4 h-4" /> Dashboard
@@ -557,7 +724,7 @@ const HadithLibrary = ({ hadithData = [] }) => {
                                 const grading = hadith.majlisiGrading || (hadith.gradingsFull && Array.isArray(hadith.gradingsFull) && hadith.gradingsFull.length > 0 ? hadith.gradingsFull[0].grade_ar : null);
 
                                 return (
-                                    <div key={hadith.id || index} className="group bg-white dark:bg-[#151518] sm:border border-slate-200 dark:border-[#2d2d33] sm:rounded-2xl p-6 sm:p-8 sm:shadow-sm relative transition-all hover:border-[#c6a87c]/30">
+                                    <div key={hadith.id || index} className="hadith-block group bg-white dark:bg-[#151518] sm:border border-slate-200 dark:border-[#2d2d33] sm:rounded-2xl p-6 sm:p-8 sm:shadow-sm relative transition-all hover:border-[#c6a87c]/30">
 
                                         <div className="flex justify-between items-start mb-6">
                                             {grading ? (
@@ -588,7 +755,6 @@ const HadithLibrary = ({ hadithData = [] }) => {
                                             </p>
                                         )}
 
-                                        {/* THE FIX: Replaced grey text class (text-slate-700/9a9a9f) with the Arabic white text class (text-slate-900/f8f8f8) */}
                                         <p className="text-lg sm:text-xl text-slate-900 dark:text-[#f8f8f8] leading-relaxed font-serif antialiased border-t border-slate-100 dark:border-[#2d2d33] pt-6">
                                             {formatHadithText(englishText)}
                                         </p>
