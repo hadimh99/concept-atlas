@@ -45,18 +45,39 @@ export default function App() {
   // --- NEW: ASYNC HADITH DATA LOADING ---
   const [alKafiData, setAlKafiData] = useState([]);
   const [isHadithLoading, setIsHadithLoading] = useState(true);
+  const [hadithLoadError, setHadithLoadError] = useState(null); // NEW: Error tracking
 
   useEffect(() => {
     const fetchHadithData = async () => {
       try {
-        // 'force-cache' tells the browser to save this massively heavy file locally
-        // so subsequent visits to the website load instantly.
+        setIsHadithLoading(true);
+        setHadithLoadError(null);
+
         const response = await fetch('/thaqalayn_complete.json', { cache: 'force-cache' });
-        if (!response.ok) throw new Error("Failed to fetch hadith data");
+
+        if (!response.ok) {
+          throw new Error(`HTTP Error ${response.status}: Vercel could not find the file. Ensure 'thaqalayn_complete.json' is inside the root 'public' folder.`);
+        }
+
         const data = await response.json();
-        setAlKafiData(data);
+
+        // Defensive parsing: Ensure we extract the array even if the JSON is wrapped in an object
+        let finalData = [];
+        if (Array.isArray(data)) {
+          finalData = data;
+        } else if (data && typeof data === 'object') {
+          const possibleArray = Object.values(data).find(Array.isArray);
+          if (possibleArray) finalData = possibleArray;
+        }
+
+        if (finalData.length === 0) {
+          throw new Error("File loaded successfully, but no hadiths were found inside it.");
+        }
+
+        setAlKafiData(finalData);
       } catch (error) {
         console.error("Error loading Hadith data:", error);
+        setHadithLoadError(error.message);
       } finally {
         setIsHadithLoading(false);
       }
@@ -1563,6 +1584,12 @@ export default function App() {
             <div className="flex flex-col items-center justify-center min-h-screen text-[#5C4A3D]/60 dark:text-[#c6a87c]/60 pt-20">
               <KisaLogo className="w-12 h-12 animate-pulse mb-4" />
               <p className="font-mono text-xs uppercase tracking-widest font-bold">Loading Library Archive...</p>
+            </div>
+          ) : hadithLoadError ? (
+            <div className="flex flex-col items-center justify-center min-h-screen text-red-500 pt-20 px-6 text-center">
+              <ShieldAlert className="w-12 h-12 mb-4 text-red-500" />
+              <p className="font-serif font-bold text-2xl mb-2 text-zinc-900 dark:text-white">Database Connection Failed</p>
+              <p className="text-sm font-mono opacity-80 max-w-md bg-red-50 dark:bg-red-500/10 p-4 rounded-lg border border-red-200 dark:border-red-500/20">{hadithLoadError}</p>
             </div>
           ) : (
             <HadithLibrary hadithData={alKafiData} />
