@@ -10,7 +10,7 @@ import QuranReader from './components/QuranReader';
 import HadithCard from './components/HadithCard';
 import TranscriptLibrary from './components/TranscriptLibrary';
 import HadithLibrary from './components/HadithLibrary';
-import alKafiData from './thaqalayn_complete.json';
+
 
 
 const APP_UPDATES = [
@@ -41,6 +41,29 @@ const KisaLogo = ({ className }) => (
 
 
 export default function App() {
+
+  // --- NEW: ASYNC HADITH DATA LOADING ---
+  const [alKafiData, setAlKafiData] = useState([]);
+  const [isHadithLoading, setIsHadithLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchHadithData = async () => {
+      try {
+        // 'force-cache' tells the browser to save this massively heavy file locally
+        // so subsequent visits to the website load instantly.
+        const response = await fetch('/thaqalayn_complete.json', { cache: 'force-cache' });
+        if (!response.ok) throw new Error("Failed to fetch hadith data");
+        const data = await response.json();
+        setAlKafiData(data);
+      } catch (error) {
+        console.error("Error loading Hadith data:", error);
+      } finally {
+        setIsHadithLoading(false);
+      }
+    };
+    fetchHadithData();
+  }, []);
+
   const [query, setQuery] = useState('');
 
   const [searchMode, setSearchMode] = useState('concept');
@@ -1535,7 +1558,16 @@ export default function App() {
           />
         )}
 
-        {activeTab === 'hadith' && <HadithLibrary hadithData={alKafiData} />}
+        {activeTab === 'hadith' && (
+          isHadithLoading ? (
+            <div className="flex flex-col items-center justify-center min-h-screen text-[#5C4A3D]/60 dark:text-[#c6a87c]/60 pt-20">
+              <KisaLogo className="w-12 h-12 animate-pulse mb-4" />
+              <p className="font-mono text-xs uppercase tracking-widest font-bold">Loading Library Archive...</p>
+            </div>
+          ) : (
+            <HadithLibrary hadithData={alKafiData} />
+          )
+        )}
 
         <AnimatePresence>
           {activeTab === 'search' && !data && !loading && (
