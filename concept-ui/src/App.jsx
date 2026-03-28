@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Search, Moon, Sun, Sparkles, X, ChevronRight, ChevronLeft, Home, Copy, ChevronDown, ChevronUp, List, Layout, Info, BookOpen, History, HelpCircle, Database, Filter, Share2, Check, Settings2, Menu, Clock, Trash2, LibraryBig, Youtube, Library as LibraryIcon, ArrowDown, User, Bookmark, Coins, HeartPulse, ShieldAlert, MoreHorizontal, PenLine, FolderPlus, FolderMinus } from 'lucide-react';
+import { Search, Moon, Sun, Sparkles, X, ChevronRight, ChevronLeft, Home, Copy, ChevronDown, ChevronUp, List, Layout, Info, BookOpen, History, HelpCircle, Database, Filter, Share2, Check, Settings2, Menu, Clock, Trash2, LibraryBig, Youtube, Library as LibraryIcon, ArrowDown, User, Bookmark, Coins, HeartPulse, ShieldAlert, MoreHorizontal, PenLine, FolderPlus, FolderMinus, Book } from 'lucide-react';
 import quranData from './quran.json';
 import verseMap from './verse_map.json';
 import transcriptData from './transcripts.json';
@@ -9,6 +9,8 @@ import { quranBenefits, spiritualPrescriptions } from './quranBenefits';
 import QuranReader from './components/QuranReader';
 import HadithCard from './components/HadithCard';
 import TranscriptLibrary from './components/TranscriptLibrary';
+import HadithLibrary from './components/HadithLibrary';
+import alKafiData from './thaqalayn_complete.json';
 
 
 const APP_UPDATES = [
@@ -1412,10 +1414,26 @@ export default function App() {
 
         <div className="flex items-center gap-2 sm:gap-4 relative z-[75] pointer-events-auto">
           <div className={`flex items-center rounded-full p-1 mr-1 sm:mr-2 border shadow-sm ${activeTab === 'search' ? 'bg-[#FDFBF7]/50 dark:bg-[#020604]/40 border-[#5C4A3D]/15 dark:border-[#c6a87c]/20 backdrop-blur-xl' : 'bg-white/40 dark:bg-[#252528]/80 border-slate-300/30 dark:border-zinc-700/50 backdrop-blur-md'}`}>
-            <button onClick={() => setActiveTab('search')} className={`p-2 rounded-full transition-all duration-300 cursor-pointer ${activeTab === 'search' ? 'bg-[#FDFBF7] dark:bg-[#c6a87c]/15 text-[#2D241C] dark:text-[#c6a87c] shadow-sm' : 'text-[#5C4A3D]/70 hover:text-[#2D241C] dark:text-[#c6a87c]/50 dark:hover:text-[#c6a87c]'}`} title="Search Engine"><Search className="w-4 h-4" /></button>
-            <button onClick={() => setActiveTab('quran')} className={`p-2 rounded-full transition-all duration-300 cursor-pointer ${activeTab === 'quran' ? 'bg-amber-600/20 text-amber-800 dark:text-amber-500' : 'text-[#5C4A3D]/70 hover:text-[#2D241C] dark:text-[#c6a87c]/50 dark:hover:text-[#c6a87c]'}`} title="Quran Reader"><BookOpen className="w-4 h-4" /></button>
-            <button onClick={() => setActiveTab('library')} className={`p-2 rounded-full transition-all duration-300 cursor-pointer ${activeTab === 'library' ? 'bg-[#c6a87c]/20 text-[#c6a87c] dark:text-[#d4b78f]' : 'text-[#5C4A3D]/70 hover:text-[#2D241C] dark:text-[#c6a87c]/50 dark:hover:text-[#c6a87c]'}`} title="Transcript Library"><LibraryIcon className="w-4 h-4" /></button>
+
+            <button onClick={() => setActiveTab('search')} className={`p-2 rounded-full transition-all duration-300 cursor-pointer ${activeTab === 'search' ? 'bg-[#FDFBF7] dark:bg-[#c6a87c]/15 text-[#2D241C] dark:text-[#c6a87c] shadow-sm' : 'text-[#5C4A3D]/70 hover:text-[#2D241C] dark:text-[#c6a87c]/50 dark:hover:text-[#c6a87c]'}`} title="Search Engine">
+              <Search className="w-4 h-4" />
+            </button>
+
+            <button onClick={() => setActiveTab('quran')} className={`p-2 rounded-full transition-all duration-300 cursor-pointer ${activeTab === 'quran' ? 'bg-amber-600/20 text-amber-800 dark:text-amber-500' : 'text-[#5C4A3D]/70 hover:text-[#2D241C] dark:text-[#c6a87c]/50 dark:hover:text-[#c6a87c]'}`} title="Quran Reader">
+              <BookOpen className="w-4 h-4" />
+            </button>
+
+            <button onClick={() => setActiveTab('library')} className={`p-2 rounded-full transition-all duration-300 cursor-pointer ${activeTab === 'library' ? 'bg-[#c6a87c]/20 text-[#c6a87c] dark:text-[#d4b78f]' : 'text-[#5C4A3D]/70 hover:text-[#2D241C] dark:text-[#c6a87c]/50 dark:hover:text-[#c6a87c]'}`} title="Transcript Library">
+              <LibraryIcon className="w-4 h-4" />
+            </button>
+
+            {/* --- THE NEW TRADITIONAL HADITH BUTTON --- */}
+            <button onClick={() => setActiveTab('hadith')} className={`p-2 rounded-full transition-all duration-300 cursor-pointer ${activeTab === 'hadith' ? 'bg-[#c6a87c]/20 text-[#c6a87c] dark:text-[#d4b78f]' : 'text-[#5C4A3D]/70 hover:text-[#2D241C] dark:text-[#c6a87c]/50 dark:hover:text-[#c6a87c]'}`} title="Traditional Hadiths">
+              <Book className="w-4 h-4" />
+            </button>
+
           </div>
+
 
           <div className="hidden md:flex items-center gap-2 sm:gap-4">
             {activeTab === 'search' && data && !isKeyword && (<div className="flex items-center bg-[#FDFBF7]/50 dark:bg-[#020604]/40 border border-[#5C4A3D]/15 dark:border-[#c6a87c]/20 backdrop-blur-xl rounded-full p-1"><button onClick={() => setViewMode('map')} className={`p-2 rounded-full transition-all duration-300 cursor-pointer ${viewMode === 'map' ? 'bg-[#FDFBF7] dark:bg-[#c6a87c]/15 text-[#2D241C] dark:text-[#c6a87c] shadow-sm' : 'text-[#5C4A3D]/70 hover:text-[#2D241C] dark:text-[#c6a87c]/50 dark:hover:text-[#c6a87c]'}`}><Layout className="w-4 h-4" /></button><button onClick={() => setViewMode('list')} className={`p-2 rounded-full transition-all duration-300 cursor-pointer ${viewMode === 'list' ? 'bg-[#FDFBF7] dark:bg-[#c6a87c]/15 text-[#2D241C] dark:text-[#c6a87c] shadow-sm' : 'text-[#5C4A3D]/70 hover:text-[#2D241C] dark:text-[#c6a87c]/50 dark:hover:text-[#c6a87c]'}`}><List className="w-4 h-4" /></button></div>)}
@@ -1516,6 +1534,8 @@ export default function App() {
             KisaLogo={KisaLogo}
           />
         )}
+
+        {activeTab === 'hadith' && <HadithLibrary hadithData={alKafiData} />}
 
         <AnimatePresence>
           {activeTab === 'search' && !data && !loading && (

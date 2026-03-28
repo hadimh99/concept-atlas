@@ -7,6 +7,8 @@ import { supabase } from '../supabaseClient';
 import { jsPDF } from 'jspdf';
 import RevisionModule from './RevisionModule';
 import MasteryRing from './MasteryRing';
+import TranscriptVideoPlayer from './TranscriptVideoPlayer';
+import revisionData from '../revision_data.json';
 
 
 const TranscriptBookmarkButton = ({ doc, vaultItems = [] }) => {
@@ -1489,6 +1491,7 @@ const TranscriptLibrary = ({
                                 return <p key={idx} className="transcript-block mb-6 text-left">{parseFormatting(block.text)}</p>;
                             })}
                         </div>
+
 
                         {/* --- THE REVISION & MASTERY MODULE --- */}
                         <div className="print-hide">

@@ -1,25 +1,46 @@
 {
     "file-of-fatima-ep1": {
+        "youtube_id": "M7FIvfx5J10",
         "flashcards": [
             {
                 "term": "Qara'in",
-                "definition": "Historical contexts or circumstantial forensic evidence used to uncover buried truths..."
+                "definition": "Historical contexts or circumstantial forensic evidence used by the Sheikh to uncover buried truths, prioritized over easily manipulated chains of narration."
             },
             {
                 "term": "Asanid",
-                "definition": "Chains of narration, described by the Sheikh as a fabricated 'game'..."
+                "definition": "Chains of narration, described by the Sheikh as a fabricated 'game' used by historians and hadith scholars to obscure facts regarding the oppression of the Ahlulbayt."
             },
             {
                 "term": "Tadlis",
-                "definition": "Deception or the deliberate hiding of facts, specifically referenced when al-Bukhari intentionally removed Ali and al-Abbas's condemnation..."
+                "definition": "Deception or the deliberate hiding of facts, specifically referenced when al-Bukhari intentionally removed Ali and al-Abbas's explicit condemnation of Abu Bakr and Umar."
             },
             {
                 "term": "Al-Tashayyu'",
-                "definition": "Shiism, which according to the Sheikh solely and absolutely represents the Infallible Ahlulbayt..."
+                "definition": "True Shiism, which according to the Sheikh solely and absolutely represents the Infallible Ahlulbayt and cannot be perfectly represented by any fallible scholar."
             },
             {
                 "term": "Murji'ah",
-                "definition": "A group cursed by Imam al-Sadiq because they validate the killers of the Ahlulbayt..."
+                "definition": "A group cursed by Imam al-Sadiq because they validate the killers of the Ahlulbayt by calling them believers, thus making their clothes smeared with the blood of the Ahlulbayt."
+            },
+            {
+                "term": "Al-Imamah wa al-Siyasah",
+                "definition": "A book by the Sunni historian Ibn Qutaybah al-Dinawari that documents Umar's mob at Fatima's door and her refusal to return the obligatory Islamic greeting to the caliphs."
+            },
+            {
+                "term": "Fara'id al-Simtayn",
+                "definition": "A book by Sunni scholar al-Juwayni containing the Prophet's explicit prophecy of Fatima's murder, her miscarriage, and a curse upon her oppressor."
+            },
+            {
+                "term": "Dala'il al-Imamah",
+                "definition": "A book by the Imami hadith scholar al-Tabari, from which a suppressed letter detailing Umar's violent confession to Muawiyah was extracted for Bihar al-Anwar."
+            },
+            {
+                "term": "Kamil al-Ziyarat",
+                "definition": "A foundational Shia text cited by the Sheikh to conclusively prove through Imam al-Sadiq that Fatima was beaten, miscarried, and died specifically from that beating."
+            },
+            {
+                "term": "The Manifesto of the Mahdi",
+                "definition": "A declaration sent with Al-Nafs al-Zakiyyah, in which the Imam of the Time cries out for help against the continuous oppression of the Ahlulbayt since the Prophet's death."
             }
         ],
         "quiz": [
@@ -27,71 +48,175 @@
                 "id": 1,
                 "difficulty": "Easy",
                 "type": "single",
-                "question": "According to Sheikh al-Ghizzi, what 'game' was fabricated by historians to hide the oppression of Fatima?",
+                "question": "What methodology does Sheikh al-Ghizzi use to investigate the 'Fatimi File' instead of relying on the traditional hadith scholars' 'game of chains of narration'?",
                 "options": [
-                    "The game of comparing Qara'in (contexts)",
-                    "The game of sources and chains of narration (Asanid)",
-                    "The game of translating texts into multiple languages",
-                    "The game of gathering firewood at the doors of opponents"
+                    "Searching for contexts and circumstantial forensic evidence (Qara'in).",
+                    "Analyzing linguistic poetry of the time.",
+                    "Depending solely on the consensus of the Ummah.",
+                    "Consulting exclusively modern historical archives."
+                ],
+                "correct": [
+                    0
+                ],
+                "hint": "The Sheikh states that he searches for the crime just as investigators search for crimes, knowing there is no such thing as a perfect crime.",
+                "explanation": "Sheikh al-Ghizzi rejects the 'game of sources and chains of narration' fabricated by historians to hide the truth. Instead, he applies a forensic approach, searching for contexts (Qara'in) to uncover the truth of Fatima's oppression."
+            },
+            {
+                "id": 2,
+                "difficulty": "Easy",
+                "type": "single",
+                "question": "According to Sheikh al-Ghizzi, who is the only entity that completely and absolutely represents Shiism (al-Tashayyu')?",
+                "options": [
+                    "The religious authorities and jurists.",
+                    "The Infallible Ahlulbayt.",
+                    "The early companions of the Prophet.",
+                    "The narrators of hadith."
                 ],
                 "correct": [
                     1
                 ],
-                "hint": "The Sheikh states he does not want to get lost in the methodology of hadith scholars...",
-                "explanation": "Sheikh al-Ghizzi explicitly rejects the traditional method of historians..."
-            },
-            {
-                "id": 2,
-                "difficulty": "Medium",
-                "type": "single",
-                "question": "How does the Sheikh apply the Quranic principle of complicity (found in Surah Al-Baqarah and Al Imran) to the tragedy of the Ahlulbayt?",
-                "options": [
-                    "By stating that only those who physically raised a sword...",
-                    "By claiming that the historical texts themselves are complicit...",
-                    "By demonstrating that anyone who defends, loves, or approves of the killers is considered a direct partner in their crimes.",
-                    "By arguing that Muslims must physically avenge the Ahlulbayt..."
-                ],
-                "correct": [
-                    2
-                ],
-                "hint": "Imam al-Sadiq explains that Allah punished later generations of Jews...",
-                "explanation": "Using verses about the Jews of Medina and exegesis from Imam al-Sadiq..."
+                "hint": "The Sheikh states that a perfect religion cannot be represented by the deficient (al-Naqis), no matter their virtue or knowledge.",
+                "explanation": "The Sheikh clarifies that true Shiism represents nothing except the Ahlulbayt. Any fallible scholar or religious authority only represents it in a relative, incidental way, while the absolute authoritative proof belongs solely to Muhammad and his family."
             },
             {
                 "id": 3,
-                "difficulty": "Hard",
+                "difficulty": "Easy",
                 "type": "single",
-                "question": "What specific forensic evidence does the Sheikh provide to prove al-Bukhari committed 'Tadlis' (deception)?",
+                "question": "How does Imam al-Sadiq explain the Quranic principle of complicity regarding those who claim the killers of the Ahlulbayt are believers?",
                 "options": [
-                    "Al-Bukhari fabricated a completely new chain...",
-                    "Al-Bukhari attributed a hadith about Fatima's death to a weak Shia narrator...",
-                    "Al-Bukhari kept the exact same chain and text as Sahih Muslim but deliberately deleted the words...",
-                    "Al-Bukhari completely removed the entire dialogue between Umar, Ali, and al-Abbas..."
+                    "Their sin is forgiven because they did not physically participate.",
+                    "They are only guilty of ignorance.",
+                    "Their clothes are smeared with the blood of the Ahlulbayt until the Day of Resurrection.",
+                    "They must pay financial compensation to the descendants of the Prophet."
                 ],
                 "correct": [
                     2
                 ],
-                "hint": "The Sheikh compares two nearly identical hadiths from Sahih Muslim and Sahih al-Bukhari...",
-                "explanation": "The Sheikh demonstrates the failure of relying solely on chains of narration..."
+                "hint": "The Imam curses the Murji'ah for validating the actions of past oppressors.",
+                "explanation": "By drawing on Surah Al-Baqarah and Al Imran, Imam al-Sadiq explains that anyone who defends or approves of the killers of the Ahlulbayt is directly complicit. Therefore, their clothes are metaphorically smeared with the blood of the Ahlulbayt until the Day of Resurrection."
             },
             {
                 "id": 4,
+                "difficulty": "Medium",
+                "type": "single",
+                "question": "What specific forensic evidence does the Sheikh provide to prove al-Bukhari committed 'Tadlis' (deception)?",
+                "options": [
+                    "Al-Bukhari fabricated a completely new chain of narration for the confrontation at Fatima's door.",
+                    "Al-Bukhari attributed a hadith to a weak Shia narrator to discredit it.",
+                    "Al-Bukhari kept the exact same chain and text as Sahih Muslim but deliberately deleted the words where Ali and al-Abbas called Abu Bakr and Umar 'liars, sinful, treacherous, and dishonest.'",
+                    "Al-Bukhari completely removed the entire dialogue between Umar, Ali, and al-Abbas to protect the reputation of the caliphs."
+                ],
+                "correct": [
+                    2
+                ],
+                "hint": "The Sheikh compares two nearly identical hadiths from Sahih Muslim and Sahih al-Bukhari to show what was intentionally omitted from the latter.",
+                "explanation": "The Sheikh demonstrates the failure of relying solely on chains of narration by showing that al-Bukhari transmitted the exact same hadith as Muslim, but deliberately censored the explicit condemnations made by Imam Ali and al-Abbas against Abu Bakr and Umar."
+            },
+            {
+                "id": 5,
+                "difficulty": "Medium",
+                "type": "single",
+                "question": "According to the account in Ibn Qutaybah's 'Al-Imamah wa al-Siyasah', what highly significant theological action did Fatima take when Abu Bakr and Umar entered her presence?",
+                "options": [
+                    "She requested a formal debate in the Prophet's mosque.",
+                    "She refused to return the obligatory Islamic greeting (Salam) to them and turned her face to the wall.",
+                    "She demanded the immediate return of Fadak in exchange for her silence.",
+                    "She forgave them on the condition they spare Ali's life."
+                ],
+                "correct": [
+                    1
+                ],
+                "hint": "Returning the Islamic greeting is obligatory upon a Muslim, yet Fatima chose not to do so, demonstrating the severity of her anger.",
+                "explanation": "Ibn Qutaybah records that when Abu Bakr and Umar greeted Fatima, she turned to the wall and did not return their Salam. The Sheikh highlights that since returning Salam is obligatory, her refusal was a profound theological statement of her absolute anger towards them."
+            },
+            {
+                "id": 6,
+                "difficulty": "Medium",
+                "type": "single",
+                "question": "In the suppressed document extracted from 'Dala'il al-Imamah' and found in 'Bihar al-Anwar', to whom is Umar ibn al-Khattab writing a detailed confession of his attack on Fatima's house?",
+                "options": [
+                    "Abu Bakr.",
+                    "Khalid ibn al-Walid.",
+                    "Muawiyah ibn Abi Sufyan.",
+                    "Malik ibn Aws."
+                ],
+                "correct": [
+                    2
+                ],
+                "hint": "Umar wrote a long, detailed letter to the future Umayyad caliph explaining his actions in Medina.",
+                "explanation": "The 30th volume of Bihar al-Anwar contains a suppressed letter extracted from Dala'il al-Imamah, which is a detailed confession written by Umar ibn al-Khattab to Muawiyah ibn Abi Sufyan, admitting to the violent assault on Fatima's home."
+            },
+            {
+                "id": 7,
+                "difficulty": "Hard",
+                "type": "single",
+                "question": "Based on the narration of Imam al-Baqir in 'Iqab al-A'mal, under what condition does a person living today become a direct partner to the oppressors of the Ahlulbayt?",
+                "options": [
+                    "If they publicly deny the existence of the Ahlulbayt entirely.",
+                    "If they willfully remain ignorant of the severity of the Ahlulbayt's oppression when it is possible for them to know it.",
+                    "If they fail to memorize the specific dates of the tragedies.",
+                    "If they refuse to read both Sunni and Shia historical texts simultaneously."
+                ],
+                "correct": [
+                    1
+                ],
+                "hint": "The Imam states that whoever does not know the evil of what was brought upon them of oppression is a partner to whoever brought it upon them.",
+                "explanation": "Imam al-Baqir establishes a severe standard of complicity: if a person is capable of knowing the extent of the oppression against the Ahlulbayt but chooses to remain ignorant of it, they become an active partner to the oppressors."
+            },
+            {
+                "id": 8,
+                "difficulty": "Hard",
+                "type": "single",
+                "question": "To conclusively silence critics who denied that Imam al-Sadiq explicitly stated Fatima died from being beaten, which foundational text does Sheikh al-Ghizzi present at the end of the episode?",
+                "options": [
+                    "Tafsir al-Burhan.",
+                    "Al-Imamah wa al-Siyasah.",
+                    "Fara'id al-Simtayn.",
+                    "Kamil al-Ziyarat."
+                ],
+                "correct": [
+                    3
+                ],
+                "hint": "The text recounts a hadith regarding the Prophet's Night Journey (Mi'raj) and the trials of his Ahlulbayt.",
+                "explanation": "To silence those who accused him of fabricating the claim, the Sheikh reads directly from Kamil al-Ziyarat. The hadith from Imam al-Sadiq explicitly details that Fatima would be beaten while pregnant, miscarry, and die specifically from that beating."
+            },
+            {
+                "id": 9,
                 "difficulty": "Expert",
                 "type": "multi",
-                "question": "Based on the various forensic texts (Qara'in) presented by Sheikh al-Ghizzi, which of the following explicit details regarding the oppression of Fatima are confirmed by the sources he cited? (Select all that apply)",
+                "question": "Based on the suppressed letter of Umar found in the 30th volume of Bihar al-Anwar, which of the following violent actions did Umar explicitly confess to committing against Fatima? (Select all that apply)",
                 "options": [
-                    "Fatima refused to return the obligatory Islamic greeting (Salam)...",
-                    "Umar confessed in a letter to Muawiyah that he struck Fatima...",
-                    "Sahih al-Bukhari explicitly states that Fatima was violently beaten...",
-                    "The Prophet explicitly prophesied in Fara'id al-Simtayn that Fatima would be murdered..."
+                    "He struck her hands with a whip when she tried to prevent him from opening the door.",
+                    "He kicked the door while she had stuck her insides to it to barricade it.",
+                    "He ordered Khalid ibn al-Walid to draw his sword and strike her shoulder.",
+                    "He slapped her cheeks from outside her veil (Khimar), causing her earring to break."
                 ],
                 "correct": [
                     0,
                     1,
                     3
                 ],
-                "hint": "Review what Ibn Qutaybah recorded about the visit of the two caliphs...",
-                "explanation": "Ibn Qutaybah confirms she refused to return the Salam (Option A). The suppressed letter..."
+                "hint": "Review the specific physical assaults Umar detailed in his letter to Muawiyah regarding the whip, the door, and her face.",
+                "explanation": "In the suppressed letter, Umar explicitly confesses to striking Fatima's hands with a whip (Option A), kicking the door while her body was pressed against it (Option B), and slapping her cheeks so hard that her earring broke (Option D). He mentions Khalid ibn al-Walid regarding gathering firewood, not drawing a sword to strike her shoulder (Option C is incorrect)."
+            },
+            {
+                "id": 10,
+                "difficulty": "Expert",
+                "type": "multi",
+                "question": "According to the narration in Kamil al-Ziyarat provided by Imam al-Sadiq regarding the Prophet's Night Journey (Mi'raj), what specific trials were prophesied to befall Fatima? (Select all that apply)",
+                "options": [
+                    "She will be forced into exile away from Medina.",
+                    "Her sanctuary and home will be entered without permission.",
+                    "She will be beaten while pregnant, causing her to miscarry.",
+                    "She will definitively die as a direct result of that beating."
+                ],
+                "correct": [
+                    1,
+                    2,
+                    3
+                ],
+                "hint": "The Prophet was informed of three things regarding his family's future suffering, specifically concerning the sanctity of Fatima's home and physical body.",
+                "explanation": "The hadith in Kamil al-Ziyarat explicitly states that Fatima's home will be entered without permission (Option B), she will be beaten while pregnant and miscarry (Option C), and she will 'die from that beating' (Option D). There is no mention in this text of her being forced into exile (Option A is incorrect)."
             }
         ]
     }
